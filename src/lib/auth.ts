@@ -63,6 +63,14 @@ export async function verifyPassword(password: string, stored: string): Promise<
   return diff === 0;
 }
 
+// Spend the same PBKDF2 work for an unknown account as for a known one so
+// response time does not reveal which emails exist.
+const DUMMY_SALT = new Uint8Array(16);
+export async function verifyDummyPassword(password: string): Promise<false> {
+  await pbkdf2(password, DUMMY_SALT, PASSWORD_ITERATIONS);
+  return false;
+}
+
 export async function createSession(locals: App.Locals, userId: string): Promise<{ id: string; expiresAt: number }> {
   const db = ensureDB(locals);
   const id = crypto.randomUUID();
