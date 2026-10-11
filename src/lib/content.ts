@@ -1,3 +1,10 @@
+import {
+  replaceNavItems,
+  saveContentWithCategories,
+  type ContentWriteInput,
+  type NavItemInput,
+  type WriteDB,
+} from "./content-writes";
 import { ensureDB, getDB } from "./db";
 
 export type ContentStatus = "draft" | "published";
@@ -141,54 +148,9 @@ export async function getContentById(locals: App.Locals, id: string): Promise<Co
 
 export async function saveContent(
   locals: App.Locals,
-  input: {
-    id?: string;
-    slug: string;
-    title: string;
-    markdown: string;
-    pageType: string;
-    status: ContentStatus;
-    authorId: string;
-    featuredImageUrl?: string | null;
-    homepageFeatured?: boolean;
-    homepageGroup?: string;
-    homepageOrder?: number;
-    homepageDescription?: string;
-  }
+  input: ContentWriteInput
 ): Promise<string> {
-  const db = ensureDB(locals);
-  const now = Date.now();
-  const featuredImageUrl = input.featuredImageUrl || null;
-  const homepageValues = [input.homepageFeatured ? 1 : 0, input.homepageGroup ?? "other", input.homepageOrder ?? 0, input.homepageDescription ?? ""];
-
-  if (input.id) {
-    await db
-      .prepare(
-        `UPDATE content
-         SET slug = ?, title = ?, markdown = ?, page_type = ?, status = ?,
-             published_at = CASE WHEN status = 'draft' AND ? = 'published' THEN ? ELSE published_at END,
-             updated_at = ?, featured_image_url = ?,
-             homepage_featured = ?, homepage_group = ?, homepage_order = ?, homepage_description = ?
-         WHERE id = ?`
-      )
-      .bind(input.slug, input.title, input.markdown, input.pageType, input.status, input.status, now, now, featuredImageUrl, ...homepageValues, input.id)
-      .run();
-    return input.id;
-  }
-
-  const id = crypto.randomUUID();
-  const publishedAt = input.status === "published" ? now : null;
-  await db
-    .prepare(
-      `INSERT INTO content
-      (id, slug, title, markdown, page_type, status, author_id, published_at, created_at, updated_at, featured_image_url,
-       homepage_featured, homepage_group, homepage_order, homepage_description)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    )
-    .bind(id, input.slug, input.title, input.markdown, input.pageType, input.status, input.authorId, publishedAt, now, now, featuredImageUrl, ...homepageValues)
-    .run();
-
-  return id;
+  return saveContentWithCategories(ensureDB(locals) as unknown as WriteDB, input, Date.now());
 }
 
 export async function deleteContentById(locals: App.Locals, id: string): Promise<void> {
@@ -347,21 +309,6 @@ export async function getContentCategories(
   }));
 }
 
-export async function setContentCategories(
-  locals: App.Locals,
-  contentId: string,
-  categoryIds: string[]
-): Promise<void> {
-  const db = ensureDB(locals);
-  await db.prepare("DELETE FROM content_categories WHERE content_id = ?").bind(contentId).run();
-  for (const categoryId of categoryIds) {
-    await db
-      .prepare("INSERT INTO content_categories (content_id, category_id) VALUES (?, ?)")
-      .bind(contentId, categoryId)
-      .run();
-  }
-}
-
 export async function listContentCategoryNames(locals: App.Locals): Promise<Record<string, string[]>> {
   const db = getDB(locals);
   if (!db) return {};
@@ -458,42 +405,7 @@ export async function listNavItems(locals: App.Locals): Promise<NavItemRecord[]>
   }));
 }
 
-export async function saveNavItems(
-  locals: App.Locals,
-  items: {
-    clientId: string;
-    contentId?: string;
-    label: string;
-    sortOrder: number;
-    parentClientId: string | null;
-  }[]
-): Promise<void> {
-  const db = ensureDB(locals);
-  const now = Date.now();
-
-  await db.prepare("DELETE FROM nav_items").run();
-
-  const idMap = new Map<string, string>();
-  for (const item of items) idMap.set(item.clientId, crypto.randomUUID());
-
-  const inserted = new Set<string>();
-  async function insertItem(item: typeof items[0]) {
-    if (inserted.has(item.clientId)) return;
-    if (item.parentClientId) {
-      const parent = items.find(i => i.clientId === item.parentClientId);
-      if (parent) await insertItem(parent);
-    }
-    const realId = idMap.get(item.clientId)!;
-    const parentRealId = item.parentClientId ? (idMap.get(item.parentClientId) ?? null) : null;
-    await db
-      .prepare(
-        `INSERT INTO nav_items (id, label, content_id, parent_item_id, sort_order, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      )
-      .bind(realId, item.label, item.contentId ?? null, parentRealId, item.sortOrder, now)
-      .run();
-    inserted.add(item.clientId);
-  }
-
-  for (const item of items) await insertItem(item);
+// Replaces the whole tree atomically; throws WriteValidationError on bad input.
+export async function saveNavItems(locals: App.Locals, items: NavItemInput[]): Promise<void> {
+  await replaceNavItems(ensureDB(locals) as unknown as WriteDB, items, Date.now());
 }

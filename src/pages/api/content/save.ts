@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
-import { saveContent, setContentCategories, type ContentStatus } from "../../../lib/content";
+import { saveContent, type ContentStatus } from "../../../lib/content";
+import { WriteValidationError } from "../../../lib/content-writes";
 import { ensureRole, sanitizeSlug } from "../../../lib/http";
 import { pingIndexNow } from "../../../lib/indexnow";
 import { pingWebSub } from "../../../lib/websub";
@@ -30,23 +31,31 @@ export const POST: APIRoute = async (context) => {
     return context.redirect(`/admin/content/${id ? encodeURIComponent(id) : "new"}?error=invalid`);
   }
 
-  const savedId = await saveContent(context.locals, {
-    id,
-    title,
-    slug,
-    markdown,
-    pageType,
-    status,
-    authorId: user.id,
-    featuredImageUrl,
-    homepageFeatured,
-    homepageGroup,
-    homepageOrder,
-    homepageDescription,
-  });
-
   const categoryIds = form.getAll("categoryId").map((v) => String(v)).filter(Boolean);
-  await setContentCategories(context.locals, savedId, categoryIds);
+
+  let savedId: string;
+  try {
+    savedId = await saveContent(context.locals, {
+      id,
+      title,
+      slug,
+      markdown,
+      pageType,
+      status,
+      authorId: user.id,
+      featuredImageUrl,
+      homepageFeatured,
+      homepageGroup,
+      homepageOrder,
+      homepageDescription,
+      categoryIds,
+    });
+  } catch (error) {
+    if (error instanceof WriteValidationError) {
+      return context.redirect(`/admin/content/${id ? encodeURIComponent(id) : "new"}?error=invalid`);
+    }
+    throw error;
+  }
 
   const isProduction = new URL(context.request.url).hostname === "orboro.net";
   if (status === "published" && isProduction) {
