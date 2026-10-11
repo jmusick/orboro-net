@@ -109,6 +109,7 @@ if (!res) {
 
 - `caches.default` needs the cast above: the generated `worker-configuration.d.ts` (`npm run cf:types`) doesn't type it.
 - The Cache API persists to `.wrangler/state/v3/cache`, so a stale response survives a dev-server restart. Stop the server, delete `.wrangler/state/v3/cache/miniflare-CacheObject`, and restart (or wait out the TTL).
+- `bookmarks.ts` validates the upstream response through `bookmarks-data.ts` (schema, item/tag/byte caps, http(s) links and https favicons, 5 s timeout, redirects only to HTTPS on the same host) and caches only the normalized result; the whole shortcode falls back to a `<p><em>` on any failure. Run `npm run test:bookmarks` when changing it.
 - `bookmarks.ts` filters tags into UI categories through an explicit `exclude_categories="…"` attribute rather than guessing which tags every item shares.
 - `src/pages/api/posts/by-category/[slug].ts` is a public, edge-cached (10 min) JSON endpoint of published posts per category, consumed by HiddenLodgeWebsite's `/articles` page. It returns plain-text excerpts, not rendered HTML, because shortcodes only resolve inside this repo's render pipeline. A new public endpoint should return absolute URLs (`new URL(path, site.origin)`), edge-cache, and answer an unknown slug with a `404` JSON body.
 

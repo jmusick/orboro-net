@@ -1,25 +1,8 @@
+import { fetchBounded, normalizeBookmarks, readLimitedText, type Bookmark } from "./bookmarks-data";
 import { nonceAttr } from "./csp";
 
 const TAGSTASH_USER = "JD";
 const CACHE_TTL_SECONDS = 600;
-
-interface TagstashTag {
-  id: number;
-  name: string;
-}
-
-interface TagstashBookmark {
-  id: number;
-  title: string;
-  url: string;
-  description: string | null;
-  favicon_url: string | null;
-  tags?: TagstashTag[];
-}
-
-interface TagstashResponse {
-  bookmarks: TagstashBookmark[];
-}
 
 function esc(s: string): string {
   return String(s)
@@ -29,37 +12,57 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-async function fetchBookmarks(tag: string): Promise<TagstashBookmark[]> {
+// Only validated, bounded results are cached, so an upstream error or
+// malformed body is never replayed for the TTL.
+async function fetchBookmarks(tag: string): Promise<Bookmark[]> {
   const url = `https://tagsta.sh/api/profiles/${encodeURIComponent(TAGSTASH_USER)}?tag=${encodeURIComponent(tag)}`;
   const cache = (caches as CacheStorage & { readonly default: Cache }).default;
   const cacheKey = new Request(url);
 
-  let res = await cache.match(cacheKey);
-  if (!res) {
-    res = await fetch(url);
-    if (res.ok) {
-      const cacheable = new Response(res.body, res);
-      cacheable.headers.set("Cache-Control", `public, max-age=${CACHE_TTL_SECONDS}`);
-      await cache.put(cacheKey, cacheable.clone());
-      res = cacheable;
+  const cached = await cache.match(cacheKey);
+  if (cached) {
+    try {
+      return normalizeBookmarks(JSON.parse(await readLimitedText(cached)));
+    } catch {
+      // Fall through and refetch.
     }
   }
 
-  if (!res.ok) {
-    throw new Error(`tagsta.sh responded with ${res.status}`);
-  }
+  const res = await fetchBounded(url);
+  if (!res.ok) throw new Error(`tagsta.sh responded with ${res.status}`);
+  const bookmarks = normalizeBookmarks(JSON.parse(await readLimitedText(res)));
 
-  const data = (await res.json()) as TagstashResponse;
-  return data.bookmarks ?? [];
+  await cache.put(
+    cacheKey,
+    new Response(JSON.stringify({ bookmarks: bookmarks.map((b) => ({
+      title: b.title,
+      url: b.url,
+      description: b.description,
+      favicon_url: b.faviconUrl,
+      tags: b.tags.map((name) => ({ name })),
+    })) }), {
+      headers: { "Content-Type": "application/json", "Cache-Control": `public, max-age=${CACHE_TTL_SECONDS}` },
+    }),
+  );
+  return bookmarks;
 }
 
+// A broken upstream or a rendering fault must not 500 the containing page.
 export async function generateBookmarksList(attrs: Record<string, string>, nonce?: string): Promise<string> {
+  try {
+    return await buildBookmarksList(attrs, nonce);
+  } catch {
+    return `<p><em>Couldn't load bookmarks right now. Try again later.</em></p>`;
+  }
+}
+
+async function buildBookmarksList(attrs: Record<string, string>, nonce?: string): Promise<string> {
   const tag = attrs.tag;
   if (!tag) {
     return `<p><em>Bookmark list error: missing "tag" attribute.</em></p>`;
   }
 
-  let bookmarks: TagstashBookmark[];
+  let bookmarks: Bookmark[];
   try {
     bookmarks = await fetchBookmarks(tag);
   } catch {
@@ -82,7 +85,7 @@ export async function generateBookmarksList(attrs: Record<string, string>, nonce
       .filter(Boolean)
   );
 
-  const tagNameLists = sorted.map((b) => (b.tags ?? []).map((t) => t.name));
+  const tagNameLists = sorted.map((b) => b.tags);
   const categoriesByBookmark = tagNameLists.map((names) =>
     names.filter((name) => !excludedTagNames.has(name.toLowerCase())).sort((a, b) => a.localeCompare(b))
   );
@@ -94,8 +97,8 @@ export async function generateBookmarksList(attrs: Record<string, string>, nonce
   const categories = [...categoryCounts.keys()].sort((a, b) => a.localeCompare(b));
 
   const itemsHtml = sorted.map((b, i) => {
-    const favicon = b.favicon_url
-      ? `<img class="bml-favicon" src="${esc(b.favicon_url)}" alt="" loading="lazy" referrerpolicy="no-referrer" />`
+    const favicon = b.faviconUrl
+      ? `<img class="bml-favicon" src="${esc(b.faviconUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer" />`
       : `<span class="bml-favicon bml-favicon--placeholder" aria-hidden="true"></span>`;
     const description = b.description
       ? `<span class="bml-desc">${esc(b.description)}</span>`
