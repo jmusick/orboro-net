@@ -53,6 +53,8 @@ Page/post markdown embeds widgets via `{{token}}` or `{{token attr="value"}}`, e
 
 **Headers.** Every page and API route is rendered by the Worker, not the static-assets layer, so `public/_headers` only affects static files. `src/middleware.ts` sets HSTS, `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options`, `Permissions-Policy` and `Content-Security-Policy` on every response. Fix a missing header in middleware, not just `_headers`.
 
+**Private responses.** `src/lib/cache-policy.ts` drives a middleware rule: every `/admin*` and non-public `/api/*` response (redirects and errors included) gets `Cache-Control: no-store`, and HTML served to a request carrying a session cookie gets `private, no-store`. Public API (`/api/posts/`), media, feeds and static assets keep their own policy. Edge/Cache Rules can't be seen from source: verify in the dashboard that none overrides this. Run `npm run test:cache-policy` when changing it.
+
 **CSP nonces.** The CSP is enforced, with a per-request nonce (`Astro.locals.nonce`) on `script-src`/`style-src` and no `'unsafe-inline'`. **Every** inline `<script>`/`<style>` needs `nonce={Astro.locals.nonce}` (Astro) or `nonceAttr(nonce)` from `src/lib/csp.ts` (shortcode strings, threaded through `processShortcodes(html, nonce)` → `ShortcodeFn(attrs, nonce)`). `<script type="application/json">` and `ld+json` blocks need none. `build.inlineStylesheets: 'never'` keeps Astro's scoped styles external. Never auto-nonce user-authored HTML.
 
 **Gotcha: memoized shortcode HTML can't bake in a nonce.** `assisted-combat-analysis.ts` and `midnight-s2-interrupts.ts` cache HTML with a `NONCE_PLACEHOLDER` and `.replaceAll()` the real nonce (or strip the attribute) per request. Don't embed `nonce` directly in `buildHtml()`.

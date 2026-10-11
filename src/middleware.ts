@@ -1,6 +1,7 @@
 import { defineMiddleware } from "astro:middleware";
 import { env as workerEnv } from "cloudflare:workers";
 import { getSessionAndUserByToken } from "./lib/auth";
+import { isPrivatePath, privateCacheControl } from "./lib/cache-policy";
 
 const SESSION_COOKIE = "orboro_session";
 
@@ -19,10 +20,6 @@ function buildCsp(nonce: string): string {
     "base-uri 'self'",
     "frame-ancestors 'none'",
   ].join("; ");
-}
-
-function isPrivatePath(pathname: string): boolean {
-  return pathname === "/admin" || pathname.startsWith("/admin/");
 }
 
 function generateNonce(): string {
@@ -63,6 +60,14 @@ export const onRequest = defineMiddleware(async (context, next) => {
     "Content-Security-Policy",
     buildCsp(context.locals.nonce),
   );
+
+  const cacheControl = privateCacheControl(
+    new URL(context.request.url).pathname,
+    Boolean(token),
+    response.headers.get("Content-Type"),
+    response.headers.get("Cache-Control"),
+  );
+  if (cacheControl) response.headers.set("Cache-Control", cacheControl);
 
   // Index hygiene only; the auth guards are what protect these routes. The
   // exact /admin login stays crawlable in robots.txt so crawlers can see this.
