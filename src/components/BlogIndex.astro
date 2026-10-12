@@ -22,7 +22,8 @@ const isFiltered = filters.q !== "" || filters.sort !== "newest";
 const first = (page - 1) * pageSize + 1;
 const last = first + posts.length - 1;
 const title = page > 1 ? `Blog, Page ${page} | Orboro.net` : "Blog | Orboro.net";
-const description = page > 1 ? `Latest Orboro.net posts, page ${page} of ${totalPages}.` : "Latest Orboro.net posts";
+const BLOG_DESCRIPTION = "Articles on World of Warcraft Mythic+ and gearing, ARPG leagues and seasons, GPU settings, and criticism of gaming-community talking points.";
+const description = page > 1 ? `${BLOG_DESCRIPTION} Page ${page} of ${totalPages}.` : BLOG_DESCRIPTION;
 const noun = (n: number) => (n === 1 ? "post" : "posts");
 const sorts = [
   ["newest", "Newest first"],
