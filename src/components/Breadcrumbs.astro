@@ -1,0 +1,66 @@
+---
+import type { Crumb } from "../lib/structured-data";
+
+interface Props {
+  /** Full trail including Home first and the current page last. */
+  trail: Crumb[];
+}
+const { trail } = Astro.props;
+---
+{trail.length >= 2 && (
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      {trail.map((crumb, index) => (
+        index === trail.length - 1 ? (
+          <li><span aria-current="page">{crumb.name}</span></li>
+        ) : (
+          <li><a href={crumb.path}>{crumb.name}</a></li>
+        )
+      ))}
+    </ol>
+  </nav>
+)}
+
+<style>
+  .breadcrumbs {
+    font-family: var(--font-ui);
+    font-size: 0.85rem;
+    margin: 0 0 1rem;
+  }
+
+  ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--muted);
+    min-width: 0;
+  }
+
+  li + li::before {
+    content: "/";
+    color: var(--line);
+  }
+
+  a {
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  a:hover {
+    color: var(--accent);
+  }
+
+  [aria-current="page"] {
+    color: var(--text);
+  }
+</style>

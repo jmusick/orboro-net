@@ -3,7 +3,9 @@ import { renderMarkdown } from "../../lib/markdown";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SidebarLayout from "../../components/SidebarLayout.astro";
 import Sidebar from "../../components/Sidebar.astro";
-import { getPublishedBySlugAndType, listPostSummaries, listCategoriesWithPostCounts } from "../../lib/content";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import { getPublishedBySlugAndType, listPostSummaries, listCategoriesWithPostCounts, listNavItems } from "../../lib/content";
+import { breadcrumbList, classifyPage, graphOf, pageNode, pageTrail, withHome } from "../../lib/structured-data";
 import { processShortcodes } from "../../lib/shortcodes";
 import { formatPageUpdatedAt } from "../../lib/dates";
 
@@ -58,11 +60,28 @@ const [categories, recentPosts] = hasWidgets
 
 const BASE = (Astro.site ?? new URL("https://orboro.net")).origin;
 const absoluteImageUrl = page.featuredImageUrl ? new URL(page.featuredImageUrl, BASE).href : undefined;
+
+const pagePath = `/pages/${page.slug}`;
+const trail = withHome(pageTrail(await listNavItems(Astro.locals), page.id, page.title, pagePath));
+const structuredData = graphOf(
+  pageNode({
+    type: classifyPage(page.markdown),
+    origin: BASE,
+    path: pagePath,
+    title: page.title,
+    description,
+    imageUrl: absoluteImageUrl,
+    publishedAt: page.publishedAt ?? page.createdAt,
+    updatedAt: page.updatedAt,
+  }),
+  breadcrumbList(trail, BASE),
+);
 ---
 
-<BaseLayout title={`${page.title} | Orboro.net`} description={description} ogType="article" ogImage={absoluteImageUrl} ogImageAlt={absoluteImageUrl ? `Featured image for ${page.title}` : undefined}>
+<BaseLayout title={`${page.title} | Orboro.net`} description={description} ogType="article" ogImage={absoluteImageUrl} ogImageAlt={absoluteImageUrl ? `Featured image for ${page.title}` : undefined} structuredData={structuredData}>
   <SidebarLayout sidebar={!hasWidgets}>
     <article class="page-content">
+      <Breadcrumbs trail={trail} />
       <h1>{page.title}</h1>
       {updated && <p class="meta">Updated {updated}</p>}
       {page.featuredImageUrl && (
