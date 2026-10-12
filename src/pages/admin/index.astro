@@ -4,8 +4,13 @@ import AdminLayout from "../../layouts/AdminLayout.astro";
 import Card from "../../components/Card.astro";
 import FormMessage from "../../components/FormMessage.astro";
 import Button from "../../components/Button.astro";
+import { isAdmin } from "../../lib/http";
 
-const loggedIn = Boolean(Astro.locals.user);
+// Admin-only by design (issue #16): only an admin session sees the dashboard.
+// A signed-in user with any other role gets a forbidden notice and sign out.
+const user = Astro.locals.user;
+const loggedIn = isAdmin(user);
+const forbidden = Boolean(user) && !loggedIn;
 const error = Astro.url.searchParams.get("error");
 const signedOutAll = Astro.url.searchParams.get("signedout") === "all";
 ---
@@ -35,6 +40,16 @@ const signedOutAll = Astro.url.searchParams.get("signedout") === "all";
       </form>
     </section>
   </AdminLayout>
+) : forbidden ? (
+  <BaseLayout title="Access Denied | Orboro.net" description="This account cannot use the Orboro.net CMS" analytics={false}>
+    <section>
+      <h1>Access Denied</h1>
+      <FormMessage error>This account does not have access to the admin area. Only administrator accounts can sign in here.</FormMessage>
+      <form method="post" action="/api/auth/logout">
+        <Button type="submit" variant="primary" icon="log-out">Sign out</Button>
+      </form>
+    </section>
+  </BaseLayout>
 ) : (
   <BaseLayout title="Admin Login | Orboro.net" description="Sign in to Orboro.net CMS" analytics={false}>
     <section>

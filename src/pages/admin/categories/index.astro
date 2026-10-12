@@ -4,10 +4,10 @@ import FormMessage from "../../../components/FormMessage.astro";
 import Button from "../../../components/Button.astro";
 import Pill from "../../../components/Pill.astro";
 import Icon from "../../../components/Icon.astro";
-import { ensureRole } from "../../../lib/http";
+import { requireAdmin } from "../../../lib/http";
 import { listCategories } from "../../../lib/content";
 
-const access = ensureRole(Astro, ["admin", "editor"]);
+const access = requireAdmin(Astro);
 if (access instanceof Response) return access;
 const categories = await listCategories(Astro.locals);
 

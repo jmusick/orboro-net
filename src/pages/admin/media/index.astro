@@ -3,10 +3,10 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 import FormMessage from "../../../components/FormMessage.astro";
 import Button from "../../../components/Button.astro";
 import Icon from "../../../components/Icon.astro";
-import { ensureRole } from "../../../lib/http";
+import { requireAdmin } from "../../../lib/http";
 import { listMedia } from "../../../lib/content";
 
-const access = ensureRole(Astro, ["admin", "editor"]);
+const access = requireAdmin(Astro);
 if (access instanceof Response) return access;
 const media = await listMedia(Astro.locals);
 const error = Astro.url.searchParams.get("error");

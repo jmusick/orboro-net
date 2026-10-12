@@ -6,11 +6,11 @@ import Pill from "../../components/Pill.astro";
 import FormMessage from "../../components/FormMessage.astro";
 import PostCard from "../../components/PostCard.astro";
 import PostListItem from "../../components/PostListItem.astro";
-import { ensureRole } from "../../lib/http";
+import { requireAdmin } from "../../lib/http";
 import { getPublishedContentByType, excerptFromMarkdown } from "../../lib/content";
 import { generateExpeditionRumourSheet } from "../../lib/expedition-rumours";
 
-const access = ensureRole(Astro, ["admin"]);
+const access = requireAdmin(Astro);
 if (access instanceof Response) return access;
 const [post] = await getPublishedContentByType(Astro.locals, "post", 1);
 const date = post ? new Date(post.publishedAt ?? post.createdAt) : null;

@@ -1,11 +1,11 @@
 import type { APIRoute } from "astro";
 import { saveMedia } from "../../../lib/content";
 import { WriteValidationError } from "../../../lib/content-writes";
-import { ensureRole } from "../../../lib/http";
+import { requireAdmin } from "../../../lib/http";
 import { BODY_LIMITS, bodyRejection, formText, readBoundedForm } from "../../../lib/request-limits";
 
 export const POST: APIRoute = async (context) => {
-  const user = ensureRole(context, ["admin", "editor"]);
+  const user = requireAdmin(context);
   if (user instanceof Response) return user;
 
   const body = await readBoundedForm(context.request, { maxBytes: BODY_LIMITS.record });
