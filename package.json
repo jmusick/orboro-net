@@ -1,7 +1,7 @@
 {
   "name": "orboro",
   "type": "module",
-  "version": "1.45.11",
+  "version": "1.46.0",
   "engines": {
     "node": ">=22.12.0"
   },
@@ -16,6 +16,7 @@
     "test:markdown": "node --experimental-strip-types --test tests/markdown.test.ts",
     "test:dates": "node --experimental-strip-types --test tests/dates.test.ts",
     "test:login-throttle": "node --experimental-strip-types --test tests/login-throttle.test.ts",
+    "test:sessions": "node --experimental-strip-types --test tests/sessions.test.ts",
     "test:feed": "node --experimental-strip-types --test tests/feed.test.ts",
     "test:json": "node --experimental-strip-types --test tests/json.test.ts",
     "test:bookmarks": "node --experimental-strip-types --test tests/bookmarks-data.test.ts",
@@ -29,6 +30,8 @@
     "data:spec-icons": "node scripts/fetch-spec-icons.mjs",
     "media:migrate": "node scripts/migrate-content-images.mjs",
     "admin:create": "node scripts/create-admin.mjs",
+    "admin:reset-password": "node scripts/reset-password.mjs",
+    "sessions:revoke": "node scripts/revoke-sessions.mjs",
     "cf:types": "wrangler types",
     "d1:migrate:local": "wrangler d1 migrations apply DB --local",
     "d1:migrate:remote": "wrangler d1 migrations apply DB --remote",

@@ -75,11 +75,11 @@ const recentPosts = posts.map((p) => ({
     <h3>Administrator account and session</h3>
     <p>
       The only site account belongs to JD, the administrator; there is no public registration.
-      Cloudflare D1 stores the account email, a password hash, and session records. Successful
-      login sets an <code>orboro_session</code> cookie to keep the administrator signed in for
-      up to 14 days. It is HttpOnly, uses SameSite=Lax, and is marked Secure over HTTPS.
-      Logging out revokes that session and removes the cookie. Reading public pages does not
-      require this login cookie.
+      Cloudflare D1 stores the account email, a password hash, and session records that hold a
+      one-way digest of each session token. Successful login sets an
+      <code>__Host-orboro_session</code> cookie to keep the administrator signed in for up to
+      14 days. It is HttpOnly, Secure, and uses SameSite=Lax. Logging out revokes that session
+      and removes the cookie. Reading public pages does not require this login cookie.
     </p>
 
     <h3>Third-party links</h3>
