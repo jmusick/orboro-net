@@ -1,6 +1,8 @@
 import {
   replaceNavItems,
+  saveCategoryRecord,
   saveContentWithCategories,
+  validateMediaInput,
   type ContentWriteInput,
   type NavItemInput,
   type WriteDB,
@@ -178,6 +180,7 @@ export async function saveMedia(
   locals: App.Locals,
   input: { url: string; altText: string; caption?: string; createdBy: string }
 ): Promise<void> {
+  validateMediaInput({ url: input.url, altText: input.altText, caption: input.caption ?? "" });
   const db = ensureDB(locals);
   await db
     .prepare(
@@ -255,20 +258,7 @@ export async function saveCategory(
   locals: App.Locals,
   input: { id?: string; name: string; slug: string }
 ): Promise<string> {
-  const db = ensureDB(locals);
-  if (input.id) {
-    await db
-      .prepare("UPDATE categories SET name = ?, slug = ? WHERE id = ?")
-      .bind(input.name, input.slug, input.id)
-      .run();
-    return input.id;
-  }
-  const id = crypto.randomUUID();
-  await db
-    .prepare("INSERT INTO categories (id, name, slug, created_at) VALUES (?, ?, ?, ?)")
-    .bind(id, input.name, input.slug, Date.now())
-    .run();
-  return id;
+  return saveCategoryRecord(ensureDB(locals) as unknown as WriteDB, input, Date.now());
 }
 
 export async function deleteCategoryById(locals: App.Locals, id: string): Promise<void> {

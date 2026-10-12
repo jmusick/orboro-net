@@ -9,6 +9,7 @@ import {
   pruneLoginAttempts,
   reserveLoginAttempt,
 } from "../../../lib/login-throttle";
+import { formText, readBoundedForm } from "../../../lib/request-limits";
 import { SESSION_COOKIE } from "../../../middleware";
 
 function refusal(status: number, message: string, retryAfterSeconds?: number): Response {
@@ -18,20 +19,13 @@ function refusal(status: number, message: string, retryAfterSeconds?: number): R
 }
 
 export const POST: APIRoute = async ({ request, locals, cookies, url, redirect }) => {
-  // Bound the body before parsing it or doing any hashing work.
-  const declared = Number(request.headers.get("content-length") ?? "0");
-  if (!Number.isFinite(declared) || declared > MAX_LOGIN_BODY_BYTES) {
-    return refusal(413, "Request too large.");
+  // Bound the streamed body before parsing it or doing any hashing work.
+  const body = await readBoundedForm(request, { maxBytes: MAX_LOGIN_BODY_BYTES, maxFields: 8 });
+  if (!body.ok) {
+    return body.status === 413 ? refusal(413, "Request too large.") : redirect("/admin?error=invalid");
   }
-
-  let form: FormData;
-  try {
-    form = await request.formData();
-  } catch {
-    return redirect("/admin?error=invalid");
-  }
-  const email = String(form.get("email") ?? "").trim().toLowerCase();
-  const password = String(form.get("password") ?? "");
+  const email = (formText(body.form, "email") ?? "").trim().toLowerCase();
+  const password = formText(body.form, "password") ?? "";
 
   if (!email || !password || email.length > MAX_EMAIL_LENGTH || password.length > MAX_PASSWORD_LENGTH) {
     return redirect("/admin?error=invalid");

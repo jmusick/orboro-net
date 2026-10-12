@@ -1,19 +1,28 @@
 import type { APIRoute } from "astro";
 import { saveCategory } from "../../../lib/content";
+import { WriteValidationError } from "../../../lib/content-writes";
 import { ensureRole, sanitizeSlug } from "../../../lib/http";
+import { BODY_LIMITS, bodyRejection, formText, readBoundedForm } from "../../../lib/request-limits";
 
 export const POST: APIRoute = async (context) => {
   const access = ensureRole(context, ["admin", "editor"]);
   if (access instanceof Response) return access;
-  const form = await context.request.formData();
-  const id = String(form.get("id") ?? "").trim() || undefined;
-  const name = String(form.get("name") ?? "").trim();
-  const slug = sanitizeSlug(String(form.get("slug") ?? ""));
+  const body = await readBoundedForm(context.request, { maxBytes: BODY_LIMITS.record });
+  if (!body.ok) return bodyRejection(body);
+  const form = body.form;
+  const rawId = formText(form, "id");
+  const name = formText(form, "name");
+  const slug = formText(form, "slug");
+  const id = rawId?.trim() || undefined;
+  const editor = `/admin/categories/${id ? encodeURIComponent(id) : "new"}?error=invalid`;
+  if (rawId === null || name === null || slug === null) return context.redirect(editor);
 
-  if (!name || !slug) {
-    return context.redirect(`/admin/categories/${id ? encodeURIComponent(id) : "new"}?error=invalid`);
+  let savedId: string;
+  try {
+    savedId = await saveCategory(context.locals, { id, name: name.trim(), slug: sanitizeSlug(slug) });
+  } catch (error) {
+    if (error instanceof WriteValidationError) return context.redirect(editor);
+    throw error;
   }
-
-  const savedId = await saveCategory(context.locals, { id, name, slug });
-  return context.redirect(`/admin/categories/${savedId}?saved=1`);
+  return context.redirect(`/admin/categories/${encodeURIComponent(savedId)}?saved=1`);
 };

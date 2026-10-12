@@ -3,38 +3,52 @@ import { saveContent, type ContentStatus } from "../../../lib/content";
 import { WriteValidationError } from "../../../lib/content-writes";
 import { ensureRole, sanitizeSlug } from "../../../lib/http";
 import { pingIndexNow } from "../../../lib/indexnow";
+import { BODY_LIMITS, bodyRejection, formText, readBoundedForm } from "../../../lib/request-limits";
 import { pingWebSub } from "../../../lib/websub";
+
+const TEXT_FIELDS = [
+  "id", "title", "slug", "markdown", "pageType", "status", "featuredImageUrl",
+  "homepageFeatured", "homepageGroup", "homepageOrder", "homepageDescription",
+] as const;
 
 export const POST: APIRoute = async (context) => {
   const user = ensureRole(context, ["admin", "editor", "author"]);
   if (user instanceof Response) return user;
 
-  const form = await context.request.formData();
-  const id = String(form.get("id") ?? "").trim() || undefined;
-  const title = String(form.get("title") ?? "").trim();
-  const slug = sanitizeSlug(String(form.get("slug") ?? ""));
-  const markdown = String(form.get("markdown") ?? "").trim();
-  const pageType = String(form.get("pageType") ?? "post").trim().toLowerCase();
-  const statusRaw = String(form.get("status") ?? "draft").trim().toLowerCase();
-  const status: ContentStatus = statusRaw === "published" ? "published" : "draft";
-  const featuredImageUrl = String(form.get("featuredImageUrl") ?? "").trim() || null;
-  const homepageFeatured = form.get("homepageFeatured") === "1";
-  const homepageGroup = String(form.get("homepageGroup") ?? "other");
-  const homepageOrder = Number(form.get("homepageOrder") ?? 0);
-  const homepageDescription = String(form.get("homepageDescription") ?? "").trim();
+  const body = await readBoundedForm(context.request, { maxBytes: BODY_LIMITS.content });
+  if (!body.ok) return bodyRejection(body);
+  const form = body.form;
 
-  if (!["wow", "poe2", "other"].includes(homepageGroup) || !Number.isInteger(homepageOrder) || homepageOrder < 0 || homepageOrder > 9999 || homepageDescription.length > 240) {
-    return context.redirect(`/admin/content/${id ? encodeURIComponent(id) : "new"}?error=homepage`);
+  const text = {} as Record<(typeof TEXT_FIELDS)[number], string>;
+  let malformed = false;
+  for (const name of TEXT_FIELDS) {
+    const value = formText(form, name);
+    if (value === null) malformed = true;
+    text[name] = value ?? "";
   }
 
-  if (!title || !slug || !markdown) {
-    return context.redirect(`/admin/content/${id ? encodeURIComponent(id) : "new"}?error=invalid`);
-  }
+  const id = text.id.trim() || undefined;
+  const editor = (code: string) => `/admin/content/${id ? encodeURIComponent(id) : "new"}?error=${code}`;
+  if (malformed) return context.redirect(editor("invalid"));
 
-  const categoryIds = form.getAll("categoryId").map((v) => String(v)).filter(Boolean);
+  const title = text.title.trim();
+  const slug = sanitizeSlug(text.slug);
+  const markdown = text.markdown.trim();
+  const pageType = (text.pageType || "post").trim().toLowerCase();
+  const status = (text.status || "draft").trim().toLowerCase() as ContentStatus;
+  const featuredImageUrl = text.featuredImageUrl.trim() || null;
+  const homepageFeatured = text.homepageFeatured === "1";
+  const homepageGroup = text.homepageGroup || "other";
+  const homepageOrder = text.homepageOrder.trim() === "" ? 0 : Number(text.homepageOrder);
+  const homepageDescription = text.homepageDescription.trim();
+  const categoryValues = form.getAll("categoryId");
+  if (categoryValues.some((v) => typeof v !== "string")) return context.redirect(editor("invalid"));
+  const categoryIds = categoryValues.map((v) => String(v).trim()).filter(Boolean);
 
   let savedId: string;
   try {
+    // saveContent validates every field, the edited row, slug uniqueness and
+    // the categories before anything is written.
     savedId = await saveContent(context.locals, {
       id,
       title,
@@ -51,9 +65,7 @@ export const POST: APIRoute = async (context) => {
       categoryIds,
     });
   } catch (error) {
-    if (error instanceof WriteValidationError) {
-      return context.redirect(`/admin/content/${id ? encodeURIComponent(id) : "new"}?error=invalid`);
-    }
+    if (error instanceof WriteValidationError) return context.redirect(editor(error.code));
     throw error;
   }
 
@@ -66,5 +78,5 @@ export const POST: APIRoute = async (context) => {
     }
   }
 
-  return context.redirect(`/admin/content/${savedId}?saved=1`);
+  return context.redirect(`/admin/content/${encodeURIComponent(savedId)}?saved=1`);
 };

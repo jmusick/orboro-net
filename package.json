@@ -1,7 +1,7 @@
 {
   "name": "orboro",
   "type": "module",
-  "version": "1.45.10",
+  "version": "1.45.11",
   "engines": {
     "node": ">=22.12.0"
   },
@@ -21,6 +21,7 @@
     "test:bookmarks": "node --experimental-strip-types --test tests/bookmarks-data.test.ts",
     "test:cache-policy": "node --experimental-strip-types --test tests/cache-policy.test.ts",
     "test:content-writes": "node --experimental-strip-types --test tests/content-writes.test.ts",
+    "test:request-limits": "node --experimental-strip-types --test tests/request-limits.test.ts",
     "test:consent": "node --test tests/consent.test.mjs",
     "test:csp": "node --test tests/csp-navigation.test.mjs",
     "data:assisted-combat": "node scripts/generate-assisted-combat-data.mjs",
