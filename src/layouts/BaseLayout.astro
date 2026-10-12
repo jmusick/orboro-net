@@ -19,13 +19,24 @@ interface Props {
   description?: string;
   ogType?: string;
   ogImage?: string;
+  ogImageAlt?: string;
+  ogImageWidth?: number;
+  ogImageHeight?: number;
   structuredData?: Record<string, unknown>;
   analytics?: boolean;
 }
 
-const { title, description = "", ogType = "website", ogImage: ogImageProp, structuredData, analytics = true } = Astro.props;
+const { title, description = "", ogType = "website", ogImage: ogImageProp, ogImageAlt, ogImageWidth, ogImageHeight, structuredData, analytics = true } = Astro.props;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://orboro.net').href;
-const ogImage = ogImageProp || `${(Astro.site ?? new URL('https://orboro.net')).origin}/images/logo.png`;
+const siteOrigin = (Astro.site ?? new URL('https://orboro.net')).origin;
+// Default social card is 1200x630 (built by scripts/build-brand-images.mjs). Its
+// dimensions are only emitted when it is the selected image; a page's own artwork
+// emits width/height only if the caller knows them.
+const ogImage = ogImageProp || `${siteOrigin}/images/social-default.png`;
+const usingDefaultOg = !ogImageProp;
+const ogWidth = usingDefaultOg ? 1200 : ogImageWidth;
+const ogHeight = usingDefaultOg ? 630 : ogImageHeight;
+const ogAlt = usingDefaultOg ? "Orboro.net logo on a dark indigo background" : ogImageAlt;
 const navItems = await listNavItems(Astro.locals);
 const pathname = new URL(Astro.request.url).pathname;
 const nonce = Astro.locals.nonce;
@@ -94,10 +105,14 @@ function nodeIcon(node: NavNode): string {
     {description && <meta property="og:description" content={description} />}
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:image" content={ogImage} />
+    {ogWidth && ogHeight && <meta property="og:image:width" content={String(ogWidth)} />}
+    {ogWidth && ogHeight && <meta property="og:image:height" content={String(ogHeight)} />}
+    {ogAlt && <meta property="og:image:alt" content={ogAlt} />}
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     {description && <meta name="twitter:description" content={description} />}
     <meta name="twitter:image" content={ogImage} />
+    {ogAlt && <meta name="twitter:image:alt" content={ogAlt} />}
     {structuredData && (
       <script type="application/ld+json" set:html={jsonForHtml(structuredData)} />
     )}
@@ -824,7 +839,7 @@ function nodeIcon(node: NavNode): string {
     <div class="container">
       <header>
         <a href="/" class="header-logo">
-          <img src="/images/logo.png" alt="Orboro.net" />
+          <img src="/images/logo-480.png" alt="Orboro.net" width="480" height="115" />
         </a>
         <button
           type="button"

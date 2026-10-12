@@ -60,7 +60,7 @@ const BASE = (Astro.site ?? new URL("https://orboro.net")).origin;
 const absoluteImageUrl = page.featuredImageUrl ? new URL(page.featuredImageUrl, BASE).href : undefined;
 ---
 
-<BaseLayout title={`${page.title} | Orboro.net`} description={description} ogType="article" ogImage={absoluteImageUrl}>
+<BaseLayout title={`${page.title} | Orboro.net`} description={description} ogType="article" ogImage={absoluteImageUrl} ogImageAlt={absoluteImageUrl ? `Featured image for ${page.title}` : undefined}>
   <SidebarLayout sidebar={!hasWidgets}>
     <article class="page-content">
       <h1>{page.title}</h1>

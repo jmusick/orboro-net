@@ -139,6 +139,7 @@ It reports `matching_users` (0 means no account has that email) and `sessions_re
 - Existing image URLs can be added to the media library. Deleting a media record removes its D1 metadata only: it doesn't delete the R2 object or update pages that reference the URL.
 - The library lists D1 `media` records, not every object in R2. The content-image migration rewrites existing media records but does not create missing ones. `scripts/content/backfill-r2-media-library.sql` registers the 13 content images checked on October 6, 2026; it can be rerun without duplicating records or overwriting existing metadata.
 - `npm run media:migrate -- --local` previews migrating content-referenced files from `public/images` into local R2; `--apply` copies the files and rewrites local D1 URLs. Use `--remote` only after reviewing its dry-run manifest, and `--remote --apply` to copy objects and update production D1. Migrated images live in R2 and are no longer bundled in `public/images`; repeat runs skip their URLs. Code deployment does not migrate content or objects.
+- `node scripts/build-brand-images.mjs` rebuilds `public/images/social-default.png` (the 1200x630 default `og:image`, used for pages without featured artwork) and `logo-480.png` (the header logo at 2x its 240px width) from `logo.png` and `gaming-header.png`. D1 does not store image dimensions, so `og:image:width/height` are emitted only for the default image.
 
 ## Public API
 
