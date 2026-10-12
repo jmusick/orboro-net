@@ -11,7 +11,7 @@ if (access instanceof Response) return access;
 const media = await listMedia(Astro.locals);
 const error = Astro.url.searchParams.get("error");
 const errorMessages: Record<string, string> = {
-  invalid: "Media was not saved. Choose an image or enter an image URL, and provide alt text. For uploads, alt text is limited to 500 characters and captions to 1,000.",
+  invalid: "Media was not saved. Choose an image or enter an https:// image URL or a site path starting with /, and provide alt text. Alt text is limited to 500 characters and captions to 1,000.",
   "too-large": "The image must be no larger than 10 MB.",
   unsupported: "Use a PNG, JPEG, GIF, WebP, or AVIF image.",
   "upload-failed": "The upload failed. Please try again.",
@@ -50,15 +50,15 @@ const errorFields = source === "upload"
     <form action="/api/media/save" method="post" class="media-form">
       <div class="form-group">
         <label for="url">Image URL</label>
-        <input id="url" name="url" type="url" required placeholder="https://example.com/image.jpg" />
+        <input id="url" name="url" type="url" maxlength="2048" required placeholder="https://example.com/image.jpg" />
       </div>
       <div class="form-group">
         <label for="altText">Alt text</label>
-        <input id="altText" name="altText" type="text" required placeholder="Description of the image" />
+        <input id="altText" name="altText" type="text" maxlength="500" required placeholder="Description of the image" />
       </div>
       <div class="form-group">
         <label for="caption">Caption</label>
-        <textarea id="caption" name="caption" rows="2" placeholder="Optional caption for the media"></textarea>
+        <textarea id="caption" name="caption" rows="2" maxlength="1000" placeholder="Optional caption for the media"></textarea>
       </div>
       <Button type="submit" variant="primary" icon="upload">
         Add Media Record

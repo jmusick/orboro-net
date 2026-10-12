@@ -13,18 +13,19 @@ const categories = await listCategories(Astro.locals);
 ---
 
 <AdminLayout title="Create Content">
-  {Astro.url.searchParams.get("error") === "invalid" && <FormMessage error fields={[{ id: "title", label: "Title" }, { id: "slug", label: "Slug" }, { id: "markdown", label: "Markdown" }]}>Content was not saved. Provide a title, a valid slug and Markdown. Re-enter any unsaved changes before saving again.</FormMessage>}
+  {Astro.url.searchParams.get("error") === "invalid" && <FormMessage error fields={[{ id: "title", label: "Title" }, { id: "slug", label: "Slug" }, { id: "markdown", label: "Markdown" }]}>Content was not saved. Provide a title of up to 200 characters, a slug that is not used by other content, and Markdown of up to 200,000 characters. Re-enter any unsaved changes before saving again.</FormMessage>}
   {Astro.url.searchParams.get("error") === "homepage" && <FormMessage error fields={[{ id: "homepageGroup", label: "Group" }, { id: "homepageOrder", label: "Display order" }, { id: "homepageDescription", label: "Card description" }]}>Content was not saved. Choose a homepage group, an order from 0 to 9999, and a description of at most 240 characters. Re-enter any unsaved changes before saving again.</FormMessage>}
+  {Astro.url.searchParams.get("error") === "image" && <FormMessage error fields={[{ id: "featuredImageUrl", label: "Featured Image URL" }]}>Content was not saved. Use an https:// image URL or a site path starting with /, up to 2,048 characters. Re-enter any unsaved changes before saving again.</FormMessage>}
   <section class="editor-section">
     <form method="post" action="/api/content/save" id="content-form" class="content-editor">
       <div class="form-row">
         <div class="form-group">
           <label for="title">Title</label>
-          <input id="title" type="text" name="title" required placeholder="Enter content title" />
+          <input id="title" type="text" name="title" maxlength="200" required placeholder="Enter content title" />
         </div>
         <div class="form-group">
           <label for="slug">Slug</label>
-          <input id="slug" type="text" name="slug" required placeholder="my-post" />
+          <input id="slug" type="text" name="slug" maxlength="200" required placeholder="my-post" />
         </div>
       </div>
 
@@ -47,7 +48,7 @@ const categories = await listCategories(Astro.locals);
 
       <div class="form-group full">
         <label for="featuredImageUrl">Featured Image URL</label>
-        <input id="featuredImageUrl" type="text" name="featuredImageUrl" placeholder="/images/example.jpg or https://example.com/image.jpg" />
+        <input id="featuredImageUrl" type="text" name="featuredImageUrl" maxlength="2048" placeholder="/images/example.jpg or https://example.com/image.jpg" />
       </div>
 
       <HomepageFeatureFields />

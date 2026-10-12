@@ -9,17 +9,17 @@ if (access instanceof Response) return access;
 ---
 
 <AdminLayout title="New Category">
-  {Astro.url.searchParams.get("error") === "invalid" && <FormMessage error fields={[{ id: "name", label: "Name" }, { id: "slug", label: "Slug" }]}>Category was not saved. Provide a name and a valid slug. Re-enter any unsaved changes before saving again.</FormMessage>}
+  {Astro.url.searchParams.get("error") === "invalid" && <FormMessage error fields={[{ id: "name", label: "Name" }, { id: "slug", label: "Slug" }]}>Category was not saved. Provide a name of up to 100 characters and a slug that no other category uses. Re-enter any unsaved changes before saving again.</FormMessage>}
   <section class="editor-section">
     <form method="post" action="/api/categories/save" class="category-editor">
       <div class="form-row">
         <div class="form-group">
           <label for="name">Name</label>
-          <input id="name" type="text" name="name" required placeholder="Category name" />
+          <input id="name" type="text" name="name" maxlength="100" required placeholder="Category name" />
         </div>
         <div class="form-group">
           <label for="slug">Slug</label>
-          <input id="slug" type="text" name="slug" required placeholder="category-slug" />
+          <input id="slug" type="text" name="slug" maxlength="200" required placeholder="category-slug" />
         </div>
       </div>
 

@@ -1,4 +1,6 @@
 export const MAX_MEDIA_BYTES = 10 * 1024 * 1024;
+/** Whole multipart body: the largest file plus boundaries, headers, alt text and caption. */
+export const MAX_UPLOAD_BODY_BYTES = MAX_MEDIA_BYTES + 64 * 1024;
 export const MEDIA_ORIGIN = "https://media.orboro.net";
 
 export function mediaUrlForRequest(requestUrl: URL, key: string): string {

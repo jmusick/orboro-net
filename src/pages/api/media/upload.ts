@@ -1,7 +1,9 @@
 import type { APIRoute } from "astro";
 import { env } from "cloudflare:workers";
 import { saveMedia } from "../../../lib/content";
-import { identifyImage, MAX_MEDIA_BYTES, mediaUrlForRequest } from "../../../lib/media-upload";
+import { MAX_ALT_TEXT_LENGTH, MAX_CAPTION_LENGTH } from "../../../lib/content-writes";
+import { identifyImage, MAX_MEDIA_BYTES, MAX_UPLOAD_BODY_BYTES, mediaUrlForRequest } from "../../../lib/media-upload";
+import { MULTIPART, formText, readBoundedForm } from "../../../lib/request-limits";
 
 export const POST: APIRoute = async (context) => {
   const user = context.locals.user;
@@ -9,17 +11,24 @@ export const POST: APIRoute = async (context) => {
   if (user.role !== "admin" && user.role !== "editor") {
     return context.redirect("/admin?error=forbidden");
   }
-  const contentLength = Number(context.request.headers.get("content-length"));
-  if (contentLength > MAX_MEDIA_BYTES + 20_000) {
-    return context.redirect("/admin/media?form=upload&error=too-large");
+
+  // The streamed body is bounded before parsing, with or without Content-Length.
+  const body = await readBoundedForm(context.request, {
+    maxBytes: MAX_UPLOAD_BODY_BYTES,
+    types: [MULTIPART],
+    maxFields: 8,
+  });
+  if (!body.ok) {
+    return context.redirect(`/admin/media?form=upload&error=${body.status === 413 ? "too-large" : "invalid"}`);
   }
+  const form = body.form;
+  const files = form.getAll("file");
+  const file = files.length === 1 ? files[0] : null;
+  const altText = formText(form, "altText")?.trim() ?? "";
+  const caption = formText(form, "caption")?.trim();
 
-  const form = await context.request.formData();
-  const file = form.get("file");
-  const altText = String(form.get("altText") ?? "").trim();
-  const caption = String(form.get("caption") ?? "").trim();
-
-  if (!(file instanceof File) || !altText || altText.length > 500 || caption.length > 1000) {
+  if (!(file instanceof File) || !altText || altText.length > MAX_ALT_TEXT_LENGTH
+      || caption === undefined || caption.length > MAX_CAPTION_LENGTH) {
     return context.redirect("/admin/media?form=upload&error=invalid");
   }
   if (file.size === 0) {

@@ -1,15 +1,76 @@
-// Validation and atomic replacement writes for navigation and content/category
-// assignments. Everything that replaces existing rows goes through db.batch(),
-// which D1 runs as one transaction: a failing statement rolls the whole batch
-// back, so rejected or failed input never erases what was already saved.
+// Validation and atomic replacement writes for navigation, content/category
+// assignments, categories and media records. Every field is checked before any
+// write. Everything that replaces existing rows goes through db.batch(), which
+// D1 runs as one transaction: a failing statement rolls the whole batch back,
+// so rejected or failed input never erases what was already saved.
 
 export const MAX_NAV_ITEMS = 500;
 export const MAX_NAV_LABEL_LENGTH = 200;
 export const MAX_CLIENT_ID_LENGTH = 100;
 export const MAX_ID_LENGTH = 100;
 export const MAX_CATEGORIES_PER_CONTENT = 100;
+export const MAX_TITLE_LENGTH = 200;
+export const MAX_SLUG_LENGTH = 200;
+export const MAX_MARKDOWN_LENGTH = 200_000;
+export const MAX_IMAGE_URL_LENGTH = 2048;
+export const MAX_HOMEPAGE_DESCRIPTION_LENGTH = 240;
+export const MAX_HOMEPAGE_ORDER = 9999;
+export const MAX_CATEGORY_NAME_LENGTH = 100;
+export const MAX_ALT_TEXT_LENGTH = 500;
+export const MAX_CAPTION_LENGTH = 1000;
 
-export class WriteValidationError extends Error {}
+export const PAGE_TYPES = ["post", "page"] as const;
+export const CONTENT_STATUSES = ["draft", "published"] as const;
+export const HOMEPAGE_GROUPS = ["wow", "poe2", "other"] as const;
+
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const CONTROL_OR_SPACE = /[\s\u0000-\u001f\u007f-\u009f]/;
+
+// `code` selects the editor's error message (`?error=<code>`).
+export type WriteErrorCode = "invalid" | "homepage" | "image";
+
+export class WriteValidationError extends Error {
+  code: WriteErrorCode;
+  constructor(message: string, code: WriteErrorCode = "invalid") {
+    super(message);
+    this.code = code;
+  }
+}
+
+/** A row ID from a form: trimmed, 1-100 characters, no spaces or control characters. */
+export function parseRecordId(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.length > MAX_ID_LENGTH || CONTROL_OR_SPACE.test(trimmed)) return null;
+  return trimmed;
+}
+
+/**
+ * Image URLs authors may store: absolute https:// URLs, or root-relative site
+ * paths such as /media/... and /images/.... Rejects javascript:, data:, http:,
+ * protocol-relative //host, backslashes, whitespace and credentials.
+ */
+export function isAllowedImageUrl(value: string): boolean {
+  if (typeof value !== "string" || !value || value.length > MAX_IMAGE_URL_LENGTH) return false;
+  if (CONTROL_OR_SPACE.test(value) || value.includes("\\")) return false;
+  if (value.startsWith("/")) {
+    if (value.startsWith("//")) return false;
+    try {
+      return new URL(value, "https://root.invalid").origin === "https://root.invalid";
+    } catch {
+      return false;
+    }
+  }
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && url.hostname !== "" && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+
+const within = (value: unknown, max: number, allowEmpty = false): value is string =>
+  typeof value === "string" && value.length <= max && (allowEmpty || value.trim().length > 0);
 
 export interface NavItemInput {
   clientId: string;
@@ -170,17 +231,55 @@ export interface ContentWriteInput {
   categoryIds: string[];
 }
 
+// Field-level checks that need no database. Throws WriteValidationError whose
+// code names the editor message to show.
+export function validateContentInput(input: ContentWriteInput): void {
+  if (input.id !== undefined && parseRecordId(input.id) !== input.id) throw new WriteValidationError("Invalid content id.");
+  if (!within(input.title, MAX_TITLE_LENGTH)) throw new WriteValidationError("Invalid title.");
+  if (typeof input.slug !== "string" || input.slug.length > MAX_SLUG_LENGTH || !SLUG_PATTERN.test(input.slug)) {
+    throw new WriteValidationError("Invalid slug.");
+  }
+  if (!within(input.markdown, MAX_MARKDOWN_LENGTH)) throw new WriteValidationError("Invalid Markdown.");
+  if (!(PAGE_TYPES as readonly string[]).includes(input.pageType)) throw new WriteValidationError("Invalid page type.");
+  if (!(CONTENT_STATUSES as readonly string[]).includes(input.status)) throw new WriteValidationError("Invalid status.");
+  if (!parseRecordId(input.authorId)) throw new WriteValidationError("Invalid author.");
+  if (!Array.isArray(input.categoryIds) || input.categoryIds.length > MAX_CATEGORIES_PER_CONTENT
+      || input.categoryIds.some((id) => parseRecordId(id) !== id)) {
+    throw new WriteValidationError("Invalid category selection.");
+  }
+  if (input.featuredImageUrl !== undefined && input.featuredImageUrl !== null && !isAllowedImageUrl(input.featuredImageUrl)) {
+    throw new WriteValidationError("Featured image must be an https:// URL or a site path.", "image");
+  }
+  const group = input.homepageGroup ?? "other";
+  const order = input.homepageOrder ?? 0;
+  if (!(HOMEPAGE_GROUPS as readonly string[]).includes(group)
+      || typeof order !== "number" || !Number.isSafeInteger(order) || order < 0 || order > MAX_HOMEPAGE_ORDER
+      || !within(input.homepageDescription ?? "", MAX_HOMEPAGE_DESCRIPTION_LENGTH, true)) {
+    throw new WriteValidationError("Invalid homepage settings.", "homepage");
+  }
+}
+
+async function idsWhere(db: WriteDB, sql: string, value: string): Promise<string[]> {
+  const result = await db.prepare(sql).bind(value).all<{ id: string }>();
+  return (result.results ?? []).map((row) => row.id);
+}
+
 // Saves a content row and replaces its category assignments in one
-// transaction. Unknown categories are rejected before anything is written.
+// transaction. Fields, the edited row, slug uniqueness and categories are all
+// checked before anything is written.
 export async function saveContentWithCategories(
   db: WriteDB,
   input: ContentWriteInput,
   now: number,
   newId: () => string = () => crypto.randomUUID(),
 ): Promise<string> {
+  validateContentInput(input);
   const categoryIds = [...new Set(input.categoryIds)];
-  if (categoryIds.length > MAX_CATEGORIES_PER_CONTENT || categoryIds.some((id) => !id || id.length > MAX_ID_LENGTH)) {
-    throw new WriteValidationError("Invalid category selection.");
+  if (input.id && !(await idsWhere(db, "SELECT id FROM content WHERE id = ?", input.id)).length) {
+    throw new WriteValidationError("Unknown content.");
+  }
+  if ((await idsWhere(db, "SELECT id FROM content WHERE slug = ?", input.slug)).some((id) => id !== input.id)) {
+    throw new WriteValidationError("Slug is already in use.");
   }
   const known = await existingIds(db, "categories", categoryIds);
   if (categoryIds.some((id) => !known.has(id))) throw new WriteValidationError("Unknown category.");
@@ -226,4 +325,58 @@ export async function saveContentWithCategories(
   }
   await db.batch(statements);
   return id;
+}
+
+export interface CategoryWriteInput {
+  id?: string;
+  name: string;
+  slug: string;
+}
+
+export function validateCategoryInput(input: CategoryWriteInput): void {
+  if (input.id !== undefined && parseRecordId(input.id) !== input.id) throw new WriteValidationError("Invalid category id.");
+  if (!within(input.name, MAX_CATEGORY_NAME_LENGTH)) throw new WriteValidationError("Invalid category name.");
+  if (typeof input.slug !== "string" || input.slug.length > MAX_SLUG_LENGTH || !SLUG_PATTERN.test(input.slug)) {
+    throw new WriteValidationError("Invalid category slug.");
+  }
+}
+
+// Creates or updates a category after checking its fields, that an edited
+// category exists, and that no other category has the slug.
+export async function saveCategoryRecord(
+  db: WriteDB,
+  input: CategoryWriteInput,
+  now: number,
+  newId: () => string = () => crypto.randomUUID(),
+): Promise<string> {
+  validateCategoryInput(input);
+  if (input.id && !(await idsWhere(db, "SELECT id FROM categories WHERE id = ?", input.id)).length) {
+    throw new WriteValidationError("Unknown category.");
+  }
+  if ((await idsWhere(db, "SELECT id FROM categories WHERE slug = ?", input.slug)).some((id) => id !== input.id)) {
+    throw new WriteValidationError("Category slug is already in use.");
+  }
+  if (input.id) {
+    await db.batch([db.prepare("UPDATE categories SET name = ?, slug = ? WHERE id = ?").bind(input.name, input.slug, input.id)]);
+    return input.id;
+  }
+  const id = newId();
+  await db.batch([
+    db.prepare("INSERT INTO categories (id, name, slug, created_at) VALUES (?, ?, ?, ?)").bind(id, input.name, input.slug, now),
+  ]);
+  return id;
+}
+
+export interface MediaWriteInput {
+  url: string;
+  altText: string;
+  caption: string;
+}
+
+// Media records need an allowed image URL, alt text and an optional caption,
+// each within its limit.
+export function validateMediaInput(input: MediaWriteInput): void {
+  if (!isAllowedImageUrl(input.url)) throw new WriteValidationError("Image URL must be https:// or a site path.");
+  if (!within(input.altText, MAX_ALT_TEXT_LENGTH)) throw new WriteValidationError("Invalid alt text.");
+  if (!within(input.caption, MAX_CAPTION_LENGTH, true)) throw new WriteValidationError("Invalid caption.");
 }
