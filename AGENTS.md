@@ -125,6 +125,8 @@ if (!res) {
 
 ## Local dev and verification
 
+- **Release gates.** `.github/workflows/ci.yml` runs `npm ci`, `npm test`, `check:styles`, `check`, `build`, the lockfile and `npm audit` checks and a gitleaks scan on every PR and push to `master`; `npm run verify` is the local equivalent (README, "Release gates"). New tests go in `tests/*.test.{ts,mjs}` and join `npm test` and CI automatically. Install with `npm ci`; a dependency with a new install script must be added to `allowScripts` (`check:lockfile` fails otherwise). A secret-scan finding is a credential to rotate, not a line to allowlist: `.gitleaks.toml` holds only public-by-design values, each pinned to a rule, file and exact value. CI has no deploy credentials; keep it that way (deploy stays with Workers Builds).
+
 - Keep the checkout focused on building, maintaining and deploying the site. External research, workbook utilities, artwork originals/prompts, drafts and historical reviews belong in the project library described in README.md. Use kebab-case for authored project-library paths; preserve tool conventions and filenames inside historical snapshots. Keep technical instructions and decision history in this repository; reference them from external notes instead of duplicating them.
 
 - Use `127.0.0.1`, not `localhost`: some integrations need an exact origin match. `npm run dev:astro` is fast with hot reload; `npm run dev` builds and runs `wrangler dev` with real D1/Cache/secret bindings but no hot reload. Use the latter for anything touching D1, `caches.default` or `cloudflare:workers`.

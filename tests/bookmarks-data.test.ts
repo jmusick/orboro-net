@@ -64,5 +64,12 @@ test('redirects are bounded and stay on the same HTTPS host', async () => {
 test('a hung upstream is aborted by the timeout', async () => {
   const hang = (_url: string, init: RequestInit) =>
     new Promise<Response>((_, reject) => init.signal!.addEventListener('abort', () => reject(new Error('aborted'))));
-  await assert.rejects(fetchBounded('https://tagsta.sh/a', hang as any, 20), /aborted/);
+  // AbortSignal.timeout() timers are unref'd. Older Node 22 releases let the test process exit
+  // before the abort fires and cancel this test, so hold the event loop open until it settles.
+  const keepAlive = setTimeout(() => {}, 5_000);
+  try {
+    await assert.rejects(fetchBounded('https://tagsta.sh/a', hang as any, 20), /aborted/);
+  } finally {
+    clearTimeout(keepAlive);
+  }
 });

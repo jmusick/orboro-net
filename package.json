@@ -1,9 +1,10 @@
 {
   "name": "orboro",
   "type": "module",
-  "version": "1.48.0",
+  "version": "1.48.1",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.12.0",
+    "npm": ">=10.9.0"
   },
   "scripts": {
     "dev": "astro build && wrangler dev --ip 127.0.0.1 --port 8787",
@@ -13,6 +14,7 @@
     "deploy": "astro build && wrangler deploy",
     "astro": "astro",
     "check": "astro check",
+    "test": "node --experimental-strip-types --test \"tests/*.test.*\"",
     "test:markdown": "node --experimental-strip-types --test tests/markdown.test.ts",
     "test:editor-preview": "node --experimental-strip-types --test tests/editor-preview.test.ts",
     "test:dates": "node --experimental-strip-types --test tests/dates.test.ts",
@@ -38,7 +40,12 @@
     "cf:types": "wrangler types",
     "d1:migrate:local": "wrangler d1 migrations apply DB --local",
     "d1:migrate:remote": "wrangler d1 migrations apply DB --remote",
-    "check:styles": "node scripts/check-styles.mjs"
+    "check:styles": "node scripts/check-styles.mjs",
+    "check:lockfile": "node scripts/check-lockfile.mjs",
+    "audit:deps": "npm audit --audit-level=high",
+    "scan:secrets": "node scripts/scan-secrets.mjs",
+    "scan:secrets:self-test": "node scripts/scan-secrets.mjs --self-test",
+    "verify": "npm run test && npm run check:styles && npm run check:lockfile && npm run check && npm run build"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.3.4",
