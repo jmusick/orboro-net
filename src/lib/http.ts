@@ -1,6 +1,6 @@
 import type { APIContext } from "astro";
 
-export function requireUser(context: APIContext): UserRecord | Response {
+export function requireUser(context: Pick<APIContext, "locals" | "redirect">): UserRecord | Response {
   const user = context.locals.user;
   if (!user) {
     return context.redirect("/admin");
@@ -8,17 +8,22 @@ export function requireUser(context: APIContext): UserRecord | Response {
   return user;
 }
 
-export function hasRole(user: UserRecord, allowed: UserRole[]): boolean {
-  return allowed.includes(user.role);
+export function isAdmin(user: UserRecord | null | undefined): user is UserRecord {
+  return user?.role === "admin";
 }
 
-export function ensureRole(
-  context: APIContext,
-  allowed: UserRole[]
+/**
+ * The guard for every admin page and mutation endpoint. The app is admin-only
+ * by design (issue #16): `editor` and `author` exist in the schema but grant
+ * no access. Signed-out requests go to the login page; signed-in non-admins
+ * go to /admin?error=forbidden, which explains and offers sign out.
+ */
+export function requireAdmin(
+  context: Pick<APIContext, "locals" | "redirect">
 ): UserRecord | Response {
   const user = requireUser(context);
   if (user instanceof Response) return user;
-  if (!hasRole(user, allowed)) {
+  if (!isAdmin(user)) {
     return context.redirect("/admin?error=forbidden");
   }
   return user;

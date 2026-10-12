@@ -2,11 +2,11 @@
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 import FormMessage from "../../../components/FormMessage.astro";
 import Button from "../../../components/Button.astro";
-import { ensureRole } from "../../../lib/http";
+import { requireAdmin } from "../../../lib/http";
 import { listNavItems, listAdminContent } from "../../../lib/content";
 import { jsonForHtml } from "../../../lib/json";
 
-const access = ensureRole(Astro, ["admin"]);
+const access = requireAdmin(Astro);
 if (access instanceof Response) return access;
 
 const navItems = await listNavItems(Astro.locals);

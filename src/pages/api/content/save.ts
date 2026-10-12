@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { saveContent, type ContentStatus } from "../../../lib/content";
 import { WriteValidationError } from "../../../lib/content-writes";
-import { ensureRole, sanitizeSlug } from "../../../lib/http";
+import { requireAdmin, sanitizeSlug } from "../../../lib/http";
 import { pingIndexNow } from "../../../lib/indexnow";
 import { BODY_LIMITS, bodyRejection, formText, readBoundedForm } from "../../../lib/request-limits";
 import { pingWebSub } from "../../../lib/websub";
@@ -12,7 +12,7 @@ const TEXT_FIELDS = [
 ] as const;
 
 export const POST: APIRoute = async (context) => {
-  const user = ensureRole(context, ["admin", "editor", "author"]);
+  const user = requireAdmin(context);
   if (user instanceof Response) return user;
 
   const body = await readBoundedForm(context.request, { maxBytes: BODY_LIMITS.content });

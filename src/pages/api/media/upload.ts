@@ -3,14 +3,12 @@ import { env } from "cloudflare:workers";
 import { saveMedia } from "../../../lib/content";
 import { MAX_ALT_TEXT_LENGTH, MAX_CAPTION_LENGTH } from "../../../lib/content-writes";
 import { identifyImage, MAX_MEDIA_BYTES, MAX_UPLOAD_BODY_BYTES, mediaUrlForRequest } from "../../../lib/media-upload";
+import { requireAdmin } from "../../../lib/http";
 import { MULTIPART, formText, readBoundedForm } from "../../../lib/request-limits";
 
 export const POST: APIRoute = async (context) => {
-  const user = context.locals.user;
-  if (!user) return context.redirect("/admin");
-  if (user.role !== "admin" && user.role !== "editor") {
-    return context.redirect("/admin?error=forbidden");
-  }
+  const user = requireAdmin(context);
+  if (user instanceof Response) return user;
 
   // The streamed body is bounded before parsing, with or without Content-Length.
   const body = await readBoundedForm(context.request, {

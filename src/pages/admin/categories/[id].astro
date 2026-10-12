@@ -3,9 +3,9 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 import FormMessage from "../../../components/FormMessage.astro";
 import Button from "../../../components/Button.astro";
 import { getCategoryById } from "../../../lib/content";
-import { ensureRole } from "../../../lib/http";
+import { requireAdmin } from "../../../lib/http";
 
-const access = ensureRole(Astro, ["admin", "editor"]);
+const access = requireAdmin(Astro);
 if (access instanceof Response) return access;
 
 const { id } = Astro.params;

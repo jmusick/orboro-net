@@ -1,7 +1,7 @@
 {
   "name": "orboro",
   "type": "module",
-  "version": "1.48.1",
+  "version": "1.48.2",
   "engines": {
     "node": ">=22.12.0",
     "npm": ">=10.9.0"
@@ -20,6 +20,7 @@
     "test:dates": "node --experimental-strip-types --test tests/dates.test.ts",
     "test:login-throttle": "node --experimental-strip-types --test tests/login-throttle.test.ts",
     "test:sessions": "node --experimental-strip-types --test tests/sessions.test.ts",
+    "test:admin-guard": "node --experimental-strip-types --test tests/admin-guard.test.ts",
     "test:blog-listing": "node --experimental-strip-types --test tests/blog-listing.test.ts",
     "test:feed": "node --experimental-strip-types --test tests/feed.test.ts",
     "test:json": "node --experimental-strip-types --test tests/json.test.ts",

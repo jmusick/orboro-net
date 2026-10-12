@@ -2,7 +2,7 @@
 
 Orboro.net is JD's personal site and Markdown CMS, built with Astro 7 and deployed as the Cloudflare Worker `orboro-net`. Content and account records live in D1; uploaded images live in R2. See `package.json` for the current version.
 
-JD is the only user, with an admin account. The schema and route guards also support `editor` and `author`, but there is no public registration or user-management UI, and author ownership restrictions are not implemented: review those permissions before adding non-admin users.
+JD is the only user, with an admin account, and the app is admin-only by design. The `editor` and `author` values exist in the `users.role` schema but grant no access: every admin page and mutation endpoint requires the `admin` role, and a signed-in non-admin only sees an access-denied page with a sign-out button. There is no public registration or user-management UI. Adding non-admin users needs an ownership and permissions design first (see [#16](https://github.com/jmusick/orboro-net/issues/16)).
 
 Conventions, architecture notes and known gotchas for working on the code are in [AGENTS.md](AGENTS.md).
 
@@ -128,7 +128,7 @@ npm run dev:astro
 - `npm run dev` builds, then serves through `wrangler dev` (D1, Cache API and secret bindings)
 - `npm run dev:astro` runs Astro's hot-reloading dev server (doesn't fully mirror the Cloudflare runtime)
 - `npm run check` type-checks `.astro` and TypeScript files
-- `npm test` runs every `tests/*.test.*` file; individual `npm run test:markdown`, `test:editor-preview`, `test:dates`, `test:feed`, `test:json`, `test:consent`, `test:csp`, `test:sessions` run one file each (the other `test:*` scripts likewise): Markdown highlighting/escaping/sanitizing, editor preview parity with publishing, page update dates, feed and sitemap output, inline-JSON safety, analytics consent behavior, CSP nonce preservation across navigation, and session tokens, revocation and cookie flags
+- `npm test` runs every `tests/*.test.*` file; individual `npm run test:markdown`, `test:editor-preview`, `test:dates`, `test:feed`, `test:json`, `test:consent`, `test:csp`, `test:sessions`, `test:admin-guard` run one file each (the other `test:*` scripts likewise): Markdown highlighting/escaping/sanitizing, editor preview parity with publishing, page update dates, feed and sitemap output, inline-JSON safety, analytics consent behavior, CSP nonce preservation across navigation, and session tokens, revocation and cookie flags, and the admin-role guard on every admin and mutation route
 - `npm run verify` runs the tests, `check:styles`, `check:lockfile`, `check` and `build` in one go; `npm run audit:deps` runs the advisory audit; `npm run scan:secrets` runs the secret scan (see [Release gates](#release-gates))
 - `npm run build` is the production build; `npm run preview` previews it
 - `npm run deploy` builds and runs `wrangler deploy` (manual; normally a push to `master` deploys)
