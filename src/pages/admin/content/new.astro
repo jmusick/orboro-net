@@ -80,7 +80,9 @@ const categories = await listCategories(Astro.locals);
   </section>
 
   <script is:inline src={easyMdeUrl}></script>
-  <script is:inline type="module" src="/admin-editor.js"></script>
+  <script>
+    import "../../../scripts/admin-editor.ts";
+  </script>
 
   <style>
     .editor-section {
