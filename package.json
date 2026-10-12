@@ -16,6 +16,7 @@
     "test:markdown": "node --experimental-strip-types --test tests/markdown.test.ts",
     "test:dates": "node --experimental-strip-types --test tests/dates.test.ts",
     "test:login-throttle": "node --experimental-strip-types --test tests/login-throttle.test.ts",
+    "test:blog-listing": "node --experimental-strip-types --test tests/blog-listing.test.ts",
     "test:feed": "node --experimental-strip-types --test tests/feed.test.ts",
     "test:json": "node --experimental-strip-types --test tests/json.test.ts",
     "test:bookmarks": "node --experimental-strip-types --test tests/bookmarks-data.test.ts",

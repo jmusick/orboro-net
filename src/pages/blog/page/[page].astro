@@ -1,0 +1,22 @@
+---
+import BlogIndex from "../../../components/BlogIndex.astro";
+import { getBlogPage, listCategoriesWithPostCounts, listPostSummaries } from "../../../lib/content";
+import { blogHref, parseFilters, parsePageNumber } from "../../../lib/blog-listing";
+
+const page = parsePageNumber(Astro.params.page);
+if (page === null) return Astro.rewrite("/404");
+
+const filters = parseFilters(Astro.url.searchParams);
+// Page 1 has a single canonical URL.
+if (page === 1) return Astro.redirect(blogHref(1, filters), 301);
+if (filters.q || filters.sort !== "newest") Astro.response.headers.set("X-Robots-Tag", "noindex, follow");
+
+const [listing, categories, recent] = await Promise.all([
+  getBlogPage(Astro.locals, page, filters),
+  listCategoriesWithPostCounts(Astro.locals),
+  listPostSummaries(Astro.locals, 5),
+]);
+if (page > listing.totalPages) return Astro.rewrite("/404");
+---
+
+<BlogIndex listing={listing} categories={categories} recent={recent} />

@@ -6,6 +6,9 @@ import {
   type WriteDB,
 } from "./content-writes";
 import { ensureDB, getDB } from "./db";
+import { queryBlogPage, type BlogFilters, type BlogPage } from "./blog-listing";
+
+export { excerptFromMarkdown } from "./excerpt";
 
 export type ContentStatus = "draft" | "published";
 
@@ -77,20 +80,6 @@ export async function getPublishedContentByType(
   return (result.results ?? []).map(mapContentRow);
 }
 
-export function excerptFromMarkdown(markdown: string, maxLen = 155): string {
-  const plain = markdown
-    .replace(/```[\s\S]*?```/g, "")
-    .replace(/#{1,6}\s+[^\n]*/g, "")
-    .replace(/!\[.*?\]\(.*?\)/g, "")
-    .replace(/\[(.+?)\]\(.*?\)/g, "$1")
-    .replace(/[*_`~]+/g, "")
-    .replace(/^\s*[-*+>|]\s*/gm, "")
-    .replace(/\n+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  return plain.length > maxLen ? plain.slice(0, maxLen).trimEnd() + "…" : plain;
-}
-
 export async function listHomepageFeatures(locals: App.Locals): Promise<ContentRecord[]> {
   const db = getDB(locals);
   if (!db) return [];
@@ -100,6 +89,13 @@ export async function listHomepageFeatures(locals: App.Locals): Promise<ContentR
      ORDER BY homepage_order ASC, title COLLATE NOCASE ASC, id ASC`,
   ).all();
   return (result.results ?? []).map(mapContentRow);
+}
+
+// Paginated blog index: card fields only (no full Markdown bodies).
+export async function getBlogPage(locals: App.Locals, page: number, filters: BlogFilters): Promise<BlogPage> {
+  const db = getDB(locals);
+  if (!db) return { posts: [], page, pageSize: 0, total: 0, totalPages: 1, filters };
+  return queryBlogPage(db, { page, filters });
 }
 
 export type PostSummary = Pick<ContentRecord, 'slug' | 'title' | 'publishedAt' | 'createdAt'>;
