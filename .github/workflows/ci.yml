@@ -1,0 +1,144 @@
+# Release gates for orboro-net: tests, style/type checks, a production build, dependency and
+# lockfile checks, and a secret scan. This workflow holds no deploy credentials and cannot deploy;
+# deployment stays with Cloudflare Workers Builds (a push to master runs `npm run build` and
+# `npx wrangler deploy` there). See README.md ("Release gates") for how to run each check locally.
+#
+# The `Release gate` job is the single result to require in branch rules; it fails when any other job
+# fails, is cancelled or is skipped.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+# Least privilege: every job can read the repository and nothing else.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Never let tooling phone home or prompt in CI.
+  CI: "true"
+  ASTRO_TELEMETRY_DISABLED: "1"
+  NPM_CONFIG_AUDIT: "false"
+  NPM_CONFIG_FUND: "false"
+  NPM_CONFIG_UPDATE_NOTIFIER: "false"
+
+jobs:
+  verify:
+    name: Test, check and build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node (version from .nvmrc)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - name: Show toolchain
+        run: |
+          node --version
+          npm --version
+
+      - name: Install from the lockfile
+        run: npm ci
+
+      # `npm test` runs every tests/*.test.* file, so new tests join the gate without workflow edits.
+      - name: Tests
+        run: npm test
+
+      - name: Style checks
+        run: npm run check:styles
+
+      - name: Astro type check
+        run: npm run check
+
+      - name: Production build
+        run: npm run build
+
+  dependencies:
+    name: Dependency and lockfile checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node (version from .nvmrc)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      - name: Lockfile integrity
+        run: npm run check:lockfile
+
+      # Fails on high or critical advisories, including in dev dependencies that run during the build.
+      - name: Advisory audit
+        run: npm audit --audit-level=high
+
+      # Install scripts are not needed to verify what was downloaded.
+      - name: Install from the lockfile without scripts
+        run: npm ci --ignore-scripts
+
+      - name: Registry signatures
+        run: npm audit signatures
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out full history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Node (version from .nvmrc)
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+
+      # Positive control: proves the pinned scanner and .gitleaks.toml still flag a synthetic leak
+      # (built at run time, never stored) before trusting a clean result below.
+      - name: Scanner self-test
+        run: npm run scan:secrets:self-test
+
+      # Downloads gitleaks at the version pinned in scripts/scan-secrets.mjs, verifies its SHA-256
+      # against the checksum recorded there, then scans all git history and the working tree.
+      - name: Scan history and working tree
+        run: npm run scan:secrets
+
+  gate:
+    name: Release gate
+    if: ${{ always() }}
+    needs: [verify, dependencies, secrets]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every check to have passed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Job results: $RESULTS"
+          for result in $RESULTS; do
+            if [ "$result" != "success" ]; then
+              echo "A required check did not succeed." >&2
+              exit 1
+            fi
+          done

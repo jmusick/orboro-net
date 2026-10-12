@@ -18,8 +18,55 @@ This repository owns website code, deployed assets, content seeds, migrations, d
 
 ## Requirements
 
-- Node.js `>=22.12.0` and npm
+- Node.js `>=22.12.0` and npm `>=10.9.0` (`.nvmrc` selects Node 22, the major CI and Workers Builds use; `engine-strict` in `.npmrc` makes `npm ci` refuse an older toolchain)
 - A Cloudflare account and Wrangler access for D1 and R2 operations
+
+### Install policy
+
+- **Install with `npm ci`, never `npm install`.** `package-lock.json` is the record of exactly what was reviewed: `npm ci` installs it unchanged and fails if `package.json` disagrees. Commit lockfile changes together with the `package.json` change that caused them, and use `npm install <pkg>` only when deliberately changing a dependency.
+- **Native install scripts are allow-listed.** `allowScripts` in `package.json` names the dependency versions (`esbuild`, `sharp`, `workerd`) permitted to run lifecycle scripts on npm 11.17+, which warns about anything unlisted (add `--strict-allow-scripts` to make that an error). npm 10, which Node 22 bundles, ignores the field and runs install scripts, so `npm run check:lockfile` enforces the same rule on every npm: a non-optional dependency with an install script that is not listed fails the gate. A new entry is a review item, not a formality. `npm ci` was verified to work cleanly on Windows 11 (Node 24 / npm 11.17) and on Linux CI (Node 22): `sharp` ships prebuilt platform binaries, and `esbuild` and `workerd` run their small postinstall checks without a compiler.
+- **Release-age policy.** Do not adopt a dependency release younger than about a week. Dependabot enforces this with a cooldown (7 days, 14 for major versions), and for manual updates use `npm install <pkg>@latest --min-release-age=7` (a recent npm 11 option; it limits which versions npm may resolve and does not affect `npm ci`).
+- **Urgent exception.** For an actively exploited or high-severity advisory, skip the wait: update the one package (`npm install <pkg>@<fixed version>`), confirm the lockfile diff touches only that package and its dependencies, run `npm run verify` and `npm audit`, then ship the change through a pull request or a normal release commit. Say in the commit message that it is a release-age exception and why. Dependabot security updates ignore the cooldown by design.
+- The `sharp` override in `package.json` pins the patched release while Miniflare still declares an older one; Dependabot does not manage overrides, so remove it by hand once upstream catches up.
+
+## Release gates
+
+`.github/workflows/ci.yml` runs on every pull request and every push to `master` and has no deploy credentials or write permissions (`contents: read` only). Deployment is still Cloudflare Workers Builds, which runs on a push to `master` independently of this workflow, so a red check reports a problem but does not by itself stop a deploy; see below.
+
+| Job | What it checks |
+| --- | --- |
+| `Test, check and build` | `npm ci`, `npm test` (every `tests/*.test.*` file), `npm run check:styles`, `npm run check` (Astro type check), `npm run build` |
+| `Dependency and lockfile checks` | `npm run check:lockfile` (registry-only sources, sha512 hashes, tarball names, install-script allow-list), `npm audit --audit-level=high`, `npm audit signatures` |
+| `Secret scan` | a synthetic-leak self-test, then gitleaks over all git history and the working tree |
+| `Release gate` | passes only if the three jobs above all succeeded; this is the one check to require |
+
+Third-party actions are pinned to full commit SHAs and updated by Dependabot. To run the same checks locally: `npm run verify` runs the tests, style, lockfile and type checks and a build; `npm run audit:deps` runs the advisory audit; `npm run scan:secrets` runs the secret scan.
+
+New tests: put them in `tests/` as `<name>.test.ts` or `<name>.test.mjs`. `npm test` and CI pick them up automatically; a per-file `test:<name>` script is optional convenience for running one file.
+
+### Secret scan
+
+GitHub secret scanning and push protection stay enabled; they cover GitHub's partner token formats. This scan adds gitleaks' generic rules (high-entropy `api_key`-style assignments, private keys and many more), including the history of the repository.
+
+```bash
+npm run scan:secrets              # git history and working tree
+npm run scan:secrets -- --tree    # files on disk only, including uncommitted work
+npm run scan:secrets -- --history # commits only
+npm run scan:secrets -- --dir path/to/folder
+npm run scan:secrets:self-test    # proves a synthetic leak is caught and a clean directory passes
+```
+
+`scripts/scan-secrets.mjs` works the same on Windows, macOS and Linux with only Node installed. It downloads one pinned gitleaks release into `.tmp/gitleaks/` (gitignored), refuses to run it unless the archive's SHA-256 matches the value recorded in the script, and exits non-zero on any finding, scanner error, bad config, failed download or checksum mismatch. To upgrade, change `VERSION` and the checksum table from the new release's `checksums.txt`, run `npm run scan:secrets:self-test`, and review the release notes.
+
+`.gitleaks.toml` extends gitleaks' default rules and contains the only suppressions: values that are public by design, each pinned to a rule, a file and the exact value, with the reason written next to it (the IndexNow ownership key that `public/<key>.txt` already publishes, and a historical hCaptcha site key). If the scan flags something else, treat it as a real credential: rotate it at the provider first, then remove it from the code (and from history if appropriate). Do not add an allowlist entry for a credential; an entry belongs here only for an identifier that is already public and needs no rotation.
+
+### Dependency updates
+
+`.github/dependabot.yml` opens one grouped weekly pull request for npm (Astro, the Cloudflare adapter and Wrangler together; everything else minor and patch) plus separate major-version PRs, and one for GitHub Actions. Each runs the gates above before merge. Dependabot security updates (which open PRs for known-vulnerable packages outside the weekly schedule) are a repository setting, not a file, and must be enabled in the GitHub settings; [docs/operations.md](docs/operations.md) records the dated state of repository settings.
+
+### SBOM
+
+No SBOM tooling is wired into CI. `package-lock.json` already records every dependency with version, source and integrity hash, `npm audit` consumes it, and GitHub's dependency graph reads it for Dependabot alerts. A generated SBOM would add maintenance without changing any decision this site makes. If one is ever requested by a customer or a regulator, `npm sbom --sbom-format cyclonedx` produces CycloneDX from the same lockfile in one command; nothing here claims statutory compliance.
 
 ## Features
 
@@ -81,7 +128,8 @@ npm run dev:astro
 - `npm run dev` builds, then serves through `wrangler dev` (D1, Cache API and secret bindings)
 - `npm run dev:astro` runs Astro's hot-reloading dev server (doesn't fully mirror the Cloudflare runtime)
 - `npm run check` type-checks `.astro` and TypeScript files
-- `npm run test:markdown`, `test:dates`, `test:feed`, `test:json`, `test:consent`, `test:csp` run the unit tests: Markdown highlighting/escaping/sanitizing, page update dates, feed and sitemap output, inline-JSON safety, analytics consent behavior, and CSP nonce preservation across navigation
+- `npm test` runs every `tests/*.test.*` file. Individual `npm run test:markdown`, `test:dates`, `test:feed`, `test:json`, `test:consent`, `test:csp` (and the other `test:*` scripts) run one file: Markdown highlighting/escaping/sanitizing, page update dates, feed and sitemap output, inline-JSON safety, analytics consent behavior, and CSP nonce preservation across navigation
+- `npm run verify` runs the tests, `check:styles`, `check:lockfile`, `check` and `build` in one go; `npm run audit:deps` runs the advisory audit; `npm run scan:secrets` runs the secret scan (see [Release gates](#release-gates))
 - `npm run build` is the production build; `npm run preview` previews it
 - `npm run deploy` builds and runs `wrangler deploy` (manual; normally a push to `master` deploys)
 - `npm run admin:create -- --local|--remote` creates the first admin (see Quick start and Disaster recovery below)
@@ -96,6 +144,7 @@ npm run dev:astro
 ## Deployment
 
 - The Worker `orboro-net` builds through Workers Builds, git-integrated with GitHub [jmusick/orboro-net](https://github.com/jmusick/orboro-net): a push to `master` runs `npm run build`, then `npx wrangler deploy`. `astro build` writes the real deploy config to `dist/server/wrangler.json`, which `wrangler deploy` and `wrangler dev` pick up.
+- Workers Builds reads `.nvmrc` for its Node version. GitHub Actions CI (`.github/workflows/ci.yml`) runs independently on the same commit and has no deploy role or credentials: it reports, and Workers Builds deploys regardless of its result unless the Cloudflare side is configured otherwise. Check the CI result on a release commit before relying on the deploy.
 - Repository bindings are `DB` (D1), `MEDIA` (R2) and `ASSETS` (static assets). Custom domains, production secrets and edge security rules are configured in Cloudflare, outside the repo. Wrangler enables Workers logs and sampled traces; check retention and dashboard rules in the Cloudflare account.
 - Apply new schema migrations locally, verify them, then apply them remotely **before** deploying code that needs them. SQL content seeds are a separate step: pushing code does not copy local content into production.
 - The app needs no runtime secrets. If one is added, put it in `.dev.vars` for local dev (gitignored) and set it in production with `wrangler secret put <NAME>`.

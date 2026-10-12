@@ -1,0 +1,48 @@
+# Secret-scan configuration for scripts/scan-secrets.mjs (gitleaks).
+#
+# Baseline policy: this file starts from gitleaks' default ruleset and suppresses only values that are
+# public by design, each one pinned to a rule, a file and the exact value. A suppression that matches
+# more than that (a whole rule, a directory, a pattern) is not acceptable. Do not allowlist a real
+# credential: rotate it. Every entry needs a justification a reviewer can verify. Review the list
+# whenever this file changes.
+
+title = "orboro-net secret scan"
+
+[extend]
+useDefault = true
+
+# Trees that are generated, vendored or local state rather than authored source. Nothing here is
+# committed (see .gitignore); they exist so a working-tree scan does not read dependencies.
+[[allowlists]]
+description = "Generated, vendored or local-only directories"
+paths = [
+  '''(^|/)node_modules/''',
+  '''(^|/)\.tmp/''',
+  '''(^|/)\.wrangler/''',
+  '''(^|/)\.astro/''',
+  '''(^|/)dist/''',
+]
+
+# IndexNow ownership key in src/lib/indexnow.ts (generic-api-key rule). IndexNow requires the key to
+# be published in plaintext at https://orboro.net/<key>.txt so search engines can verify ownership;
+# public/00b5d4eb80cc64a1451e6a4e5efa248e.txt serves exactly this value. Knowing it grants nothing
+# beyond what that public file already shows. Pinned to this rule, this file and this value.
+[[allowlists]]
+description = "IndexNow key, published by design at /00b5d4eb80cc64a1451e6a4e5efa248e.txt"
+condition = "AND"
+targetRules = ["generic-api-key"]
+paths = ['''(^|/)src/lib/indexnow\.ts$''']
+regexTarget = "secret"
+regexes = ['''^00b5d4eb80cc64a1451e6a4e5efa248e$''']
+
+# hCaptcha site key from the admin login form, present only in git history (commit 2a3c6dd; removed in
+# v1.34.0 when hCaptcha was dropped, see docs/operations.md). A site key is rendered into the public
+# page HTML for every visitor; the secret key never lived in the repository. Pinned to this rule,
+# this file and this value.
+[[allowlists]]
+description = "hCaptcha public site key in historical admin login markup"
+condition = "AND"
+targetRules = ["generic-api-key"]
+paths = ['''(^|/)src/pages/admin/index\.astro$''']
+regexTarget = "secret"
+regexes = ['''^063e31aa-ed14-481a-a844-cb5e5c74ab9a$''']
