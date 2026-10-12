@@ -7,6 +7,7 @@ import Button from "../../components/Button.astro";
 
 const loggedIn = Boolean(Astro.locals.user);
 const error = Astro.url.searchParams.get("error");
+const signedOutAll = Astro.url.searchParams.get("signedout") === "all";
 ---
 
 {loggedIn ? (
@@ -25,11 +26,20 @@ const error = Astro.url.searchParams.get("error");
         </Card>
       </div>
     </section>
+    <section aria-labelledby="sessions-title">
+      <h2 id="sessions-title" class="quick-actions-title">Sessions</h2>
+      {error === "sessions" && <FormMessage error>Sessions were not signed out. Try again.</FormMessage>}
+      <p class="sessions-note">A session lasts 14 days from sign-in. Signing out all sessions ends every session for this account, including this one.</p>
+      <form method="post" action="/api/auth/revoke-all">
+        <Button type="submit" variant="danger" icon="log-out">Sign out all sessions</Button>
+      </form>
+    </section>
   </AdminLayout>
 ) : (
   <BaseLayout title="Admin Login | Orboro.net" description="Sign in to Orboro.net CMS">
     <section>
       <h1>Admin Login</h1>
+      {signedOutAll && !error ? <FormMessage>All sessions are signed out. Sign in again to continue.</FormMessage> : null}
       {error
         ? <FormMessage error fields={[{ id: "email", label: "Email" }, { id: "password", label: "Password" }]}>Unable to sign in. Check your email and password and try again.</FormMessage>
         : null}
@@ -50,6 +60,7 @@ const error = Astro.url.searchParams.get("error");
 
 <style>
 .quick-actions-title { margin: 0 0 1.5rem; }
+  .sessions-note { margin: 0 0 1rem; color: var(--muted); }
   .cards-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));

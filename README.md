@@ -81,10 +81,11 @@ npm run dev:astro
 - `npm run dev` builds, then serves through `wrangler dev` (D1, Cache API and secret bindings)
 - `npm run dev:astro` runs Astro's hot-reloading dev server (doesn't fully mirror the Cloudflare runtime)
 - `npm run check` type-checks `.astro` and TypeScript files
-- `npm run test:markdown`, `test:dates`, `test:feed`, `test:json`, `test:consent`, `test:csp` run the unit tests: Markdown highlighting/escaping/sanitizing, page update dates, feed and sitemap output, inline-JSON safety, analytics consent behavior, and CSP nonce preservation across navigation
+- `npm run test:markdown`, `test:dates`, `test:feed`, `test:json`, `test:consent`, `test:csp`, `test:sessions` run the unit tests: Markdown highlighting/escaping/sanitizing, page update dates, feed and sitemap output, inline-JSON safety, analytics consent behavior, CSP nonce preservation across navigation, and session tokens, revocation and cookie flags
 - `npm run build` is the production build; `npm run preview` previews it
 - `npm run deploy` builds and runs `wrangler deploy` (manual; normally a push to `master` deploys)
 - `npm run admin:create -- --local|--remote` creates the first admin (see Quick start and Disaster recovery below)
+- `npm run admin:reset-password -- --local|--remote` sets a new password for an existing account and revokes its sessions; `npm run sessions:revoke -- --email <email>|--all [--remote]` revokes sessions only, against local D1 unless `--remote` is given (see Credential recovery below)
 - `npm run d1:migrate:local` / `d1:migrate:remote` apply migrations
 - `npm run cf:types` regenerates the Cloudflare worker types
 - `npm run media:migrate` previews moving content images to R2 (see Media)
@@ -112,6 +113,16 @@ Page and post Markdown is stored in `content.markdown`. Re-runnable seed scripts
 
 If D1 is ever emptied or restored without a user, no one can sign in. Create a new admin with `npm run admin:create -- --remote` using the same `ADMIN_EMAIL` and `ADMIN_PASSWORD` variables. It is a no-op while any user exists. Note that `/admin/setup` no longer exists.
 
+### Credential recovery
+
+If the password or a signed-in device may be compromised, reset the password and revoke every session in one step:
+
+```bash
+ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='at least 10 characters' npm run admin:reset-password -- --remote
+```
+
+It reports `matching_users` (0 means no account has that email) and `sessions_remaining`, which should be 0. To sign an account out everywhere without changing the password, use `npm run sessions:revoke -- --email you@example.com --remote` (or `--all` for every account), or **Sign out all sessions** on the admin dashboard. Without `--remote`, `sessions:revoke` runs against local D1.
+
 ## Content rendering
 
 - Pages and posts render fenced code through `src/lib/markdown.ts` with server-side Highlight.js and a bundled GitHub Dark theme. Add a language after the opening fence (`js`, `ts`, `bash`, `json`, `html`, `css`, `sql`, `python`, `lua`, `yaml` or `markdown`). Unlabeled and unsupported languages stay escaped plain text; inline code is unchanged.
@@ -135,7 +146,7 @@ If D1 is ever emptied or restored without a user, no one can sign in. Create a n
 
 ## Security and privacy
 
-- Admin login is password-only. Sessions last 14 days and logout revokes the current session. There is no MFA, password recovery or built-in login throttling; any edge protection is configured separately.
+- Admin login is password-only, with in-Worker throttling and no MFA or self-service password recovery. Sessions last an absolute 14 days from sign-in, with no idle timeout. D1 stores only a SHA-256 digest of each session token, and the cookie is `__Host-orboro_session` over HTTPS. Logout revokes the current session; **Sign out all sessions** and the operator scripts under Credential recovery revoke all of an account's sessions.
 - Author Markdown is sanitized and inline JSON is encoded for HTML, and the nonce-based CSP is enforced (without a report endpoint). Inline style attributes are blocked; widgets use classes or direct style-property updates. HTTPS images are permitted for article artwork and bookmark favicons. Publishing is a trusted-admin capability, and these controls don't establish safe untrusted publishing.
 - Google Analytics loads only after acceptance in `ConsentBanner.astro`, on `BaseLayout` pages (including the login page) but never in the authenticated admin layout. Without acceptance or JavaScript the Google tag is never fetched. Accepted page views send the full URL, including query strings.
 - The choice is stored in the browser's localStorage as `orboro-analytics-consent` until changed or cleared. Footer **Cookie preferences** reopens the banner. Withdrawing consent disables analytics, clears GA cookies on the current host and parent domains, and reloads; other open tabs follow through storage events. If localStorage is unavailable the choice lasts only until a full reload.

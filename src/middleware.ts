@@ -1,9 +1,13 @@
 import { defineMiddleware } from "astro:middleware";
 import { env as workerEnv } from "cloudflare:workers";
-import { getSessionAndUserByToken } from "./lib/auth";
+import {
+  clearSessionCookies,
+  clearStaleSessionCookies,
+  getSessionAndUserByToken,
+  hasSessionCookie,
+  readSessionCookie,
+} from "./lib/auth";
 import { isPrivatePath, privateCacheControl } from "./lib/cache-policy";
-
-const SESSION_COOKIE = "orboro_session";
 
 function buildCsp(nonce: string): string {
   return [
@@ -32,14 +36,19 @@ export const onRequest = defineMiddleware(async (context, next) => {
   context.locals.session = null;
   context.locals.nonce = generateNonce();
 
-  const token = context.cookies.get(SESSION_COOKIE)?.value;
-  if (token && ((workerEnv as unknown) as { DB?: unknown }).DB) {
+  const hasSession = hasSessionCookie(context.cookies, context.url);
+  const token = readSessionCookie(context.cookies, context.url);
+  if (hasSession && ((workerEnv as unknown) as { DB?: unknown }).DB) {
     try {
-      const { session, user } = await getSessionAndUserByToken(context.locals, token);
+      const { session, user } = token ? await getSessionAndUserByToken(context.locals, token) : { session: null, user: null };
       context.locals.session = session;
       context.locals.user = user;
+      // Expired, revoked and pre-digest cookies are cleared, as is the
+      // unprefixed legacy name over HTTPS.
+      if (session) clearStaleSessionCookies(context.cookies, context.url);
+      else clearSessionCookies(context.cookies, context.url);
     } catch {
-      context.cookies.delete(SESSION_COOKIE, { path: "/" });
+      clearSessionCookies(context.cookies, context.url);
     }
   }
 
@@ -63,7 +72,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   const cacheControl = privateCacheControl(
     new URL(context.request.url).pathname,
-    Boolean(token),
+    hasSession,
     response.headers.get("Content-Type"),
     response.headers.get("Cache-Control"),
   );
@@ -77,5 +86,3 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   return response;
 });
-
-export { SESSION_COOKIE };

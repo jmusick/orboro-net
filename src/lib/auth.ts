@@ -1,7 +1,13 @@
 import { ensureDB } from "./db";
+import {
+  createSessionRecord,
+  findSession,
+  pruneSessions,
+  revokeSession,
+  revokeUserSessions,
+} from "./sessions";
 
 const PASSWORD_ITERATIONS = 100_000;
-const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 14;
 
 function toBase64(bytes: Uint8Array): string {
   let binary = "";
@@ -71,72 +77,45 @@ export async function verifyDummyPassword(password: string): Promise<false> {
   return false;
 }
 
-export async function createSession(locals: App.Locals, userId: string): Promise<{ id: string; expiresAt: number }> {
-  const db = ensureDB(locals);
-  const id = crypto.randomUUID();
-  const expiresAt = Date.now() + SESSION_DURATION_MS;
-
-  await db
-    .prepare("INSERT INTO sessions (id, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)")
-    .bind(id, userId, expiresAt, Date.now())
-    .run();
-
-  return { id, expiresAt };
+export async function createSession(locals: App.Locals, userId: string): Promise<{ token: string; expiresAt: number }> {
+  return createSessionRecord(ensureDB(locals), userId);
 }
 
-export async function invalidateSession(locals: App.Locals, sessionId: string): Promise<void> {
-  const db = ensureDB(locals);
-  await db.prepare("DELETE FROM sessions WHERE id = ?").bind(sessionId).run();
+export async function invalidateSession(locals: App.Locals, token: string): Promise<void> {
+  await revokeSession(ensureDB(locals), token);
 }
 
-export async function getSessionAndUserByToken(locals: App.Locals, sessionId: string): Promise<{
+export async function invalidateUserSessions(locals: App.Locals, userId: string): Promise<void> {
+  await revokeUserSessions(ensureDB(locals), userId);
+}
+
+export async function getSessionAndUserByToken(locals: App.Locals, token: string): Promise<{
   session: SessionRecord | null;
   user: UserRecord | null;
 }> {
   const db = ensureDB(locals);
   const now = Date.now();
 
-  // Expiry is enforced by the SELECT, so cleanup need not write on every request.
+  // Expiry is enforced by the lookup, so cleanup need not write on every request.
   if (crypto.getRandomValues(new Uint32Array(1))[0] % 100 === 0) {
-    await db.prepare("DELETE FROM sessions WHERE expires_at <= ?").bind(now).run();
+    await pruneSessions(db, now);
   }
 
-  const row = await db
-    .prepare(
-      `SELECT
-        sessions.id as session_id,
-        sessions.user_id as user_id,
-        sessions.expires_at as expires_at,
-        users.email as email,
-        users.role as role
-      FROM sessions
-      INNER JOIN users ON users.id = sessions.user_id
-      WHERE sessions.id = ? AND sessions.expires_at > ?
-      LIMIT 1`
-    )
-    .bind(sessionId, now)
-    .first<{
-      session_id: string;
-      user_id: string;
-      expires_at: number;
-      email: string;
-      role: UserRole;
-    }>();
-
+  const row = await findSession(db, token, now);
   if (!row) {
     return { session: null, user: null };
   }
 
   return {
-    session: {
-      id: row.session_id,
-      userId: row.user_id,
-      expiresAt: row.expires_at,
-    },
-    user: {
-      id: row.user_id,
-      email: row.email,
-      role: row.role,
-    },
+    session: { id: row.sessionId, userId: row.userId, expiresAt: row.expiresAt },
+    user: { id: row.userId, email: row.email, role: row.role },
   };
 }
+
+export {
+  clearSessionCookies,
+  clearStaleSessionCookies,
+  hasSessionCookie,
+  readSessionCookie,
+  setSessionCookie,
+} from "./session-cookie";

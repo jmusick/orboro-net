@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { createSession, verifyDummyPassword, verifyPassword } from "../../../lib/auth";
+import { createSession, setSessionCookie, verifyDummyPassword, verifyPassword } from "../../../lib/auth";
 import { ensureDB } from "../../../lib/db";
 import {
   MAX_EMAIL_LENGTH,
@@ -9,7 +9,6 @@ import {
   pruneLoginAttempts,
   reserveLoginAttempt,
 } from "../../../lib/login-throttle";
-import { SESSION_COOKIE } from "../../../middleware";
 
 function refusal(status: number, message: string, retryAfterSeconds?: number): Response {
   const headers: Record<string, string> = { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" };
@@ -70,13 +69,7 @@ export const POST: APIRoute = async ({ request, locals, cookies, url, redirect }
   }
 
   const session = await createSession(locals, user.id);
-  cookies.set(SESSION_COOKIE, session.id, {
-    path: "/",
-    httpOnly: true,
-    sameSite: "lax",
-    secure: url.protocol === "https:",
-    expires: new Date(session.expiresAt),
-  });
+  setSessionCookie(cookies, url, session.token, session.expiresAt);
 
   return redirect("/admin");
 };
