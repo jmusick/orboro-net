@@ -36,7 +36,7 @@ const signedOutAll = Astro.url.searchParams.get("signedout") === "all";
     </section>
   </AdminLayout>
 ) : (
-  <BaseLayout title="Admin Login | Orboro.net" description="Sign in to Orboro.net CMS">
+  <BaseLayout title="Admin Login | Orboro.net" description="Sign in to Orboro.net CMS" analytics={false}>
     <section>
       <h1>Admin Login</h1>
       {signedOutAll && !error ? <FormMessage>All sessions are signed out. Sign in again to continue.</FormMessage> : null}

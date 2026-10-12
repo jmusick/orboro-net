@@ -1,3 +1,3 @@
-// Last substantive policy change: analytics opt-in, stored preferences and withdrawal.
+// Last substantive policy change: analytics page URLs reduced to origin and path; login excluded.
 // Keep the visible policy date and sitemap date in sync when the policy changes.
-export const PRIVACY_UPDATED_AT = '2026-10-04';
+export const PRIVACY_UPDATED_AT = '2026-10-11';
