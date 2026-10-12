@@ -1,7 +1,7 @@
 {
   "name": "orboro",
   "type": "module",
-  "version": "1.48.5",
+  "version": "1.48.6",
   "engines": {
     "node": ">=22.12.0",
     "npm": ">=10.9.0"
@@ -43,10 +43,11 @@
     "d1:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "check:styles": "node scripts/check-styles.mjs",
     "check:lockfile": "node scripts/check-lockfile.mjs",
+    "check:inline-scripts": "node scripts/check-inline-scripts.mjs",
     "audit:deps": "npm audit --audit-level=high",
     "scan:secrets": "node scripts/scan-secrets.mjs",
     "scan:secrets:self-test": "node scripts/scan-secrets.mjs --self-test",
-    "verify": "npm run test && npm run check:styles && npm run check:lockfile && npm run check && npm run build"
+    "verify": "npm run test && npm run check:styles && npm run check:lockfile && npm run check && npm run build && npm run check:inline-scripts"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.3.4",

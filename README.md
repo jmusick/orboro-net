@@ -35,12 +35,12 @@ This repository owns website code, deployed assets, content seeds, migrations, d
 
 | Job | What it checks |
 | --- | --- |
-| `Test, check and build` | `npm ci`, `npm test` (every `tests/*.test.*` file), `npm run check:styles`, `npm run check` (Astro type check), `npm run build` |
+| `Test, check and build` | `npm ci`, `npm test` (every `tests/*.test.*` file), `npm run check:styles`, `npm run check` (Astro type check), `npm run build`, `npm run check:inline-scripts` (no processed script inlined without a nonce) |
 | `Dependency and lockfile checks` | `npm run check:lockfile` (registry-only sources, sha512 hashes, tarball names, install-script allow-list), `npm audit --audit-level=high`, `npm audit signatures` |
 | `Secret scan` | a synthetic-leak self-test, then gitleaks over all git history and the working tree |
 | `Release gate` | passes only if the three jobs above all succeeded; this is the one check to require |
 
-Third-party actions are pinned to full commit SHAs and updated by Dependabot. To run the same checks locally: `npm run verify` runs the tests, style, lockfile and type checks and a build; `npm run audit:deps` runs the advisory audit; `npm run scan:secrets` runs the secret scan.
+Third-party actions are pinned to full commit SHAs and updated by Dependabot. To run the same checks locally: `npm run verify` runs the tests, style, lockfile and type checks, a build and the inlined-script check; `npm run audit:deps` runs the advisory audit; `npm run scan:secrets` runs the secret scan.
 
 New tests: put them in `tests/` as `<name>.test.ts` or `<name>.test.mjs`. `npm test` and CI pick them up automatically; a per-file `test:<name>` script is optional convenience for running one file.
 
@@ -129,7 +129,7 @@ npm run dev:astro
 - `npm run dev:astro` runs Astro's hot-reloading dev server (doesn't fully mirror the Cloudflare runtime)
 - `npm run check` type-checks `.astro` and TypeScript files
 - `npm test` runs every `tests/*.test.*` file; individual `npm run test:markdown`, `test:editor-preview`, `test:dates`, `test:feed`, `test:json`, `test:consent`, `test:csp`, `test:sessions`, `test:admin-guard` run one file each (the other `test:*` scripts likewise): Markdown highlighting/escaping/sanitizing, editor preview parity with publishing, page update dates, feed and sitemap output, inline-JSON safety, analytics consent behavior, CSP nonce preservation across navigation, and session tokens, revocation and cookie flags, and the admin-role guard on every admin and mutation route
-- `npm run verify` runs the tests, `check:styles`, `check:lockfile`, `check` and `build` in one go; `npm run audit:deps` runs the advisory audit; `npm run scan:secrets` runs the secret scan (see [Release gates](#release-gates))
+- `npm run verify` runs the tests, `check:styles`, `check:lockfile`, `check`, `build` and `check:inline-scripts` in one go; `npm run audit:deps` runs the advisory audit; `npm run scan:secrets` runs the secret scan (see [Release gates](#release-gates))
 - `npm run build` is the production build; `npm run preview` previews it
 - `npm run deploy` builds and runs `wrangler deploy` (manual; normally a push to `master` deploys)
 - `npm run admin:create -- --local|--remote` creates the first admin (see Quick start and Disaster recovery below)

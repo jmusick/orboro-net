@@ -67,6 +67,9 @@ jobs:
       - name: Production build
         run: npm run build
 
+      - name: No inlined processed scripts
+        run: npm run check:inline-scripts
+
   dependencies:
     name: Dependency and lockfile checks
     runs-on: ubuntu-24.04
