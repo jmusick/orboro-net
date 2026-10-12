@@ -18,6 +18,7 @@
     "test:login-throttle": "node --experimental-strip-types --test tests/login-throttle.test.ts",
     "test:feed": "node --experimental-strip-types --test tests/feed.test.ts",
     "test:json": "node --experimental-strip-types --test tests/json.test.ts",
+    "test:structured-data": "node --experimental-strip-types --test tests/structured-data.test.ts",
     "test:bookmarks": "node --experimental-strip-types --test tests/bookmarks-data.test.ts",
     "test:cache-policy": "node --experimental-strip-types --test tests/cache-policy.test.ts",
     "test:content-writes": "node --experimental-strip-types --test tests/content-writes.test.ts",

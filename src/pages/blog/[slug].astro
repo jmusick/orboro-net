@@ -10,7 +10,9 @@ import {
   excerptFromMarkdown,
   listCategoriesWithPostCounts,
 } from "../../lib/content";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import { processShortcodes } from "../../lib/shortcodes";
+import { breadcrumbList, graphOf } from "../../lib/structured-data";
 
 function estimateReadingMinutes(markdown: string): number {
   const words = markdown
@@ -65,8 +67,17 @@ const absoluteImageUrl = post.featuredImageUrl ? new URL(post.featuredImageUrl, 
 const publishedIso = new Date(post.publishedAt ?? post.createdAt).toISOString();
 const updatedIso = new Date(post.updatedAt).toISOString();
 
-const structuredData = {
-  "@context": "https://schema.org",
+// Categories are tags, not a hierarchy: use the first (alphabetical) one so the
+// trail is stable. Posts with no category get Home > Blog > Post.
+const primaryCategory = postCategories[0];
+const trail = [
+  { name: "Home", path: "/" },
+  { name: "Blog", path: "/blog" },
+  ...(primaryCategory ? [{ name: primaryCategory.name, path: `/blog/category/${primaryCategory.slug}` }] : []),
+  { name: post.title, path: `/blog/${post.slug}` },
+];
+
+const blogPosting = {
   "@type": "BlogPosting",
   headline: post.title,
   description,
@@ -81,6 +92,7 @@ const structuredData = {
     logo: { "@type": "ImageObject", url: `${BASE}/images/logo.png` },
   },
 };
+const structuredData = graphOf(blogPosting, breadcrumbList(trail, BASE));
 ---
 
 <BaseLayout
@@ -92,6 +104,7 @@ const structuredData = {
 >
   <SidebarLayout>
     <article>
+      <Breadcrumbs trail={trail} />
       <h1>{post.title}</h1>
       <p class="meta">
         <span>By JD</span>

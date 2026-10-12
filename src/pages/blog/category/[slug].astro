@@ -3,6 +3,8 @@ import BaseLayout from "../../../layouts/BaseLayout.astro";
 import PostCard from "../../../components/PostCard.astro";
 import Sidebar from "../../../components/Sidebar.astro";
 import SidebarLayout from "../../../components/SidebarLayout.astro";
+import Breadcrumbs from "../../../components/Breadcrumbs.astro";
+import { breadcrumbList, graphOf } from "../../../lib/structured-data";
 import { getCategoryBySlug, getPublishedContentByCategory, excerptFromMarkdown, listCategoriesWithPostCounts, listPostSummaries } from "../../../lib/content";
 
 const { slug } = Astro.params;
@@ -21,11 +23,32 @@ const recentPosts = summaries.map((post) => ({
   title: post.title,
   dateLabel: new Date(post.publishedAt ?? post.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
 }));
+
+const BASE = (Astro.site ?? new URL("https://orboro.net")).origin;
+const categoryPath = `/blog/category/${category.slug}`;
+const trail = [
+  { name: "Home", path: "/" },
+  { name: "Blog", path: "/blog" },
+  { name: category.name, path: categoryPath },
+];
+const categoryDescription = `Browse posts in the ${category.name} category on Orboro.net.`;
+const structuredData = graphOf(
+  {
+    "@type": "CollectionPage",
+    "@id": `${BASE}${categoryPath}`,
+    url: `${BASE}${categoryPath}`,
+    name: category.name,
+    description: categoryDescription,
+    isPartOf: { "@id": `${BASE}/#website` },
+  },
+  breadcrumbList(trail, BASE),
+);
 ---
 
-<BaseLayout title={`${category.name} | Orboro.net`} description={`Browse posts in the ${category.name} category on Orboro.net.`}>
+<BaseLayout title={`${category.name} | Orboro.net`} description={categoryDescription} structuredData={structuredData}>
   <SidebarLayout>
   <section>
+    <Breadcrumbs trail={trail} />
     <h1>{category.name}</h1>
     {posts.length === 0 ? (
       <p class="empty">No published posts in this category yet.</p>
