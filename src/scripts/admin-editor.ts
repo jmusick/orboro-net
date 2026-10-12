@@ -1,3 +1,9 @@
+import type EasyMDEClass from "easymde";
+import { editorOptions } from "../lib/editor-preview.ts";
+
+// EasyMDE is loaded as a separate classic script before this module runs.
+declare const EasyMDE: typeof EasyMDEClass | undefined;
+
 // Delete confirmation
 const deleteForm = document.querySelector(".delete-form");
 if (deleteForm instanceof HTMLFormElement) {
@@ -25,25 +31,11 @@ if (title instanceof HTMLInputElement && slug instanceof HTMLInputElement) {
   });
 }
 
-// EasyMDE WYSIWYG editor
+// EasyMDE WYSIWYG editor. Its preview renders through the publishing pipeline
+// (see src/lib/editor-preview.ts), never EasyMDE's own unsanitized parser.
 const markdownEl = document.querySelector("#markdown");
 if (markdownEl instanceof HTMLTextAreaElement && typeof EasyMDE !== "undefined") {
-  const easyMde = new EasyMDE({
-    element: markdownEl,
-    autoDownloadFontAwesome: false,
-    theme: "orboro",
-    spellChecker: false,
-    autosave: { enabled: false },
-    minHeight: "300px",
-    maxHeight: "560px",
-    toolbar: [
-      "bold", "italic", "strikethrough", "heading", "|",
-      "quote", "unordered-list", "ordered-list", "|",
-      "link", "image", "table", "|",
-      "preview", "side-by-side", "fullscreen", "|",
-      "guide",
-    ],
-  });
+  const easyMde = new EasyMDE(editorOptions(markdownEl));
 
   // EasyMDE hides the source textarea. Name its actual editable input instead,
   // for both CodeMirror's desktop textarea and mobile contenteditable modes.

@@ -35,6 +35,5 @@ async function check(directory) {
   }
 }
 await check("src");
-await checkFile("public/admin-editor.js");
 if (failures) process.exitCode = 1;
 else console.log("Design style checks passed.");

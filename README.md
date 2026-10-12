@@ -81,7 +81,7 @@ npm run dev:astro
 - `npm run dev` builds, then serves through `wrangler dev` (D1, Cache API and secret bindings)
 - `npm run dev:astro` runs Astro's hot-reloading dev server (doesn't fully mirror the Cloudflare runtime)
 - `npm run check` type-checks `.astro` and TypeScript files
-- `npm run test:markdown`, `test:dates`, `test:feed`, `test:json`, `test:consent`, `test:csp`, `test:sessions` run the unit tests: Markdown highlighting/escaping/sanitizing, page update dates, feed and sitemap output, inline-JSON safety, analytics consent behavior, CSP nonce preservation across navigation, and session tokens, revocation and cookie flags
+- `npm run test:markdown`, `test:editor-preview`, `test:dates`, `test:feed`, `test:json`, `test:consent`, `test:csp`, `test:sessions` run the unit tests: Markdown highlighting/escaping/sanitizing, editor preview parity with publishing, page update dates, feed and sitemap output, inline-JSON safety, analytics consent behavior, CSP nonce preservation across navigation, and session tokens, revocation and cookie flags
 - `npm run build` is the production build; `npm run preview` previews it
 - `npm run deploy` builds and runs `wrangler deploy` (manual; normally a push to `master` deploys)
 - `npm run admin:create -- --local|--remote` creates the first admin (see Quick start and Disaster recovery below)
