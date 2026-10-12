@@ -184,3 +184,21 @@ test('rejections are uncacheable plain text with the failure status', async () =
   assert.equal(response.headers.get('cache-control'), 'no-store');
   assert.match(await response.text(), /too large/i);
 });
+
+// The login page renders in BaseLayout, whose ClientRouter resubmits forms with
+// fetch as multipart/form-data. Rejecting multipart there locked browsers out of
+// sign-in while curl (URL-encoded) still worked.
+test('login accepts the multipart body ClientRouter submits', async () => {
+  const fd = new FormData();
+  fd.set('email', 'admin@example.test');
+  fd.set('password', 'correct horse battery');
+  const request = new Request(URL_, { method: 'POST', body: fd });
+  const parsed = await readBoundedForm(request, { maxBytes: 4096, types: [URLENCODED, MULTIPART], maxFields: 8 });
+  assert.ok(parsed.ok);
+  assert.equal(formText(parsed.form, 'email'), 'admin@example.test');
+  assert.equal(formText(parsed.form, 'password'), 'correct horse battery');
+
+  const { readFile } = await import('node:fs/promises');
+  const login = await readFile(new URL('../src/pages/api/auth/login.ts', import.meta.url), 'utf8');
+  assert.match(login, /types:\s*\[URLENCODED,\s*MULTIPART\]/);
+});

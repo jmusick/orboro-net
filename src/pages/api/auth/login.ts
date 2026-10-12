@@ -9,7 +9,7 @@ import {
   pruneLoginAttempts,
   reserveLoginAttempt,
 } from "../../../lib/login-throttle";
-import { formText, readBoundedForm } from "../../../lib/request-limits";
+import { MULTIPART, URLENCODED, formText, readBoundedForm } from "../../../lib/request-limits";
 
 function refusal(status: number, message: string, retryAfterSeconds?: number): Response {
   const headers: Record<string, string> = { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" };
@@ -18,8 +18,14 @@ function refusal(status: number, message: string, retryAfterSeconds?: number): R
 }
 
 export const POST: APIRoute = async ({ request, locals, cookies, url, redirect }) => {
-  // Bound the streamed body before parsing it or doing any hashing work.
-  const body = await readBoundedForm(request, { maxBytes: MAX_LOGIN_BODY_BYTES, maxFields: 8 });
+  // Bound the streamed body before parsing it or doing any hashing work. The
+  // login page uses BaseLayout, whose ClientRouter resubmits forms with fetch
+  // as multipart/form-data, so both encodings must be accepted.
+  const body = await readBoundedForm(request, {
+    maxBytes: MAX_LOGIN_BODY_BYTES,
+    types: [URLENCODED, MULTIPART],
+    maxFields: 8,
+  });
   if (!body.ok) {
     return body.status === 413 ? refusal(413, "Request too large.") : redirect("/admin?error=invalid");
   }
