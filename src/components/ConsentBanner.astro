@@ -31,6 +31,16 @@ const nonce = Astro.locals.nonce;
     try { choice = localStorage.getItem(STORAGE_KEY); } catch (_) {}
 
     function gtag() { window.dataLayer.push(arguments); }
+    // Only origin + pathname ever leaves the page: never query strings or fragments.
+    var EXCLUDED = /^\/(?:admin|api)(?:\/|$)/;
+    function minimize(value) {
+      try {
+        var url = new URL(value, location.href);
+        return url.origin + url.pathname;
+      } catch (_) { return ''; }
+    }
+    function excluded() { return EXCLUDED.test(location.pathname); }
+    var lastPage = document.referrer ? minimize(document.referrer) : '';
     function loadAnalytics() {
       if (loaded || choice !== 'granted') return;
       loaded = true;
@@ -41,7 +51,12 @@ const nonce = Astro.locals.nonce;
       });
       gtag('consent', 'update', { analytics_storage: 'granted' });
       gtag('js', new Date());
-      gtag('config', MEASUREMENT_ID, { send_page_view: false });
+      // Set explicit values so gtag's defaults (full location and referrer) never apply.
+      gtag('config', MEASUREMENT_ID, {
+        send_page_view: false,
+        page_location: minimize(location.href),
+        page_referrer: lastPage
+      });
       var script = document.createElement('script');
       script.async = true;
       script.src = 'https://www.googletagmanager.com/gtag/js?id=' + MEASUREMENT_ID;
@@ -51,16 +66,21 @@ const nonce = Astro.locals.nonce;
       document.head.appendChild(script);
     }
     function pageView() {
-      // AdminLayout never renders this banner; do not track a swap into /admin.
-      if (choice !== 'granted' || !document.getElementById('analytics-consent')) return;
+      // Admin, login and auth routes are never tracked, whatever layout renders them,
+      // including a ClientRouter swap into one of them.
+      if (choice !== 'granted' || excluded() || !document.getElementById('analytics-consent')) return;
       loadAnalytics();
+      var page = minimize(location.href);
+      gtag('set', { page_location: page, page_referrer: lastPage });
       gtag('event', 'page_view', {
-        page_location: location.href, page_path: location.pathname, page_title: document.title
+        page_location: page, page_referrer: lastPage,
+        page_path: location.pathname, page_title: document.title
       });
+      lastPage = page;
     }
     function init() {
       var banner = document.getElementById('analytics-consent');
-      if (!banner) return;
+      if (!banner || excluded()) return;
       banner.hidden = choice === 'granted' || choice === 'denied';
       document.querySelectorAll('[data-analytics-preferences]').forEach(function (button) {
         button.hidden = false;

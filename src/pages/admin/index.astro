@@ -27,7 +27,7 @@ const error = Astro.url.searchParams.get("error");
     </section>
   </AdminLayout>
 ) : (
-  <BaseLayout title="Admin Login | Orboro.net" description="Sign in to Orboro.net CMS">
+  <BaseLayout title="Admin Login | Orboro.net" description="Sign in to Orboro.net CMS" analytics={false}>
     <section>
       <h1>Admin Login</h1>
       {error

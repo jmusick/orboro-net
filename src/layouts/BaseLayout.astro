@@ -20,9 +20,10 @@ interface Props {
   ogType?: string;
   ogImage?: string;
   structuredData?: Record<string, unknown>;
+  analytics?: boolean;
 }
 
-const { title, description = "", ogType = "website", ogImage: ogImageProp, structuredData } = Astro.props;
+const { title, description = "", ogType = "website", ogImage: ogImageProp, structuredData, analytics = true } = Astro.props;
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://orboro.net').href;
 const ogImage = ogImageProp || `${(Astro.site ?? new URL('https://orboro.net')).origin}/images/logo.png`;
 const navItems = await listNavItems(Astro.locals);
@@ -859,7 +860,7 @@ function nodeIcon(node: NavNode): string {
         {hasHeaderFeature ? <div class="main-panel"><slot /></div> : <slot />}
       </main>
       <Footer />
-      <ConsentBanner />
+      {analytics && <ConsentBanner />}
     </div>
     <script is:inline nonce={nonce}>
       function styleNodeTables() {

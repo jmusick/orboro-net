@@ -6,7 +6,8 @@ import { runInNewContext } from 'node:vm';
 const component = readFileSync(new URL('../src/components/ConsentBanner.astro', import.meta.url), 'utf8');
 const script = component.match(/<script[^>]*>([\s\S]*?)<\/script>/)[1];
 
-function browserHarness(stored = null, storageUnavailable = false) {
+function browserHarness(stored = null, storageUnavailable = false, href = 'https://www.orboro.net/', referrer = '') {
+  const parsed = new URL(href);
   const listeners = new Map();
   const scripts = [];
   const cookies = [];
@@ -25,6 +26,7 @@ function browserHarness(stored = null, storageUnavailable = false) {
   const controller = { nonce: 'first-page-nonce' };
   const document = {
     title: 'Home',
+    referrer,
     getElementById: id => id === 'analytics-controller' ? controller : hasBanner ? banner : null,
     querySelector: () => preferences,
     querySelectorAll: () => [preferences],
@@ -40,8 +42,8 @@ function browserHarness(stored = null, storageUnavailable = false) {
   };
   const window = { addEventListener: document.addEventListener };
   const context = {
-    Element, document, window,
-    location: { href: 'https://www.orboro.net/', pathname: '/', hostname: 'www.orboro.net', reload: () => reloads++ },
+    Element, document, window, URL,
+    location: { href: parsed.href, pathname: parsed.pathname, search: parsed.search, hash: parsed.hash, origin: parsed.origin, hostname: parsed.hostname, reload: () => reloads++ },
     localStorage: {
       getItem: () => { if (storageUnavailable) throw new Error('blocked'); return stored; },
       setItem: (_, value) => { if (storageUnavailable) throw new Error('blocked'); stored = value; }
@@ -131,4 +133,53 @@ test('withdrawal in another tab stops this tab too', () => {
   browser.emit('storage', { key: 'orboro-analytics-consent', newValue: 'denied' });
   assert.equal(browser.reloads, 1);
   assert.equal(browser.window['ga-disable-G-BLR72SL0L6'], true);
+});
+
+const SECRET_URL = 'https://www.orboro.net/blog/post?token=SECRET&email=a@b.c#access_token=SECRET';
+
+test('page views send only origin and pathname, never query or fragment', () => {
+  const browser = browserHarness('granted', false, SECRET_URL, 'https://www.orboro.net/search?q=SECRET#frag=SECRET');
+  browser.swap();
+  const [, , params] = browser.pageViews[0];
+  assert.equal(params.page_location, 'https://www.orboro.net/blog/post');
+  assert.equal(params.page_referrer, 'https://www.orboro.net/search');
+  assert.equal(params.page_path, '/blog/post');
+  const config = browser.window.dataLayer.find(event => event[0] === 'config');
+  assert.equal(config[2].page_location, 'https://www.orboro.net/blog/post');
+  assert.equal(config[2].page_referrer, 'https://www.orboro.net/search');
+  assert.ok(!JSON.stringify([...browser.window.dataLayer].map(e => [...e])).includes('SECRET'));
+  assert.ok(browser.scripts.every(script => !script.src.includes('SECRET')));
+});
+
+test('client navigation uses the previous minimized page as referrer', () => {
+  const browser = browserHarness('granted', false, SECRET_URL);
+  browser.swap();
+  browser.context.location.href = 'https://www.orboro.net/about?x=SECRET';
+  browser.context.location.pathname = '/about';
+  browser.swap();
+  const params = browser.pageViews[1][2];
+  assert.equal(params.page_location, 'https://www.orboro.net/about');
+  assert.equal(params.page_referrer, 'https://www.orboro.net/blog/post');
+});
+
+test('admin, login and auth routes never load or send analytics', () => {
+  for (const path of ['/admin', '/admin/', '/admin/content/1?token=SECRET', '/api/auth/login']) {
+    const browser = browserHarness('granted', false, `https://www.orboro.net${path}`);
+    browser.swap();
+    assert.equal(browser.scripts.length, 0, path);
+    assert.equal(browser.pageViews.length, 0, path);
+    assert.equal(browser.banner.hidden, true, path);
+    browser.click('granted');
+    assert.equal(browser.pageViews.length, 0, path);
+  }
+  const lookalike = browserHarness('granted', false, 'https://www.orboro.net/administration');
+  lookalike.swap();
+  assert.equal(lookalike.pageViews.length, 1);
+});
+
+test('login page is rendered without the consent banner', () => {
+  const login = readFileSync(new URL('../src/pages/admin/index.astro', import.meta.url), 'utf8');
+  assert.match(login, /<BaseLayout[^>]*analytics=\{false\}/);
+  const layout = readFileSync(new URL('../src/layouts/BaseLayout.astro', import.meta.url), 'utf8');
+  assert.match(layout, /analytics && <ConsentBanner \/>/);
 });

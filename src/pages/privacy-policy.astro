@@ -49,13 +49,14 @@ const recentPosts = posts.map((p) => ({
       treated as completely anonymous, even when reports show aggregate statistics.
     </p>
     <p>
-      Analytics loads on public pages and the administrator login screen only after
+      Analytics loads on public pages only after
       you accept analytics cookies in the consent banner. Declining keeps the analytics tag
       from loading. Your choice is saved in this browser's local storage until you change
       it or clear that storage. Without JavaScript, the analytics tag does not load. Page-view
-      events send the page title and full page URL, including query parameters. The site does
-      not deliberately send login email addresses or passwords as analytics fields.
-      The authenticated administration interface does not load the analytics tag.
+      events send the page title, the page address without any query parameters or fragment,
+      and the previous page address in the same reduced form. Google's tag can still collect
+      other browser details described above. The administrator login screen, the
+      administration interface and sign-in endpoints do not load the analytics tag.
     </p>
     <p>
       The site's tag configuration keeps advertising storage, advertising user data, and
