@@ -752,6 +752,8 @@ function isActive(url: string): boolean {
 
       .prose img {
         max-width: 100%;
+        /* With width/height attributes, reserves the box at the right ratio before load. */
+        height: auto;
         border-radius: var(--r-md,10px);
         border: 1px solid var(--line);
         margin: 1rem 0;

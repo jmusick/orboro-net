@@ -21,7 +21,7 @@ VALUES (
   '46cf5736-0cc3-410a-9de3-4c2ef9a68bdb',
   'path-of-exile-ii',
   'Path of Exile II',
-  '![Path of Exile 2](https://media.orboro.net/images/path-of-exile-ii-header.webp)
+  '<p><img src="https://media.orboro.net/images/path-of-exile-ii-header.webp" alt="Path of Exile 2" width="1800" height="600"></p>
 
 Tools and references for Path of Exile 2: a tier list of Atlas currency farming strategies, an Expedition rumours cheat sheet and a list of useful PoE2 sites. Aimed at players working on the Atlas endgame.
 

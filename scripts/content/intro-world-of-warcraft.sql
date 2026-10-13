@@ -21,7 +21,7 @@ VALUES (
   '665d329f-6c97-49c8-ac81-5dfaf1fe065e',
   'world-of-warcraft',
   'World of Warcraft',
-  '![World of Warcraft](https://media.orboro.net/images/world-of-warcraft-header.webp)
+  '<p><img src="https://media.orboro.net/images/world-of-warcraft-header.webp" alt="World of Warcraft" width="2172" height="724"></p>
 
 Original World of Warcraft tools and research, including a Spell Queue Window simulator and an analysis of Blizzard''s assisted combat rotations, plus a list of useful WoW sites and a profile of The Hidden Lodge raiding guild.
 

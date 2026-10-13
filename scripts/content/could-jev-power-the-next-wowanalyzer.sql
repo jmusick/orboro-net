@@ -158,7 +158,7 @@ Jev could help select an interpretation, but the analysis engine still has to es
   CAST(strftime('%s', '2026-09-30 16:00:00') AS INTEGER) * 1000,
   CAST(strftime('%s', '2026-09-30 16:00:00') AS INTEGER) * 1000,
   CAST(strftime('%s', '2026-09-30 16:00:00') AS INTEGER) * 1000,
-  'https://media.orboro.net/images/could-jev-power-the-next-wowanalyzer-header.png'
+  'https://media.orboro.net/images/could-jev-power-the-next-wowanalyzer-header.webp'
 )
 ON CONFLICT(slug) DO UPDATE SET
   title = excluded.title,
