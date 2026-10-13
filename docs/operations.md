@@ -25,6 +25,15 @@ The authenticated zone dashboard showed an active per-IP rule for exactly `/api/
 
 GitHub secret scanning and push protection are enabled. The API showed no Actions workflows, master branch protection or rulesets, and Dependabot security updates disabled. Reproducible release checks are tracked in [issue #14](https://github.com/jmusick/orboro-net/issues/14). The [dated audit issues](https://github.com/jmusick/orboro-net/issues?q=is%3Aissue%20label%3Aaudit%3A2026-10-10) are the current backlog.
 
+## PBKDF2 iteration limit — October 13, 2026
+
+For [issue #6](https://github.com/jmusick/orboro-net/issues/6), a throwaway Worker (`orboro-pbkdf2-bench`, no bindings, deleted afterwards) was deployed to the account's workers.dev subdomain on Workers Paid with compatibility date `2026-04-05` and Wrangler 4.148.0. It ran one `deriveBits` PBKDF2-HMAC-SHA256 call per request:
+
+- 100,000 iterations succeeded; `wrangler tail` reported 25, 25 and 33 ms CPU across three requests.
+- 100,001, 200,000, 600,000 and 1,000,000 iterations each failed immediately with `NotSupportedError: Pbkdf2 failed: iteration counts above 100000 are not supported`.
+
+The OWASP figure of 600,000 is therefore not deployable. [cloudflare/workerd#7550](https://github.com/cloudflare/workerd/pull/7550), which would raise the default cap to 1,000,000, was still open. The site keeps 100,000 and is ready to migrate: raise the bounds in `src/lib/passwords.js` after re-measuring, and each account is rehashed on its next sign-in.
+
 ## Decision history
 
 These rationales were consolidated from earlier project notes; they are historical, not new deployment changes.

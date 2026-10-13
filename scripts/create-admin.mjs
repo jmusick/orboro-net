@@ -5,49 +5,39 @@
  *
  * Pass --local for the local D1 simulation or --remote for production. The
  * password is read from the environment so it stays out of shell history and
- * the process list. The hash matches `hashPassword` in src/lib/auth.ts.
+ * the process list. It must meet the rules in src/lib/passwords.js and is
+ * screened against known breaches (scripts/lib/pwned-passwords.mjs) unless
+ * --skip-breach-check is given.
  */
-import { spawnSync } from "node:child_process";
-import { randomUUID, pbkdf2Sync, randomBytes } from "node:crypto";
-import fs from "node:fs";
-import os from "node:os";
-import path from "node:path";
-
-const ITERATIONS = 100_000;
-const MIN_PASSWORD_LENGTH = 10;
+import { randomUUID } from "node:crypto";
+import { MAX_PASSWORD_CODE_POINTS, MIN_PASSWORD_CODE_POINTS, hashPassword } from "../src/lib/passwords.js";
+import { executeD1, quote } from "./lib/d1.mjs";
+import { SKIP_BREACH_CHECK, newPasswordProblem } from "./lib/new-password.mjs";
 
 const target = process.argv.includes("--remote") ? "--remote" : process.argv.includes("--local") ? "--local" : null;
 const email = (process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
 const password = process.env.ADMIN_PASSWORD ?? "";
 
-if (!target || !email.includes("@") || password.length < MIN_PASSWORD_LENGTH) {
+if (!target || !email.includes("@")) {
   console.error(
-    "Usage: ADMIN_EMAIL=<email> ADMIN_PASSWORD=<at least 10 characters> npm run admin:create -- --local|--remote",
+    `Usage: ADMIN_EMAIL=<email> ADMIN_PASSWORD=<${MIN_PASSWORD_CODE_POINTS}-${MAX_PASSWORD_CODE_POINTS} characters> npm run admin:create -- --local|--remote [${SKIP_BREACH_CHECK}]`,
   );
   process.exit(1);
 }
 
-const salt = randomBytes(16);
-const hash = pbkdf2Sync(password, salt, ITERATIONS, 32, "sha256");
-const passwordHash = `pbkdf2$${ITERATIONS}$${salt.toString("base64")}$${hash.toString("base64")}`;
-const quote = (value) => `'${value.replaceAll("'", "''")}'`;
+const problem = await newPasswordProblem({ email, password });
+if (problem) {
+  console.error(problem);
+  process.exit(1);
+}
 
 // A single conditional INSERT is atomic, so this never adds a second admin.
 const sql = `INSERT INTO users (id, email, password_hash, role, created_at)
-SELECT ${quote(randomUUID())}, ${quote(email)}, ${quote(passwordHash)}, 'admin', ${Date.now()}
+SELECT ${quote(randomUUID())}, ${quote(email)}, ${quote(await hashPassword(password))}, 'admin', ${Date.now()}
 WHERE NOT EXISTS (SELECT 1 FROM users);
 SELECT COUNT(1) AS users FROM users;
 `;
 
-const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "orboro-admin-")), "create-admin.sql");
-fs.writeFileSync(file, sql, { mode: 0o600 });
-try {
-  const result = spawnSync("npx", ["wrangler", "d1", "execute", "DB", target, `--file=${file}`], {
-    stdio: "inherit",
-    shell: process.platform === "win32",
-  });
-  if (result.status !== 0) process.exit(result.status ?? 1);
-} finally {
-  fs.rmSync(path.dirname(file), { recursive: true, force: true });
-}
+const status = executeD1(target, sql, "create-admin");
+if (status !== 0) process.exit(status);
 console.log("Done. A users count of 1 means an admin exists; if one already existed, nothing was inserted.");

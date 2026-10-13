@@ -44,10 +44,10 @@ These steps run the site locally with simulated D1 and R2. Nothing touches a Clo
    npm run d1:migrate:local
    ```
 
-3. Create the first admin. There is no setup page; the script inserts a user only while the users table is empty:
+3. Create the first admin. There is no setup page; the script inserts a user only while the users table is empty. The password must be 15 to 128 characters (counted as Unicode code points, never trimmed or truncated) and must not contain the site name or the email's name. It is also screened against known breaches through the [Pwned Passwords](https://haveibeenpwned.com/API/v3#PwnedPasswords) range API, which receives only the first five characters of the password's SHA-1. If that service can't be reached the script refuses; `--skip-breach-check` proceeds without screening:
 
    ```bash
-   ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='at least 10 characters' npm run admin:create -- --local
+   ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='15 to 128 characters' npm run admin:create -- --local
    ```
 
 4. Start local dev with the full Cloudflare runtime, then open `http://127.0.0.1:8787/admin`:
@@ -102,7 +102,7 @@ Generate a new IndexNow key rather than reusing the published one. The SQL files
    ```
 
    ```bash
-   ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='at least 10 characters' npm run admin:create -- --remote
+   ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='15 to 128 characters' npm run admin:create -- --remote
    ```
 
 4. Deploy:
@@ -183,7 +183,7 @@ If D1 is ever emptied or restored without a user, no one can sign in. Create a n
 If the password or a signed-in device may be compromised, reset the password and revoke every session in one step:
 
 ```bash
-ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='at least 10 characters' npm run admin:reset-password -- --remote
+ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='15 to 128 characters' npm run admin:reset-password -- --remote
 ```
 
 It reports `matching_users` (0 means no account has that email) and `sessions_remaining`, which should be 0. To sign an account out everywhere without changing the password, use `npm run sessions:revoke -- --email you@example.com --remote` (or `--all` for every account), or **Sign out all sessions** on the admin dashboard. Without `--remote`, `sessions:revoke` runs against local D1.
@@ -210,7 +210,7 @@ It reports `matching_users` (0 means no account has that email) and `sessions_re
 
 ## Security and privacy
 
-- Admin login is password-only, with in-Worker throttling and no MFA or self-service password recovery. Sessions last an absolute 14 days from sign-in, with no idle timeout. D1 stores only a SHA-256 digest of each session token, and over HTTPS the cookie is `__Host-orboro_session`.
+- Admin login is password-only, with in-Worker throttling and no MFA or self-service password recovery. Passwords are stored as PBKDF2-HMAC-SHA256 at 100,000 iterations, the most Cloudflare's deployed runtime accepts; a later increase rehashes each account on its next sign-in. Sessions last an absolute 14 days from sign-in, with no idle timeout. D1 stores only a SHA-256 digest of each session token, and over HTTPS the cookie is `__Host-orboro_session`.
 - Author Markdown is sanitized, inline JSON is encoded for HTML, and a nonce-based CSP is enforced. Inline style attributes are blocked. Publishing is a trusted-admin capability; these controls don't make it safe to publish untrusted content.
 - Google Analytics loads only after acceptance in `ConsentBanner.astro`, and never in the authenticated admin layout. Without acceptance or JavaScript the Google tag is never fetched. The choice is stored in localStorage as `orboro-analytics-consent`, and footer **Cookie preferences** reopens the banner. Withdrawing consent disables analytics, clears GA cookies and reloads.
 - Consent grants analytics storage only and keeps advertising storage, advertising user data and ad personalization denied.

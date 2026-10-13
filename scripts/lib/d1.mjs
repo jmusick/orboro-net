@@ -1,22 +1,11 @@
 // Shared helpers for operator scripts that run SQL against D1 through Wrangler.
 import { spawnSync } from "node:child_process";
-import { pbkdf2Sync, randomBytes } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-export const PASSWORD_ITERATIONS = 100_000;
-export const MIN_PASSWORD_LENGTH = 10;
-
 /** SQL string literal. */
 export const quote = (value) => `'${String(value).replaceAll("'", "''")}'`;
-
-/** Same format as `hashPassword` in src/lib/auth.ts. */
-export function hashPassword(password) {
-  const salt = randomBytes(16);
-  const hash = pbkdf2Sync(password, salt, PASSWORD_ITERATIONS, 32, "sha256");
-  return `pbkdf2$${PASSWORD_ITERATIONS}$${salt.toString("base64")}$${hash.toString("base64")}`;
-}
 
 /**
  * Writes `sql` to a private temp file and runs it with `wrangler d1 execute`.

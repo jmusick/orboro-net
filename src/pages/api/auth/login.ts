@@ -1,5 +1,12 @@
 import type { APIRoute } from "astro";
-import { createSession, setSessionCookie, verifyDummyPassword, verifyPassword } from "../../../lib/auth";
+import {
+  createSession,
+  hashPassword,
+  passwordNeedsRehash,
+  setSessionCookie,
+  verifyDummyPassword,
+  verifyPassword,
+} from "../../../lib/auth";
 import { ensureDB } from "../../../lib/db";
 import {
   MAX_EMAIL_LENGTH,
@@ -59,6 +66,21 @@ export const POST: APIRoute = async ({ request, locals, cookies, url, redirect }
   const ok = user ? await verifyPassword(password, user.password_hash) : await verifyDummyPassword(password);
   if (!user || !ok) {
     return redirect("/admin?error=invalid");
+  }
+
+  // Work-factor migration: a hash made with fewer iterations than new hashes
+  // use is replaced now that the password is known. The WHERE on the old value
+  // keeps a concurrent reset from being overwritten. A failure leaves the old
+  // hash, which still verifies.
+  if (passwordNeedsRehash(user.password_hash)) {
+    try {
+      await db
+        .prepare("UPDATE users SET password_hash = ? WHERE id = ? AND password_hash = ?")
+        .bind(await hashPassword(password), user.id, user.password_hash)
+        .run();
+    } catch {
+      // Retried on the next sign-in.
+    }
   }
 
   try {
