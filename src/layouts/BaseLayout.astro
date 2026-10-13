@@ -9,9 +9,9 @@ import { listNavItems } from "../lib/content";
 import { jsonForHtml } from "../lib/json";
 import { ClientRouter } from "astro:transitions";
 // Self-hosted so the CSP's `font-src 'self'` holds — no Google Fonts request.
-import "@fontsource-variable/schibsted-grotesk";
-import "@fontsource-variable/source-sans-3";
-import "@fontsource-variable/source-sans-3/wght-italic.css";
+import "@fontsource-variable/unbounded";
+import "@fontsource-variable/hanken-grotesk";
+import "@fontsource-variable/hanken-grotesk/wght-italic.css";
 import "highlight.js/styles/github-dark.css";
 
 interface Props {
@@ -40,7 +40,8 @@ const ogAlt = usingDefaultOg ? "Orboro.net logo on a dark indigo background" : o
 const navItems = await listNavItems(Astro.locals);
 const pathname = new URL(Astro.request.url).pathname;
 const nonce = Astro.locals.nonce;
-const hasHeaderFeature = Astro.slots.has("headerFeature");
+// A page's `hero` slot renders full-bleed artwork behind the site header.
+const hasHero = Astro.slots.has("hero");
 
 // Build nav tree (unlimited depth)
 type NavNode = (typeof navItems)[0] & { children: NavNode[] };
@@ -76,12 +77,6 @@ const navTree = buildNavTree(navItems);
 function isActive(url: string): boolean {
   if (url === "/") return pathname === "/";
   return pathname === url || pathname.startsWith(url + "/");
-}
-
-function nodeIcon(node: NavNode): string {
-  if (node.url.includes("about")) return "user";
-  if (node.children.length > 0) return "compass";
-  return "file-text";
 }
 ---
 
@@ -156,13 +151,9 @@ function nodeIcon(node: NavNode): string {
         margin: 0;
         font-family: var(--font-ui);
         font-size: 1.0625rem;
+        line-height: 1.55;
         color: var(--text);
-        /* One faint nebula behind the header, echoing the header art. */
-        background:
-          radial-gradient(ellipse 70% 45% at 30% 0%, rgb(76 70 170 / 22%) 0%, transparent 100%),
-          var(--bg);
-        background-repeat: no-repeat;
-        background-attachment: fixed;
+        background: var(--bg);
         -webkit-font-smoothing: antialiased;
       }
       a {
@@ -187,17 +178,26 @@ function nodeIcon(node: NavNode): string {
         outline: 2px solid var(--accent);
         outline-offset: 2px;
       }
-      .container {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 0 1.2rem 1.2rem;
+      /* ── Masthead: header, plus optional full-bleed hero art behind it ── */
+      .masthead {
+        position: relative;
+        isolation: isolate;
       }
-      header {
+      .masthead:not(.masthead--hero) .site-header {
+        border-bottom: 1px solid var(--line);
+      }
+      .site-header {
+        position: relative;
+        z-index: 10;
+      }
+      .site-header__inner {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 2rem;
-        padding: 1.5rem 0;
+        max-width: var(--page-max);
+        margin: 0 auto;
+        padding: 1.25rem var(--gutter);
       }
       .header-logo {
         display: block;
@@ -206,8 +206,8 @@ function nodeIcon(node: NavNode): string {
         line-height: 0;
       }
       .header-logo img {
-        width: 240px;
-        height: auto;
+        width: auto;
+        height: 34px;
       }
       .nav-toggle {
         display: none;
@@ -215,11 +215,11 @@ function nodeIcon(node: NavNode): string {
         justify-content: center;
         align-items: center;
         gap: 4px;
-        width: 42px;
-        height: 38px;
-        background: var(--surface);
+        width: 44px;
+        height: 44px;
+        background: rgb(from var(--bg) r g b / 55%);
         border: 1px solid var(--line-strong);
-        border-radius: var(--r-md,10px);
+        border-radius: var(--r-pill,999px);
         cursor: pointer;
         flex-shrink: 0;
       }
@@ -242,34 +242,47 @@ function nodeIcon(node: NavNode): string {
       }
       #site-nav {
         display: flex;
-        align-items: stretch;
-        gap: 0;
-        background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: var(--r-md,10px);
-        padding: 0.25rem;
-        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.25rem;
       }
       #site-nav a {
         display: flex;
         align-items: center;
         gap: 0.4rem;
+        min-height: 44px;
         border-radius: var(--r-sm,6px);
-        padding: 0.55rem 1.35rem;
+        padding: 0 0.85rem;
         text-decoration: none;
         transition: color 0.18s ease, background 0.18s ease;
-        font-weight: 500;
+        font-weight: 600;
         font-size: 0.95rem;
-        color: var(--muted);
+        color: var(--text-soft);
         white-space: nowrap;
       }
       #site-nav a:hover {
-        color: var(--text);
-        background: rgb(255 255 255 / 5%);
+        color: #fff;
       }
+      /* The current section reads white with an accent underline, so it
+         never depends on color alone. */
       #site-nav a.active {
-        color: var(--accent);
-        background: rgb(from var(--accent) r g b / 10%);
+        color: #fff;
+        text-decoration: underline;
+        text-decoration-color: var(--accent);
+        text-decoration-thickness: 2px;
+        text-underline-offset: 0.5rem;
+      }
+      #site-nav a.nav-support {
+        margin-left: 0.75rem;
+        padding: 0 1.25rem;
+        border-radius: var(--r-pill,999px);
+        background: var(--accent);
+        color: var(--accent-ink);
+        font-weight: 700;
+        transition: background 0.18s ease;
+      }
+      #site-nav a.nav-support:hover {
+        background: var(--accent-hover);
+        color: var(--accent-ink);
       }
       .nav-dropdown-wrapper {
         position: relative;
@@ -285,13 +298,11 @@ function nodeIcon(node: NavNode): string {
       }
       #site-nav .nav-dropdown-wrapper:hover > a,
       .nav-dropdown-wrapper:hover > .nav-caret {
-        color: var(--text);
-        background: rgb(255 255 255 / 5%);
+        color: #fff;
+        background: rgb(255 255 255 / 6%);
       }
-      #site-nav .nav-dropdown-wrapper > a.active,
       .nav-dropdown-wrapper > a.active + .nav-caret {
-        color: var(--accent);
-        background: rgb(from var(--accent) r g b / 10%);
+        color: #fff;
       }
       .nav-dropdown-wrapper > a::after {
         content: none;
@@ -320,7 +331,7 @@ function nodeIcon(node: NavNode): string {
         background: transparent;
         border: 0;
         border-radius: 0 var(--r-sm,6px) var(--r-sm,6px) 0;
-        color: var(--muted);
+        color: var(--text-soft);
         cursor: pointer;
         transition: background 0.18s ease, color 0.18s ease;
       }
@@ -414,23 +425,18 @@ function nodeIcon(node: NavNode): string {
         z-index: 51;
         box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
       }
-      main {
-        background: var(--surface);
-        border: 1px solid var(--line);
-        border-radius: var(--r-lg,16px);
-        padding: 2rem;
+      /* Content sits directly on the page ground; sections bring their own
+         surfaces. The width is the same on every page. */
+      .site-main {
+        max-width: var(--page-max);
+        margin: 0 auto;
+        padding: var(--space-10) var(--gutter) var(--space-24);
       }
-      main:focus {
+      .site-main:focus {
         outline: none;
       }
-      main.main-with-feature { background: transparent; border: 0; padding: 0; }
-      .main-panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 2rem; }
-      @media (max-width: 768px) { .main-panel { padding: 1.5rem; } }
-      section + section {
-        margin-top: 2.5rem;
-      }
-      footer {
-        /* styles moved to Footer.astro */
+      .masthead--hero + .site-main {
+        padding-top: var(--space-6);
       }
       ul {
         padding-left: 1.2rem;
@@ -447,30 +453,37 @@ function nodeIcon(node: NavNode): string {
       .mono {
         font-family: var(--font-code);
       }
-      /* Type scale: major third (1.25) from the 17px body. */
+      /* Type scale: major third (1.25) from the 17px body. Unbounded is wide,
+         so display sizes sit a step below what a narrow face would use. */
       h1 {
-        font-size: 2.6rem;
-        line-height: 1.1;
+        font-family: var(--font-display);
+        font-size: clamp(2rem, 1.4rem + 2.2vw, 3.25rem);
+        line-height: 1.08;
         letter-spacing: -0.02em;
-        margin: 0 0 1rem;
-        font-weight: 800;
-      }
-      h2 {
-        font-size: 1.66rem;
-        line-height: 1.2;
-        letter-spacing: -0.01em;
         margin: 0 0 1rem;
         font-weight: 700;
       }
+      h2 {
+        font-family: var(--font-display);
+        font-size: 1.6rem;
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+        margin: 0 0 1rem;
+        font-weight: 600;
+      }
       h3 {
-        font-size: 1.33rem;
+        font-size: 1.25rem;
         line-height: 1.3;
         margin: 0 0 0.75rem;
-        font-weight: 650;
+        font-weight: 700;
       }
       h1, h2, h3 {
         color: var(--text);
         text-wrap: balance;
+      }
+      /* Widget headings nested inside article content keep the UI face. */
+      .prose * h2 {
+        font-family: var(--font-ui);
       }
       p {
         line-height: 1.6;
@@ -489,10 +502,7 @@ function nodeIcon(node: NavNode): string {
          coarse-pointer devices (e.g. touchscreen desktops) still get the
          horizontal nav with tap dropdowns. */
       @media (max-width: 768px), ((pointer: coarse) and (max-width: 1024px)) {
-        main {
-          padding: 1.5rem;
-        }
-        header {
+        .site-header__inner {
           flex-wrap: wrap;
           justify-content: space-between;
           gap: 0.75rem;
@@ -505,6 +515,10 @@ function nodeIcon(node: NavNode): string {
           width: 100%;
           flex-direction: column;
           align-items: stretch;
+          padding: 0.5rem;
+          background: var(--surface);
+          border: 1px solid var(--line);
+          border-radius: var(--r-lg,16px);
         }
         #site-nav.nav-open {
           display: flex;
@@ -512,6 +526,10 @@ function nodeIcon(node: NavNode): string {
         #site-nav a {
           width: 100%;
           white-space: normal;
+        }
+        #site-nav a.nav-support {
+          margin: 0.5rem 0 0;
+          justify-content: center;
         }
         .nav-dropdown-wrapper,
         .nav-flyout-item {
@@ -547,11 +565,8 @@ function nodeIcon(node: NavNode): string {
           border: none;
           padding-left: 0.75rem;
         }
-        h1 {
-          font-size: 2rem;
-        }
         h2 {
-          font-size: 1.4rem;
+          font-size: 1.35rem;
         }
       }
 
@@ -559,21 +574,28 @@ function nodeIcon(node: NavNode): string {
       .prose { line-height: 1.7; }
       .prose p { margin: 0 0 1rem; }
 
-      /* Running text gets Source Sans 3 and a readable measure. Only direct
-         children, so shortcode widgets keep the UI face and full width. */
+      /* Running text gets the reading size and a readable measure. Only direct
+         children, so shortcode widgets keep their own sizing and full width. */
       .prose > p,
       .prose > ul,
       .prose > ol,
       .prose > blockquote {
         font-family: var(--font-read);
-        font-size: 1.125rem;
-        line-height: 1.75;
+        font-size: 1.1875rem;
+        line-height: 1.7;
         max-width: var(--measure);
       }
       .prose > h2,
       .prose > h3,
       .prose > h4 {
         max-width: var(--measure);
+      }
+      .prose > h2 {
+        font-family: var(--font-display);
+        font-size: 1.6rem;
+        font-weight: 600;
+        line-height: 1.25;
+        scroll-margin-top: var(--space-6);
       }
 
       .prose h2 {
@@ -836,47 +858,49 @@ function nodeIcon(node: NavNode): string {
   </head>
   <body>
     <a href="#main-content" class="skip-link">Skip to content</a>
-    <div class="container">
-      <header>
-        <a href="/" class="header-logo">
-          <img src="/images/logo-480.png" alt="Orboro.net" width="480" height="115" />
-        </a>
-        <button
-          type="button"
-          class="nav-toggle"
-          id="nav-toggle"
-          aria-label="Toggle navigation menu"
-          aria-expanded="false"
-          aria-controls="site-nav"
-        >
-          <span class="nav-toggle-bar" /><span class="nav-toggle-bar" /><span class="nav-toggle-bar" />
-        </button>
-        <nav id="site-nav" aria-label="Main">
-          <a href="/" class={isActive("/") ? "active" : ""}><Icon name="home" size={15} />Home</a>
-          <a href="/blog" class={isActive("/blog") ? "active" : ""}><Icon name="file-text" size={15} />Blog</a>
-          {navTree.map(node => {
-            if (node.children.length > 0) {
-              const dropdownId = `nav-dropdown-${node.id}`;
-              return (
-                <div class="nav-dropdown-wrapper">
-                  <a href={node.url} class={isActive(node.url) ? "active" : ""}><Icon name={nodeIcon(node)} size={15} />{node.label}</a>
-                  <button type="button" class="nav-caret" aria-label={`Toggle ${node.label} submenu`} aria-expanded="false" aria-controls={dropdownId} />
-                  <div class="nav-dropdown" id={dropdownId} set:html={renderDropdownItems(node.children)} />
-                </div>
-              );
-            }
-            return <a href={node.url} class={isActive(node.url) ? "active" : ""}><Icon name={nodeIcon(node)} size={15} />{node.label}</a>;
-          })}
-          <a href="https://www.patreon.com/cw/Orboro" target="_blank" rel="noopener noreferrer"><Icon name="patreon" size={15} filled />Support Me</a>
-        </nav>
+    <div class:list={["masthead", hasHero && "masthead--hero"]}>
+      <header class="site-header">
+        <div class="site-header__inner">
+          <a href="/" class="header-logo">
+            <img src="/images/logo-480.png" alt="Orboro.net" width="480" height="115" />
+          </a>
+          <button
+            type="button"
+            class="nav-toggle"
+            id="nav-toggle"
+            aria-label="Toggle navigation menu"
+            aria-expanded="false"
+            aria-controls="site-nav"
+          >
+            <span class="nav-toggle-bar" /><span class="nav-toggle-bar" /><span class="nav-toggle-bar" />
+          </button>
+          <nav id="site-nav" aria-label="Main">
+            <a href="/" class={isActive("/") ? "active" : ""}>Home</a>
+            <a href="/blog" class={isActive("/blog") ? "active" : ""}>Blog</a>
+            {navTree.map(node => {
+              if (node.children.length > 0) {
+                const dropdownId = `nav-dropdown-${node.id}`;
+                return (
+                  <div class="nav-dropdown-wrapper">
+                    <a href={node.url} class={isActive(node.url) ? "active" : ""}>{node.label}</a>
+                    <button type="button" class="nav-caret" aria-label={`Toggle ${node.label} submenu`} aria-expanded="false" aria-controls={dropdownId} />
+                    <div class="nav-dropdown" id={dropdownId} set:html={renderDropdownItems(node.children)} />
+                  </div>
+                );
+              }
+              return <a href={node.url} class={isActive(node.url) ? "active" : ""}>{node.label}</a>;
+            })}
+            <a class="nav-support" href="https://www.patreon.com/cw/Orboro" target="_blank" rel="noopener noreferrer"><Icon name="patreon" size={14} filled />Support</a>
+          </nav>
+        </div>
       </header>
-      <main id="main-content" tabindex="-1" class:list={[hasHeaderFeature && "main-with-feature"]}>
-        <slot name="headerFeature" />
-        {hasHeaderFeature ? <div class="main-panel"><slot /></div> : <slot />}
-      </main>
-      <Footer />
-      {analytics && <ConsentBanner />}
+      {hasHero && <slot name="hero" />}
     </div>
+    <main id="main-content" class="site-main" tabindex="-1">
+      <slot />
+    </main>
+    <Footer links={navTree.map(node => ({ label: node.label, url: node.url }))} />
+    {analytics && <ConsentBanner />}
     <script is:inline nonce={nonce}>
       function styleNodeTables() {
         document.querySelectorAll('.prose table').forEach(function(table) {

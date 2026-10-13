@@ -9,6 +9,7 @@ import {
 } from "./content-writes";
 import { ensureDB, getDB } from "./db";
 import { queryBlogPage, type BlogFilters, type BlogPage } from "./blog-listing";
+import type { CoverCandidate } from "./topics";
 
 export { excerptFromMarkdown } from "./excerpt";
 
@@ -100,18 +101,18 @@ export async function getBlogPage(locals: App.Locals, page: number, filters: Blo
   return queryBlogPage(db, { page, filters });
 }
 
-export type PostSummary = Pick<ContentRecord, 'slug' | 'title' | 'publishedAt' | 'createdAt'>;
+export type PostSummary = Pick<ContentRecord, 'slug' | 'title' | 'publishedAt' | 'createdAt' | 'featuredImageUrl'>;
 
-// Sidebars and adjacent-post links never need article bodies or image metadata.
+// Sidebars and adjacent-post links never need article bodies.
 export async function listPostSummaries(locals: App.Locals, limit = 5): Promise<PostSummary[]> {
   const db = getDB(locals);
   if (!db) return [];
   const result = await db.prepare(
-    `SELECT slug, title, published_at, created_at FROM content
+    `SELECT slug, title, published_at, created_at, featured_image_url FROM content
      WHERE page_type = 'post' AND status = 'published'
      ORDER BY COALESCE(published_at, created_at) DESC LIMIT ?`,
-  ).bind(limit).all<{ slug: string; title: string; published_at: number | null; created_at: number }>();
-  return (result.results ?? []).map(row => ({ slug: row.slug, title: row.title, publishedAt: row.published_at, createdAt: row.created_at }));
+  ).bind(limit).all<{ slug: string; title: string; published_at: number | null; created_at: number; featured_image_url: string | null }>();
+  return (result.results ?? []).map(row => ({ slug: row.slug, title: row.title, publishedAt: row.published_at, createdAt: row.created_at, featuredImageUrl: row.featured_image_url }));
 }
 
 export async function getPublishedBySlugAndType(
@@ -241,6 +242,24 @@ export async function listCategoriesWithPostCounts(
     createdAt: row.created_at,
     postCount: row.post_count,
   }));
+}
+
+/** Post artwork per category, newest first, for topic banners. */
+export async function listCategoryCoverCandidates(locals: App.Locals): Promise<CoverCandidate[]> {
+  const db = getDB(locals);
+  if (!db) return [];
+  const result = await db
+    .prepare(
+      `SELECT cc.category_id, c.featured_image_url
+       FROM content c
+       INNER JOIN content_categories cc ON cc.content_id = c.id
+       WHERE c.status = 'published' AND c.page_type = 'post'
+         AND c.featured_image_url IS NOT NULL AND c.featured_image_url <> ''
+       ORDER BY COALESCE(c.published_at, c.created_at) DESC
+       LIMIT 200`
+    )
+    .all<{ category_id: string; featured_image_url: string }>();
+  return (result.results ?? []).map((row) => ({ categoryId: row.category_id, imageUrl: row.featured_image_url }));
 }
 
 export async function getCategoryById(locals: App.Locals, id: string): Promise<CategoryRecord | null> {

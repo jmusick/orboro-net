@@ -1,0 +1,59 @@
+---
+import { topicTone } from "../lib/topics";
+interface Props {
+  slug: string;
+  title: string;
+  image?: string | null;
+  dateIso: string;
+  dateLabel: string;
+  excerpt?: string;
+  /** First category, shown as the card's kicker. Its slug (or name) sets the tone. */
+  category?: { name: string; slug?: string } | null;
+  headingLevel?: "h2" | "h3";
+}
+const { slug, title, image, dateIso, dateLabel, excerpt, category, headingLevel = "h3" } = Astro.props;
+const Heading = headingLevel;
+---
+<article class="story" data-tone={topicTone(category?.slug ?? category?.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"))}>
+  <a class="story__art" href={`/blog/${slug}`} tabindex="-1" aria-hidden="true">
+    {image ? <img src={image} alt="" loading="lazy" /> : <span class="story__plain" />}
+  </a>
+  <div class="story__body">
+    <p class="story__meta">
+      {category && <span class="story__kicker">{category.name}</span>}
+      <time datetime={dateIso}>{dateLabel}</time>
+    </p>
+    <Heading class="story__title"><a href={`/blog/${slug}`}>{title}</a></Heading>
+    {excerpt && <p class="story__excerpt">{excerpt}</p>}
+  </div>
+</article>
+<style>
+  .story { --tone: var(--accent); display: flex; flex-direction: column; gap: 1.1rem; min-width: 0; }
+  .story[data-tone="wow"] { --tone: var(--game-wow); }
+  .story[data-tone="poe"] { --tone: var(--game-poe); }
+
+  .story__art { display: block; aspect-ratio: 16 / 9; border-radius: var(--r-lg,16px); overflow: hidden; background: var(--surface); border: 1px solid var(--line); }
+  .story__art img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
+  .story:hover .story__art img { transform: scale(1.04); }
+  .story__plain { display: block; width: 100%; height: 100%; background: radial-gradient(circle at 75% 20%, rgb(from var(--tone) r g b / 22%), transparent 60%), var(--surface-2); }
+
+  .story__body { display: flex; flex-direction: column; gap: var(--space-2); }
+  .story__meta { display: flex; flex-wrap: wrap; gap: 0.25rem 0.9rem; margin: 0; font-size: 0.85rem; color: var(--muted); }
+  .story__kicker { color: var(--tone); font-weight: 700; }
+
+  .story__title { margin: 0; font-family: var(--font-display); font-size: 1.2rem; font-weight: 600; line-height: 1.3; }
+  .story__title a { color: var(--text); text-decoration: none; transition: color var(--transition-fast); }
+  .story__title a:hover { color: var(--accent); }
+
+  .story__excerpt {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+    margin: 0;
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+</style>

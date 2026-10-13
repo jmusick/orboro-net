@@ -3,7 +3,7 @@ import { renderMarkdown } from "../../lib/markdown";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SidebarLayout from "../../components/SidebarLayout.astro";
 import Sidebar from "../../components/Sidebar.astro";
-import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import PageHeader from "../../components/PageHeader.astro";
 import { getPublishedBySlugAndType, listPostSummaries, listCategoriesWithPostCounts, listNavItems } from "../../lib/content";
 import { breadcrumbList, classifyPage, graphOf, pageNode, pageTrail, withHome } from "../../lib/structured-data";
 import { processShortcodes } from "../../lib/shortcodes";
@@ -79,14 +79,11 @@ const structuredData = graphOf(
 ---
 
 <BaseLayout title={`${page.title} | Orboro.net`} description={description} ogType="article" ogImage={absoluteImageUrl} ogImageAlt={absoluteImageUrl ? `Featured image for ${page.title}` : undefined} structuredData={structuredData}>
+  <PageHeader slot="hero" title={page.title} trail={trail} image={page.featuredImageUrl}>
+    {updated && <span>Updated {updated}</span>}
+  </PageHeader>
   <SidebarLayout sidebar={!hasWidgets}>
     <article class="page-content">
-      <Breadcrumbs trail={trail} />
-      <h1>{page.title}</h1>
-      {updated && <p class="meta">Updated {updated}</p>}
-      {page.featuredImageUrl && (
-        <img class="hero" src={page.featuredImageUrl} alt="" />
-      )}
       <div class="prose" set:html={html} />
     </article>
     <Sidebar slot="sidebar" categories={categories} recentPosts={recentPosts} />
@@ -99,22 +96,4 @@ const structuredData = graphOf(
     max-width: none;
   }
 
-  /* Same columns as a blog post, so text pages and posts line up. */
-
-  .meta {
-    color: var(--muted);
-    font-size: 0.9rem;
-    margin: -0.5rem 0 1.5rem;
-  }
-
-  /* A fixed 3:1 box (the header art's usual ratio) reserves space before the image loads. */
-  .hero {
-    display: block;
-    width: 100%;
-    aspect-ratio: 3 / 1;
-    max-height: 360px;
-    object-fit: cover;
-    border-radius: var(--r-md,10px);
-    margin-bottom: 1.5rem;
-  }
 </style>

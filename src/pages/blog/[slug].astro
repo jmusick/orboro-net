@@ -1,8 +1,10 @@
 ---
 import { renderMarkdown } from "../../lib/markdown";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-import SidebarLayout from "../../components/SidebarLayout.astro";
 import Sidebar from "../../components/Sidebar.astro";
+import PageHeader from "../../components/PageHeader.astro";
+import TopicChip from "../../components/TopicChip.astro";
+import Icon from "../../components/Icon.astro";
 import {
   getPublishedBySlugAndType,
   listPostSummaries,
@@ -10,9 +12,10 @@ import {
   excerptFromMarkdown,
   listCategoriesWithPostCounts,
 } from "../../lib/content";
-import Breadcrumbs from "../../components/Breadcrumbs.astro";
 import { processShortcodes } from "../../lib/shortcodes";
 import { breadcrumbList, graphOf } from "../../lib/structured-data";
+import { addHeadingIds } from "../../lib/toc";
+import { PATREON_URL } from "../../lib/profiles";
 
 function estimateReadingMinutes(markdown: string): number {
   const words = markdown
@@ -41,7 +44,7 @@ const [categories, postCategories, allPosts] = await Promise.all([
 
 const recentPosts = allPosts
   .filter((p) => p.slug !== post.slug)
-  .slice(0, 5)
+  .slice(0, 3)
   .map((p) => ({
     slug: p.slug,
     title: p.title,
@@ -51,8 +54,15 @@ const recentPosts = allPosts
 const currentIndex = allPosts.findIndex((p) => p.slug === post.slug);
 const newerPost = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
 const olderPost = currentIndex >= 0 && currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : null;
+const adjacent = [
+  olderPost && { post: olderPost, label: "Older", rel: "prev" },
+  newerPost && { post: newerPost, label: "Newer", rel: "next" },
+].filter((item) => !!item);
 
-const html = await processShortcodes(renderMarkdown(post.markdown), Astro.locals.nonce);
+// Heading ids are added before shortcodes expand, so only author headings are listed.
+const { html: articleHtml, headings } = addHeadingIds(renderMarkdown(post.markdown));
+const html = await processShortcodes(articleHtml, Astro.locals.nonce);
+const showToc = headings.length >= 3;
 
 const updated = new Date(post.updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
@@ -103,155 +113,294 @@ const structuredData = graphOf(blogPosting, breadcrumbList(trail, BASE));
   ogImageAlt={absoluteImageUrl ? `Featured image for ${post.title}` : undefined}
   structuredData={structuredData}
 >
-  <SidebarLayout>
-    <article>
-      <Breadcrumbs trail={trail} />
-      <h1>{post.title}</h1>
-      <p class="meta">
-        <span>By JD</span>
-        <span>Updated <time datetime={updatedIso}>{updated}</time></span>
-        <span>{readingMinutes} min read</span>
-      </p>
-      {post.featuredImageUrl && (
-        <img class="hero" src={post.featuredImageUrl} alt="" />
+  <PageHeader slot="hero" title={post.title} trail={trail} image={post.featuredImageUrl} variant="article">
+    <span>By JD</span>
+    <span>Updated <time datetime={updatedIso}>{updated}</time></span>
+    <span>{readingMinutes} min read</span>
+    {postCategories.length > 0 && (
+      <span class="chips">
+        {postCategories.map((cat) => <TopicChip name={cat.name} slug={cat.slug} />)}
+      </span>
+    )}
+  </PageHeader>
+
+  <div class="post-layout">
+    <article class="post-body">
+      {showToc && (
+        <details class="toc-inline">
+          <summary>On this page</summary>
+          <ol>
+            {headings.map((h) => <li><a href={`#${h.id}`}>{h.text}</a></li>)}
+          </ol>
+        </details>
       )}
       <div class="prose" set:html={html} />
 
-      {postCategories.length > 0 && (
-        <div class="tags">
-          {postCategories.map((cat) => (
-            <a class="tag" href={`/blog/category/${cat.slug}`}>{cat.name}</a>
-          ))}
+      <aside class="author" aria-label="About the author">
+        <img src="/favicon-192.png" alt="" width="48" height="48" loading="lazy" />
+        <div class="author__text">
+          <strong>Written by JD</strong>
+          <span>Guides, analysis and tools for World of Warcraft and Path of Exile 2. Reader-supported.</span>
         </div>
-      )}
+        <a class="author__support" href={PATREON_URL} target="_blank" rel="noopener noreferrer"><Icon name="patreon" size={14} filled />Support on Patreon</a>
+      </aside>
+    </article>
 
-      {(olderPost || newerPost) && (
-        <nav class="post-nav" aria-label="More posts">
-          {olderPost ? (
-            <a class="post-nav__link post-nav__link--older" href={`/blog/${olderPost.slug}`}>
-              <span class="post-nav__label">← Older</span>
-              <span class="post-nav__title">{olderPost.title}</span>
-            </a>
-          ) : <span />}
-          {newerPost ? (
-            <a class="post-nav__link post-nav__link--newer" href={`/blog/${newerPost.slug}`}>
-              <span class="post-nav__label">Newer →</span>
-              <span class="post-nav__title">{newerPost.title}</span>
-            </a>
-          ) : <span />}
+    <div class="post-aside">
+      {showToc && (
+        <nav class="toc" aria-labelledby="toc-title">
+          <h2 id="toc-title">On this page</h2>
+          <ol>
+            {headings.map((h) => <li><a href={`#${h.id}`}>{h.text}</a></li>)}
+          </ol>
         </nav>
       )}
-    </article>
-    <Sidebar slot="sidebar" categories={categories} recentPosts={recentPosts} />
-  </SidebarLayout>
+      <Sidebar categories={categories} recentPosts={recentPosts} />
+    </div>
+  </div>
+
+  {adjacent.length > 0 && (
+    <nav class="post-nav" aria-label="More posts">
+      {adjacent.map(({ post: other, label, rel }) => (
+        <a class="post-nav__link" href={`/blog/${other.slug}`} rel={rel}>
+          <span class="post-nav__art">
+            {other.featuredImageUrl ? <img src={other.featuredImageUrl} alt="" loading="lazy" /> : <span class="post-nav__plain" />}
+          </span>
+          <span class="post-nav__text">
+            <span class="post-nav__label">{label}</span>
+            <span class="post-nav__title">{other.title}</span>
+          </span>
+        </a>
+      ))}
+    </nav>
+  )}
 </BaseLayout>
 
 <style>
-
-  article > h1 {
-    max-width: 22ch;
-    font-size: clamp(2rem, 1.3rem + 2vw, 3rem);
-    letter-spacing: -0.025em;
+  /* Reading column at the measure, with contents and navigation beside it. */
+  .post-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 46rem) minmax(0, 17rem);
+    justify-content: space-between;
+    gap: var(--space-16);
+    max-width: 74rem;
+    margin: 0 auto;
+    align-items: start;
   }
 
-  .meta {
+  .post-body {
+    min-width: 0;
+  }
+
+  .post-aside {
+    position: sticky;
+    top: var(--space-6);
     display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+
+  .chips {
+    display: inline-flex;
     flex-wrap: wrap;
-    gap: 0.35rem 1.5rem;
+    gap: 0.5rem;
+  }
+
+  .toc h2 {
+    margin: 0 0 var(--space-3);
+    font-family: var(--font-ui);
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .toc ol,
+  .toc-inline ol {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .toc li,
+  .toc-inline li {
+    margin: 0;
+  }
+
+  .toc a,
+  .toc-inline a {
+    display: block;
+    padding: 0.45rem 0.75rem;
+    border-radius: var(--r-md,10px);
     color: var(--muted);
     font-size: 0.95rem;
-    margin: 0 0 1.75rem;
+    line-height: 1.4;
+    text-decoration: none;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
   }
 
-  /* A fixed 3:1 box (the header art's usual ratio) reserves space before the image loads. */
-  .hero {
-    display: block;
-    width: 100%;
-    aspect-ratio: 3 / 1;
-    max-height: 380px;
-    object-fit: cover;
+  .toc a:hover,
+  .toc-inline a:hover {
+    background: var(--surface);
+    color: #fff;
+  }
+
+  .toc-inline {
+    display: none;
+    margin: 0 0 var(--space-8);
+    padding: 0.25rem 0.5rem;
+    border: 1px solid var(--line);
     border-radius: var(--r-md,10px);
-    margin-bottom: 2.25rem;
+    background: var(--surface);
   }
 
-  .tags {
+  .toc-inline summary {
+    padding: 0.6rem 0.25rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .toc-inline[open] ol {
+    padding-bottom: 0.5rem;
+  }
+
+  .author {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem;
-    margin-top: 2.5rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid var(--line);
-  }
-
-  .tag {
-    padding: 0.35rem 0.85rem;
+    align-items: center;
+    gap: var(--space-4) var(--space-6);
+    margin-top: var(--space-16);
+    padding: var(--space-6);
     border: 1px solid var(--line);
-    border-radius: var(--r-pill,999px);
-    background: rgb(from var(--accent) r g b / 8%);
-    color: var(--accent);
-    text-decoration: none;
-    font-size: 0.82rem;
-    font-weight: 500;
-    transition: border-color 0.2s ease, background 0.2s ease;
+    border-radius: var(--r-lg,16px);
+    background: var(--surface);
   }
 
-  .tag:hover {
-    border-color: var(--accent);
-    background: rgb(from var(--accent) r g b / 15%);
+  .author img {
+    width: 48px;
+    height: 48px;
+  }
+
+  .author__text {
+    flex: 1 1 16rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    color: var(--muted);
+  }
+
+  .author__text strong {
+    color: var(--text);
+  }
+
+  .author__support {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-height: 44px;
+    padding: 0 1.25rem;
+    border-radius: var(--r-pill,999px);
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 700;
+    text-decoration: none;
+    transition: background-color var(--transition-fast);
+  }
+
+  .author__support:hover {
+    background: var(--accent-hover);
   }
 
   .post-nav {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-top: 1.5rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    gap: 1.25rem;
+    max-width: 74rem;
+    margin: var(--space-16) auto 0;
+    padding-top: var(--space-10);
+    border-top: 1px solid var(--line);
   }
 
   .post-nav__link {
     display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-    padding: 1rem 1.1rem;
+    min-height: 7.5rem;
+    overflow: hidden;
     border: 1px solid var(--line);
-    border-radius: var(--r-md,10px);
-    background: var(--surface-2);
-    text-decoration: none;
+    border-radius: var(--r-lg,16px);
+    background: var(--surface);
     color: var(--text);
-    transition: border-color 0.2s ease;
-    min-width: 0;
+    text-decoration: none;
+    transition: border-color var(--transition-fast);
   }
 
   .post-nav__link:hover {
-    border-color: var(--accent);
+    border-color: var(--line-strong);
   }
 
-  .post-nav__link--newer {
-    text-align: right;
-    align-items: flex-end;
+  .post-nav__art {
+    flex: 0 0 36%;
+    overflow: hidden;
+  }
+
+  .post-nav__art img,
+  .post-nav__plain {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+  }
+
+  .post-nav__plain {
+    background: radial-gradient(circle at 75% 20%, rgb(from var(--accent) r g b / 18%), transparent 60%), var(--surface-2);
+  }
+
+  .post-nav__link:hover .post-nav__art img {
+    transform: scale(1.04);
+  }
+
+  .post-nav__text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 1.1rem 1.25rem;
+    min-width: 0;
   }
 
   .post-nav__label {
-    font-size: 0.78rem;
     color: var(--muted);
+    font-size: 0.85rem;
   }
 
   .post-nav__title {
-    font-size: 0.9rem;
+    font-family: var(--font-display);
+    font-size: 1rem;
     font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 100%;
+    line-height: 1.35;
   }
 
-  @media (max-width: 600px) {
-    .post-nav {
-      grid-template-columns: 1fr;
+  @media (max-width: 1080px) {
+    .post-layout {
+      grid-template-columns: minmax(0, 1fr);
+      max-width: 46rem;
     }
 
-    .post-nav__link--newer {
-      text-align: left;
-      align-items: flex-start;
+    .post-aside {
+      position: static;
+    }
+
+    .post-aside .toc {
+      display: none;
+    }
+
+    .toc-inline {
+      display: block;
+    }
+
+    .post-nav {
+      max-width: 46rem;
     }
   }
 </style>

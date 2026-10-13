@@ -1,0 +1,25 @@
+---
+import { topicTone } from "../lib/topics";
+interface Props { name: string; slug: string; }
+const { name, slug } = Astro.props;
+---
+<a class="chip" data-tone={topicTone(slug)} href={`/blog/category/${slug}`}>{name}</a>
+<style>
+  .chip {
+    --tone: var(--accent);
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--r-pill,999px);
+    border: 1px solid rgb(from var(--tone) r g b / 35%);
+    background: rgb(from var(--tone) r g b / 14%);
+    color: var(--tone);
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: border-color var(--transition-fast);
+  }
+  .chip[data-tone="wow"] { --tone: var(--game-wow); }
+  .chip[data-tone="poe"] { --tone: var(--game-poe); }
+  .chip:hover { border-color: var(--tone); }
+</style>

@@ -47,4 +47,21 @@ if (failures) {
   console.error("Keep processed scripts external (see vite.build.assetsInlineLimit in astro.config.mjs).");
   process.exit(1);
 }
-console.log("No processed scripts are inlined.");
+
+// Fonts inlined into CSS as data: URIs are blocked by `font-src 'self'`.
+const cssRoot = "dist/client/_astro";
+let inlinedFonts = 0;
+for (const entry of await readdir(cssRoot)) {
+  if (!entry.endsWith(".css")) continue;
+  const source = await readFile(join(cssRoot, entry), "utf8");
+  const count = source.match(/url\(\s*["']?data:(?:font\/|application\/(?:x-)?font)/g)?.length ?? 0;
+  if (count) {
+    console.error(`${join(cssRoot, entry)}: ${count} font(s) inlined as data: URIs`);
+    inlinedFonts += count;
+  }
+}
+if (inlinedFonts) {
+  console.error("Keep font files external (see vite.build.assetsInlineLimit in astro.config.mjs).");
+  process.exit(1);
+}
+console.log("No processed scripts or fonts are inlined.");

@@ -1,17 +1,16 @@
 ---
 import BlogIndex from "../../components/BlogIndex.astro";
-import { getBlogPage, listCategoriesWithPostCounts, listPostSummaries } from "../../lib/content";
+import { getBlogPage, listCategoriesWithPostCounts } from "../../lib/content";
 import { parseFilters } from "../../lib/blog-listing";
 
 // Page 1 of the paginated index; later pages are /blog/page/N (see page/[page].astro).
 const filters = parseFilters(Astro.url.searchParams);
 if (filters.q || filters.sort !== "newest") Astro.response.headers.set("X-Robots-Tag", "noindex, follow");
 
-const [listing, categories, recent] = await Promise.all([
+const [listing, categories] = await Promise.all([
   getBlogPage(Astro.locals, 1, filters),
   listCategoriesWithPostCounts(Astro.locals),
-  listPostSummaries(Astro.locals, 5),
 ]);
 ---
 
-<BlogIndex listing={listing} categories={categories} recent={recent} />
+<BlogIndex listing={listing} categories={categories} />

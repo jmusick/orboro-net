@@ -1,22 +1,31 @@
 :root {
-  --bg: #080b18;
-  --surface: #0e1428;
-  --surface-2: #131a33;
+  --bg: #070914;
+  --bg-deep: #05070f;
+  --surface: #0f1326;
+  --surface-2: #151b33;
   --text: #e9eef9;
-  --muted: #98a3bf;
+  --text-soft: #c3cbe0;
+  --muted: #a3aec9;
   --accent: #70d0ff;
+  --accent-ink: #06101c;
   /* Reserved for status and data distinctions, never navigation chrome. */
   --accent-2: #ff3fb8;
   --accent-3: #a8ff60;
+  /* Game identity: tool tiles, topic chips and category labels only. */
+  --game-wow: #f5c46b;
+  --game-poe: #ff8a73;
   --danger: #ff3d4d;
   --warning: #ffc107;
-  --line: #222c4a;
-  --line-strong: #667aa3;
+  --line: #1d2442;
+  --line-strong: #3a4a78;
   --accent-hover: color-mix(in srgb, var(--accent), white 36%);
-  --font-ui: "Schibsted Grotesk Variable", "Segoe UI", system-ui, sans-serif;
-  --font-read: "Source Sans 3 Variable", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Unbounded Variable", "Segoe UI", system-ui, sans-serif;
+  --font-ui: "Hanken Grotesk Variable", "Segoe UI", system-ui, sans-serif;
+  --font-read: "Hanken Grotesk Variable", "Segoe UI", system-ui, sans-serif;
   --font-code: Consolas, monospace;
   --measure: 42rem;
+  --page-max: 1440px;
+  --gutter: clamp(1rem, 4vw, 3.5rem);
   --r-sm: 6px;
   --r-md: 10px;
   --r-lg: 16px;
@@ -28,6 +37,8 @@
   --space-6: 1.5rem;
   --space-8: 2rem;
   --space-10: 2.5rem;
+  --space-16: 4rem;
+  --space-24: 6rem;
   --sidebar-width: 280px;
   --transition-fast: 0.2s ease;
 }

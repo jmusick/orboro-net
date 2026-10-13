@@ -4,8 +4,8 @@ import Button from "../../components/Button.astro";
 import Card from "../../components/Card.astro";
 import Pill from "../../components/Pill.astro";
 import FormMessage from "../../components/FormMessage.astro";
-import PostCard from "../../components/PostCard.astro";
-import PostListItem from "../../components/PostListItem.astro";
+import StoryCard from "../../components/StoryCard.astro";
+import TopicChip from "../../components/TopicChip.astro";
 import { requireAdmin } from "../../lib/http";
 import { getPublishedContentByType, excerptFromMarkdown } from "../../lib/content";
 import { generateExpeditionRumourSheet } from "../../lib/expedition-rumours";
@@ -18,7 +18,7 @@ const dateIso = date?.toISOString() ?? "";
 const dateLabel = date?.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) ?? "";
 const excerpt = post ? excerptFromMarkdown(post.markdown, 140) : "";
 const showError = Astro.url.searchParams.has("error");
-const colors = ["bg", "surface", "surface-2", "text", "muted", "accent", "line", "line-strong"];
+const colors = ["bg", "surface", "surface-2", "text", "muted", "accent", "line", "line-strong", "game-wow", "game-poe"];
 ---
 <AdminLayout title="Design system">
   <section>
@@ -27,14 +27,14 @@ const colors = ["bg", "surface", "surface-2", "text", "muted", "accent", "line",
     <div class="swatches">
       {colors.map((color) => <div class={`swatch swatch--${color}`}><span aria-hidden="true"></span><code>--{color}</code></div>)}
     </div>
-    <h3>Schibsted Grotesk for headings and controls</h3>
-    <p>Article text uses Source Sans 3 on the public site. Small controls use 6px corners, cards and inputs 10px, and shells 16px.</p>
+    <h3>Unbounded for display, Hanken Grotesk for everything else</h3>
+    <p>On the public site, page titles, section headings and card titles use Unbounded; body, UI and widgets use Hanken Grotesk. Game colors mark World of Warcraft and Path of Exile 2 in chips, tiles and card kickers only. Small controls use 6px corners, cards and inputs 10px, and shells 16px.</p>
   </section>
   <section>
     <h2>Buttons and status</h2>
     <div class="examples">
       <Button>Primary</Button><Button variant="secondary">Secondary</Button>
-      <Button variant="tertiary">Tertiary</Button><Button variant="danger" icon="trash-2">Delete</Button>
+      <Button variant="tertiary">Tertiary</Button><Button variant="ghost">Ghost</Button><Button variant="danger" icon="trash-2">Delete</Button>
       <Button size="sm">Small</Button><Button size="lg">Large</Button><Button disabled>Disabled</Button>
       <Button href="/blog" variant="secondary">Link button</Button>
       <Button href="/blog" variant="secondary" disabled>Disabled link</Button>
@@ -61,10 +61,12 @@ const colors = ["bg", "surface", "surface-2", "text", "muted", "accent", "line",
     <div class="cards">
       <Card title="Information" icon="file-text"><p>A quiet frame and muted supporting text.</p></Card>
       <Card title="Browse posts" icon="file-text" href="/blog"><p>Linked cards share the blue hover and focus treatment.</p></Card>
-      {post && <PostCard title={post.title} slug={post.slug} image={post.featuredImageUrl} dateIso={dateIso} dateLabel={dateLabel} excerpt={excerpt} />}
-      {post && <PostCard title={post.title} slug={post.slug} dateIso={dateIso} dateLabel={dateLabel} variant="compact" />}
+      {post && <StoryCard title={post.title} slug={post.slug} image={post.featuredImageUrl} dateIso={dateIso} dateLabel={dateLabel} excerpt={excerpt} category={{ name: "World of Warcraft", slug: "world-of-warcraft" }} />}
+      {post && <StoryCard title={post.title} slug={post.slug} dateIso={dateIso} dateLabel={dateLabel} excerpt={excerpt} category={{ name: "Development", slug: "development" }} />}
     </div>
-    {post && <PostListItem post={{ ...post, dateIso, dateLabel, excerpt }} />}
+    <div class="examples">
+      <TopicChip name="World of Warcraft" slug="world-of-warcraft" /><TopicChip name="Path of Exile II" slug="path-of-exile-ii" /><TopicChip name="Development" slug="development" />
+    </div>
   </section>
   <section>
     <h2>Widget primitives</h2>
@@ -83,5 +85,6 @@ const colors = ["bg", "surface", "surface-2", "text", "muted", "accent", "line",
   .swatch--bg { --swatch: var(--bg); }.swatch--surface { --swatch: var(--surface); }.swatch--surface-2 { --swatch: var(--surface-2); }
   .swatch--text { --swatch: var(--text); }.swatch--muted { --swatch: var(--muted); }.swatch--accent { --swatch: var(--accent); }
   .swatch--line { --swatch: var(--line); }.swatch--line-strong { --swatch: var(--line-strong); }
+  .swatch--game-wow { --swatch: var(--game-wow); }.swatch--game-poe { --swatch: var(--game-poe); }
   small { color: var(--muted); }
 </style>

@@ -12,7 +12,6 @@ const { sidebar = true, class: className = "" } = Astro.props;
 <style>
   .sidebar-layout { min-width: 0; }
   .sidebar-layout--columns {
-    --measure: 100%;
     display: grid;
     grid-template-columns: minmax(0, 1fr) var(--sidebar-width);
     gap: var(--space-10);

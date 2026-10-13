@@ -1,0 +1,92 @@
+---
+// The title band at the top of every inner page. Place it in BaseLayout's
+// `hero` slot (`<PageHeader slot="hero" … />`) so its artwork runs behind the
+// site header. The default slot holds page meta (dates, chips, actions).
+import HeroArt from "./HeroArt.astro";
+import Breadcrumbs from "./Breadcrumbs.astro";
+import type { Crumb } from "../lib/structured-data";
+
+interface Props {
+  title: string;
+  trail?: Crumb[];
+  lede?: string;
+  image?: string | null;
+  /** "article": tall, art behind the title. "page": compact, art to the right. */
+  variant?: "article" | "page";
+}
+const { title, trail, lede, image, variant = "page" } = Astro.props;
+---
+<div class:list={["page-header", `page-header--${variant}`, image && "page-header--art"]}>
+  <HeroArt image={image} scrim={variant === "article" ? "bottom" : "side"} />
+  <div class="page-header__inner">
+    {trail && <Breadcrumbs trail={trail} />}
+    <h1>{title}</h1>
+    {lede && <p class="page-header__lede">{lede}</p>}
+    {Astro.slots.has("default") && <div class="page-header__meta"><slot /></div>}
+  </div>
+</div>
+<style>
+  .page-header {
+    display: flex;
+    align-items: flex-end;
+    max-width: var(--page-max);
+    margin: 0 auto;
+    padding: var(--space-8) var(--gutter) var(--space-10);
+  }
+
+  .page-header--art.page-header--page {
+    min-height: clamp(16rem, 12rem + 10vw, 22rem);
+  }
+
+  /* Articles line up with their centered reading column (blog/[slug]). */
+  .page-header--article {
+    max-width: calc(74rem + 2 * var(--gutter));
+  }
+
+  .page-header--art.page-header--article {
+    min-height: clamp(22rem, 16rem + 18vw, 34rem);
+  }
+
+  @media (max-width: 1080px) {
+    .page-header--article {
+      max-width: calc(46rem + 2 * var(--gutter));
+    }
+  }
+
+  .page-header__inner {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 0;
+    max-width: 56rem;
+  }
+
+  .page-header--page .page-header__inner {
+    max-width: 44rem;
+  }
+
+  .page-header__inner :global(.breadcrumbs) {
+    margin: 0;
+  }
+
+  h1 {
+    margin: 0;
+  }
+
+  .page-header__lede {
+    margin: 0;
+    max-width: 40em;
+    color: var(--text-soft);
+    font-size: 1.125rem;
+    line-height: 1.6;
+  }
+
+  .page-header__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.25rem;
+    color: var(--text-soft);
+    font-size: 0.95rem;
+  }
+</style>

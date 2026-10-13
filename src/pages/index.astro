@@ -1,32 +1,45 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import PostListItem from "../components/PostListItem.astro";
 import Button from "../components/Button.astro";
-import SidebarLayout from "../components/SidebarLayout.astro";
-import Sidebar from "../components/Sidebar.astro";
+import HeroArt from "../components/HeroArt.astro";
+import StoryCard from "../components/StoryCard.astro";
+import TopicChip from "../components/TopicChip.astro";
 import FeaturedTools from "../components/FeaturedTools.astro";
-import { getPublishedContentByType, excerptFromMarkdown, listCategoriesWithPostCounts, listHomepageFeatures } from "../lib/content";
+import {
+	getPublishedContentByType,
+	excerptFromMarkdown,
+	listCategoriesWithPostCounts,
+	listCategoryCoverCandidates,
+	listHomepageFeatures,
+	getContentCategories,
+} from "../lib/content";
+import { assignCovers, topicTone } from "../lib/topics";
 
-const [rawPosts, featuredPages, categories] = await Promise.all([
-  getPublishedContentByType(Astro.locals, "post", 5),
-  listHomepageFeatures(Astro.locals),
-  listCategoriesWithPostCounts(Astro.locals),
+const [rawPosts, featuredPages, categories, coverCandidates] = await Promise.all([
+	getPublishedContentByType(Astro.locals, "post", 5),
+	listHomepageFeatures(Astro.locals),
+	listCategoriesWithPostCounts(Astro.locals),
+	listCategoryCoverCandidates(Astro.locals),
 ]);
-const posts = rawPosts.map((post) => {
+const postCategories = await Promise.all(rawPosts.map((post) => getContentCategories(Astro.locals, post.id)));
+const posts = rawPosts.map((post, index) => {
 	const date = post.publishedAt ?? post.createdAt;
 	return {
 		...post,
-		excerpt: excerptFromMarkdown(post.markdown, 300),
+		categories: postCategories[index],
+		excerpt: excerptFromMarkdown(post.markdown, 180),
 		dateIso: new Date(date).toISOString(),
 		dateLabel: new Date(date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
 	};
 });
-// The newest post leads the page; the rest form the feed below it.
+// The newest post leads the page behind the header; the rest follow as cards.
 const lead = posts[0];
-const leadExcerpt = lead ? excerptFromMarkdown(lead.markdown, 200) : "";
-const feedPosts = posts.slice(1);
+const latest = posts.slice(1);
 
-const recentPosts = posts.slice(0, 5);
+// Larger topics claim cover art first, so overlapping ones don't repeat it.
+const topics = [...categories].sort((a, b) => b.postCount - a.postCount || a.name.localeCompare(b.name));
+const covers = assignCovers(topics.map((topic) => topic.id), coverCandidates);
+const noun = (n: number) => (n === 1 ? "post" : "posts");
 ---
 
 <BaseLayout title="Orboro.net | Gaming guides, analysis, and developer resources" description="World of Warcraft and Path of Exile guides, game analysis, and developer resources from JD." structuredData={{
@@ -37,146 +50,253 @@ const recentPosts = posts.slice(0, 5);
 	],
 }}>
 	{lead && (
-		<article slot="headerFeature" class="lead" aria-labelledby="lead-title">
-			<div class="lead__body">
-				<p class="lead__date"><time datetime={lead.dateIso}>{lead.dateLabel}</time></p>
+		<section slot="hero" class="lead" aria-labelledby="lead-title">
+			<HeroArt image={lead.featuredImageUrl} scrim="side" />
+			<div class="lead__inner">
+				<p class="lead__meta">
+					{lead.categories.map((cat) => (
+						<TopicChip name={cat.name} slug={cat.slug} />
+					))}
+					<time datetime={lead.dateIso}>{lead.dateLabel}</time>
+				</p>
 				<h1 id="lead-title" class="lead__title"><a href={`/blog/${lead.slug}`}>{lead.title}</a></h1>
-				{leadExcerpt && <p class="lead__excerpt">{leadExcerpt}</p>}
-				<Button class="lead__cta" href={`/blog/${lead.slug}`}>Read the post</Button>
-			</div>
-			{lead.featuredImageUrl && (
-				<a class="lead__art" href={`/blog/${lead.slug}`} tabindex="-1" aria-hidden="true">
-					<img src={lead.featuredImageUrl} alt="" fetchpriority="high" />
-				</a>
-			)}
-		</article>
-	)}
-	<SidebarLayout>
-		<div class="home-content">
-			<FeaturedTools pages={featuredPages} />
-			<section class="feed-section" aria-labelledby="feed-title">
-				<div class="feed-header">
-					<h2 id="feed-title">Recent articles</h2>
-					<Button href="/blog" variant="tertiary" size="sm">All posts</Button>
+				{lead.excerpt && <p class="lead__excerpt">{lead.excerpt}</p>}
+				<div class="lead__actions">
+					<Button href={`/blog/${lead.slug}`} size="lg" icon="chevron-right" iconPosition="right">Read the post</Button>
+					<Button href="/blog" size="lg" variant="ghost">All posts</Button>
 				</div>
-				{posts.length === 0 ? (
-					<p class="empty-note">No posts published yet.</p>
-				) : feedPosts.length === 0 ? (
-					<p class="empty-note">More posts coming soon.</p>
-				) : (
-					<div class="feed-list" id="home-feed">
-						{feedPosts.map((post) => (
-							<PostListItem post={post} />
-						))}
-					</div>
-				)}
-			</section>
-		</div>
+			</div>
+		</section>
+	)}
 
-		<Sidebar slot="sidebar" categories={categories} recentPosts={recentPosts} />
-	</SidebarLayout>
+	<div class="home">
+		<FeaturedTools pages={featuredPages} />
+
+		<section aria-labelledby="latest-title">
+			<div class="section-head section-head--row">
+				<h2 id="latest-title">Latest writing</h2>
+				<a class="section-link" href="/blog">All posts</a>
+			</div>
+			{latest.length === 0 ? (
+				<p class="empty-note">{posts.length === 0 ? "No posts published yet." : "More posts coming soon."}</p>
+			) : (
+				<div class="story-grid">
+					{latest.map((post) => (
+						<StoryCard slug={post.slug} title={post.title} image={post.featuredImageUrl}
+							dateIso={post.dateIso} dateLabel={post.dateLabel} excerpt={post.excerpt}
+							category={post.categories[0] ?? null} />
+					))}
+				</div>
+			)}
+		</section>
+
+		{topics.length > 0 && (
+			<section aria-labelledby="topics-title">
+				<div class="section-head">
+					<h2 id="topics-title">Browse by topic</h2>
+				</div>
+				<ul class="topic-grid">
+					{topics.map((topic) => {
+						const cover = covers.get(topic.id);
+						return (
+							<li>
+								<a class="topic" href={`/blog/category/${topic.slug}`} data-tone={topicTone(topic.slug)}>
+									{cover ? <img src={cover} alt="" loading="lazy" /> : <span class="topic__plain" aria-hidden="true" />}
+									<span class="topic__label">
+										<span class="topic__name">{topic.name}</span>
+										<span class="topic__count">{topic.postCount} {noun(topic.postCount)}</span>
+									</span>
+								</a>
+							</li>
+						);
+					})}
+				</ul>
+			</section>
+		)}
+	</div>
 </BaseLayout>
 
 <style>
-	/* A compact lead leaves room for tools and the article feed. */
+	/* ── Lead: the newest post, set over its artwork behind the header ── */
 	.lead {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
-		margin-bottom: 1.2rem;
-		background: var(--surface);
-		border: 1px solid var(--line);
-		border-radius: var(--r-lg,16px);
-		overflow: hidden;
+		display: flex;
+		align-items: flex-end;
+		min-height: clamp(30rem, 30rem + 12vw, 40rem);
+		max-width: var(--page-max);
+		margin: 0 auto;
+		padding: var(--space-10) var(--gutter) var(--space-16);
 	}
 
-	.lead__body {
+	.lead__inner {
 		display: flex;
 		flex-direction: column;
-		justify-content: center;
 		align-items: flex-start;
-		padding: clamp(1.25rem, 2vw, 1.75rem);
+		gap: 1.25rem;
+		max-width: 40rem;
 	}
 
-	.lead__date {
-		margin: 0 0 0.65rem;
+	.lead__meta {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem 0.75rem;
+		margin: 0;
 		color: var(--muted);
-		font-size: 0.95rem;
-		font-weight: 500;
+		font-size: 0.9rem;
 	}
+
 
 	.lead__title {
 		margin: 0;
-		font-size: clamp(1.45rem, 1.1rem + 1.2vw, 2.1rem);
-		font-weight: 850;
-		line-height: 1.15;
-		letter-spacing: -0.03em;
+		font-size: clamp(2rem, 1.3rem + 2.2vw, 3.4rem);
+		line-height: 1.08;
 	}
 
 	.lead__title a {
 		color: var(--text);
 		text-decoration: none;
-		transition: color 0.2s ease;
+		transition: color var(--transition-fast);
 	}
 
 	.lead__title a:hover {
-		color: var(--accent);
+		color: var(--accent-hover);
 	}
 
 	.lead__excerpt {
-		max-width: 34rem;
-		margin: 0.75rem 0 0;
-		color: var(--muted);
-		font-family: var(--font-read);
-		font-size: 1rem;
+		margin: 0;
+		max-width: 34em;
+		color: var(--text-soft);
+		font-size: 1.15rem;
 		line-height: 1.6;
 	}
 
-	.lead__body :global(.lead__cta) { margin-top: 1rem; }
-	.lead:not(:has(.lead__art)) { grid-template-columns: 1fr; }
-
-	.lead__art {
-		display: block;
-		position: relative;
-		min-height: 12rem;
-		border-left: 1px solid var(--line);
-	}
-
-	.lead__art img {
-		display: block;
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-
-	@media (max-width: 600px) {
-		.lead { grid-template-columns: 1fr; }
-		.lead__art { order: -1; height: 8rem; min-height: 0; border-left: 0; border-bottom: 1px solid var(--line); }
-	}
-
-	/* ── Feed + sidebar ─────────────────────── */
-
-	.feed-header {
+	.lead__actions {
 		display: flex;
-		justify-content: space-between;
-		align-items: baseline;
-		gap: 1rem;
-		margin-bottom: 0.5rem;
+		flex-wrap: wrap;
+		gap: 0.75rem;
+		padding-top: 0.5rem;
 	}
 
-	.feed-header h2 {
+	/* ── Sections below the lead ─────────────── */
+	.home {
+		display: flex;
+		flex-direction: column;
+		gap: clamp(4rem, 3rem + 3vw, 6rem);
+		padding-top: var(--space-6);
+	}
+
+	.section-head {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		margin-bottom: var(--space-6);
+	}
+
+	.section-head--row {
+		flex-direction: row;
+		flex-wrap: wrap;
+		align-items: baseline;
+		justify-content: space-between;
+	}
+
+	.section-head h2 {
 		margin: 0;
-		font-size: 1.25rem;
+		font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+	}
+
+	.section-link {
+		font-weight: 700;
+		text-decoration: none;
+	}
+
+	.section-link:hover {
+		color: var(--accent-hover);
 	}
 
 	.empty-note {
 		color: var(--muted);
 	}
 
-	.feed-list {
-		display: flex;
-		flex-direction: column;
+	.story-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+		gap: 2rem 1.5rem;
 	}
 
+	.topic-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+		gap: 1.25rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.topic-grid li {
+		margin: 0;
+	}
+
+	.topic {
+		--tone: var(--accent);
+		position: relative;
+		isolation: isolate;
+		display: flex;
+		align-items: flex-end;
+		min-height: 12rem;
+		overflow: hidden;
+		border-radius: var(--r-lg,16px);
+		border: 1px solid var(--line);
+		color: #fff;
+		text-decoration: none;
+		transition: border-color var(--transition-fast);
+	}
+	.topic[data-tone="wow"] { --tone: var(--game-wow); }
+	.topic[data-tone="poe"] { --tone: var(--game-poe); }
+	.topic:hover { border-color: var(--line-strong); }
+
+	.topic img,
+	.topic__plain {
+		position: absolute;
+		inset: 0;
+		z-index: -2;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: transform 0.5s ease;
+	}
+
+	.topic:hover img {
+		transform: scale(1.04);
+	}
+
+	.topic__plain {
+		background: radial-gradient(circle at 80% 15%, rgb(from var(--tone) r g b / 28%), transparent 60%), var(--surface-2);
+	}
+
+	/* Bottom scrim keeps the label legible over any artwork. */
+	.topic::after {
+		content: "";
+		position: absolute;
+		inset: 0;
+		z-index: -1;
+		background: linear-gradient(0deg, rgb(from var(--bg) r g b / 95%) 0%, rgb(from var(--bg) r g b / 20%) 70%);
+	}
+
+	.topic__label {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		padding: 1.25rem 1.4rem;
+	}
+
+	.topic__name {
+		font-family: var(--font-display);
+		font-size: 1.25rem;
+		font-weight: 600;
+	}
+
+	.topic__count {
+		color: var(--text-soft);
+		font-size: 0.9rem;
+	}
 </style>

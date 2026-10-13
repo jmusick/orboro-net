@@ -1,5 +1,4 @@
 ---
-import Icon from "./Icon.astro";
 import type { CategoryWithCount } from "../lib/content";
 
 interface RecentPost {
@@ -10,219 +9,129 @@ interface RecentPost {
 
 interface Props {
   categories: CategoryWithCount[];
-  recentPosts: RecentPost[];
+  /** Leave empty where the page already lists recent posts. */
+  recentPosts?: RecentPost[];
   activeCategorySlug?: string;
 }
 
-const { categories, recentPosts, activeCategorySlug } = Astro.props;
-
-const profiles = [
-	{
-		platform: "Patreon",
-		handle: "Support Orboro.net",
-		icon: "patreon",
-		url: "https://www.patreon.com/cw/Orboro",
-	},
-	{
-		platform: "Discord",
-		handle: "xing_yuen",
-		icon: "discord",
-	},
-	{
-		platform: "Battle.net",
-		handle: "Xing#1673",
-		icon: "battlenet",
-	},
-	{
-		platform: "Steam",
-		handle: "XingYuen",
-		icon: "steam",
-		url: "https://steamcommunity.com/id/XingYuen/",
-	},
-	{
-		platform: "Reddit",
-		handle: "u/XingYuen",
-		icon: "reddit",
-		url: "https://www.reddit.com/user/XingYuen/",
-	},
-	{
-		platform: "YouTube",
-		handle: "@XingYuen",
-		icon: "youtube",
-		url: "https://www.youtube.com/@XingYuen",
-	},
-	{
-		platform: "Twitch",
-		handle: "xingyuen",
-		icon: "twitch",
-		url: "https://www.twitch.tv/xingyuen",
-	},
-];
-
+const { categories, recentPosts = [], activeCategorySlug } = Astro.props;
+// Profiles live in the site footer, so the sidebar carries only navigation.
 ---
 
 <aside class="site-sidebar">
   {categories.length > 0 && (
-    <section class="sidebar-block">
-      <h2>Categories</h2>
-      <div class="sidebar-list">
+    <nav class="sidebar-block" aria-labelledby="sidebar-categories">
+      <h2 id="sidebar-categories">Categories</h2>
+      <ul class="sidebar-list">
         {categories.map((cat) => (
-          <a
-            class={`sidebar-row ${cat.slug === activeCategorySlug ? "sidebar-row--active" : ""}`}
-            href={`/blog/category/${cat.slug}`}
-          >
-            <Icon name="tag" size={14} />
-            <span class="sidebar-row__text">{cat.name}</span>
-            <span class="sidebar-row__count">{cat.postCount}</span>
-          </a>
+          <li>
+            <a
+              class="sidebar-row"
+              href={`/blog/category/${cat.slug}`}
+              aria-current={cat.slug === activeCategorySlug ? "page" : undefined}
+            >
+              <span class="sidebar-row__text">{cat.name}</span>
+              <span class="sidebar-row__count">{cat.postCount}</span>
+            </a>
+          </li>
         ))}
-      </div>
-    </section>
+      </ul>
+    </nav>
   )}
 
   {recentPosts.length > 0 && (
-    <section class="sidebar-block">
-      <h2>Recent Posts</h2>
-      <div class="sidebar-list">
+    <nav class="sidebar-block" aria-labelledby="sidebar-recent">
+      <h2 id="sidebar-recent">Recent posts</h2>
+      <ul class="sidebar-list">
         {recentPosts.map((post) => (
-          <a class="sidebar-row sidebar-row--post" href={`/blog/${post.slug}`}>
-            <span class="sidebar-row__text">
-              <strong>{post.title}</strong>
-              <span class="sidebar-row__date">{post.dateLabel}</span>
-            </span>
-          </a>
-        ))}
-      </div>
-    </section>
-  )}
-  <section class="sidebar-block" aria-labelledby="profiles-title">
-    <h2 id="profiles-title">Find me elsewhere</h2>
-    <ul class="sidebar-list profiles-list">
-      {profiles.map((profile) => {
-        const Tag = profile.url ? "a" : "div";
-        const linkProps = profile.url ? { href: profile.url, target: "_blank", rel: "noopener noreferrer" } : {};
-        return (
           <li>
-            <Tag class="sidebar-row sidebar-row--profile" {...linkProps}>
-              <Icon name={profile.icon} size={18} filled={true} />
-              <span class="sidebar-row__text profile-text">
-                <strong>{profile.platform}</strong>
-                <span class="profile-handle">{profile.handle}</span>
-              </span>
-              {profile.url && <Icon name="external-link" size={13} />}
-            </Tag>
+            <a class="sidebar-row sidebar-row--post" href={`/blog/${post.slug}`}>
+              <span class="sidebar-row__title">{post.title}</span>
+              <span class="sidebar-row__date">{post.dateLabel}</span>
+            </a>
           </li>
-        );
-      })}
-    </ul>
-  </section>
+        ))}
+      </ul>
+    </nav>
+  )}
 </aside>
 
 <style>
   .site-sidebar {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
-  }
-
-  .sidebar-block {
-    margin: 0;
+    gap: var(--space-8);
   }
 
   .sidebar-block h2 {
-    margin: 0 0 0.75rem;
-    font-size: 1.1rem;
+    margin: 0 0 var(--space-3);
+    font-family: var(--font-ui);
+    font-size: 1rem;
+    font-weight: 700;
   }
 
   .sidebar-list {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 2px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .sidebar-list li {
+    margin: 0;
   }
 
   .sidebar-row {
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    padding: 0.55rem 0.75rem;
-    background:var(--surface-2);
-    border: 1px solid var(--line);
+    min-height: 40px;
+    padding: 0.45rem 0.75rem;
     border-radius: var(--r-md,10px);
-    color: var(--text);
+    color: var(--text-soft);
     text-decoration: none;
-    font-size: 0.85rem;
-    transition: border-color 0.2s ease;
+    font-size: 0.95rem;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
-  a.sidebar-row:hover {
-    border-color: var(--accent);
+  .sidebar-row:hover {
+    background: var(--surface);
+    color: #fff;
   }
 
-  .sidebar-row--active {
-    border-color: var(--accent);
+  .sidebar-row[aria-current="page"] {
+    background: rgb(from var(--accent) r g b / 10%);
     color: var(--accent);
+    font-weight: 600;
   }
 
   .sidebar-row__text {
     flex: 1;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
-  .sidebar-row--post .sidebar-row__text {
-    display: flex;
+  .sidebar-row__count {
+    flex-shrink: 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sidebar-row--post {
     flex-direction: column;
+    align-items: flex-start;
     gap: 0.15rem;
-    white-space: normal;
   }
 
-  .sidebar-row--post strong {
-    font-size: 0.88rem;
+  .sidebar-row__title {
+    font-weight: 600;
     line-height: 1.35;
   }
 
   .sidebar-row__date {
     color: var(--muted);
-    font-size: 0.78rem;
-  }
-
-  .sidebar-row__count {
-    flex-shrink: 0;
-    padding: 0.1rem 0.5rem;
-    border-radius: var(--r-pill,999px);
-    background: rgb(from var(--accent) r g b / 10%);
-    color: var(--accent);
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-
-  .profiles-list {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .profiles-list li {
-    margin: 0;
-  }
-
-  .sidebar-row--profile :global(svg) {
-    flex-shrink: 0;
-    color: var(--muted);
-  }
-
-  .profile-text {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    white-space: normal;
-    overflow-wrap: anywhere;
-  }
-
-  .profile-handle {
-    color: var(--muted);
-    font-size: 0.78rem;
+    font-size: 0.8rem;
   }
 </style>

@@ -155,3 +155,14 @@ test('page and filter parsing is strict; hrefs keep page 1 canonical', () => {
   assert.equal(blogHref(2, { q: 'a b', sort: 'oldest' }), '/blog/page/2?q=a+b&sort=oldest');
   assert.equal(blogHref(1, { q: '', sort: 'newest' }), '/blog');
 });
+
+test('excerpts end on a word boundary', () => {
+  const text = 'Enshittification and AI slop are useful terms until we start using them for everything. A browser changes its tabs. A developer ships a feature.';
+  const excerpt = excerptFromMarkdown(text, 120);
+  assert.ok(excerpt.endsWith('…'));
+  assert.ok(text.startsWith(excerpt.slice(0, -1)));
+  assert.match(excerpt, /\S…$/);
+  assert.equal(text.charAt(excerpt.length - 1), ' ');
+  assert.equal(excerptFromMarkdown('Supercalifragilistic'.repeat(10), 20), 'Supercalifragilistic…');
+  assert.equal(excerptFromMarkdown('Short text.', 140), 'Short text.');
+});

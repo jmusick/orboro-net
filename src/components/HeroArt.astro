@@ -1,0 +1,90 @@
+---
+// Full-bleed artwork behind the masthead. Render it inside BaseLayout's `hero`
+// slot: it fills the masthead (header included) and sits behind its content.
+interface Props {
+  image?: string | null;
+  /** "side" darkens from the left for text beside the art; "bottom" from below. */
+  scrim?: "side" | "bottom";
+}
+const { image, scrim = "side" } = Astro.props;
+---
+<div class:list={["hero-art", `hero-art--${scrim}`, !image && "hero-art--plain"]} aria-hidden="true">
+  {image && <img src={image} alt="" fetchpriority="high" decoding="async" />}
+</div>
+<style>
+  .hero-art {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  /* Negative z-index inside .hero-art's stacking context keeps the image
+     under the scrim pseudo-elements, which would otherwise paint first. */
+  .hero-art img {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 35%;
+  }
+
+  /* Beside text, the art takes the right of the frame and fades into the
+     ground, so the subject stays visible and the copy sits on solid color. */
+  .hero-art--side img {
+    left: auto;
+    width: min(100%, 74%);
+    /* Header art keeps its subject left of center; shift it clear of the copy. */
+    object-position: 15% 35%;
+    mask-image: linear-gradient(90deg, transparent 0, #000 38%);
+  }
+
+  .hero-art::before,
+  .hero-art::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+
+  /* Scrims keep text over artwork at AA contrast; they are not decoration. */
+  .hero-art--side::before {
+    background: linear-gradient(90deg, var(--bg) 0%, rgb(from var(--bg) r g b / 82%) 34%, rgb(from var(--bg) r g b / 25%) 58%, transparent 72%);
+  }
+
+  /* Tablet widths: the copy spans more of the frame, so the scrim does too. */
+  @media (max-width: 1100px) {
+    .hero-art--side::before {
+      background: linear-gradient(90deg, var(--bg) 0%, rgb(from var(--bg) r g b / 88%) 50%, rgb(from var(--bg) r g b / 35%) 78%, transparent 100%);
+    }
+  }
+
+  .hero-art--bottom::before {
+    background: linear-gradient(0deg, var(--bg) 4%, rgb(from var(--bg) r g b / 82%) 40%, rgb(from var(--bg) r g b / 20%) 100%);
+  }
+
+  /* The header always sits on darkened art, and the hero melts into the page. */
+  .hero-art::after {
+    background:
+      linear-gradient(180deg, rgb(from var(--bg) r g b / 70%) 0, transparent 9rem),
+      linear-gradient(0deg, var(--bg) 0, transparent 12rem);
+  }
+
+  .hero-art--plain {
+    background:
+      radial-gradient(ellipse 70% 60% at 30% 0%, rgb(76 70 170 / 28%) 0%, transparent 100%),
+      var(--bg);
+  }
+
+  @media (max-width: 760px) {
+    .hero-art--side img {
+      width: 100%;
+      mask-image: none;
+    }
+    .hero-art--side::before {
+      background: linear-gradient(0deg, var(--bg) 15%, rgb(from var(--bg) r g b / 88%) 55%, rgb(from var(--bg) r g b / 55%) 100%);
+    }
+  }
+</style>

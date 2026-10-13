@@ -18,9 +18,11 @@ export default defineConfig({
 		build: {
 			// Astro inlines processed <script> chunks under this limit as an
 			// unnonced <script type="module">, which the CSP blocks. Keep every
-			// script chunk external under /_astro/; other assets keep Vite's
-			// default 4 KB limit. Guarded by `npm run check:inline-scripts`.
-			assetsInlineLimit: (filePath) => (/\.[cm]?js$/.test(filePath) ? false : undefined),
+			// script chunk external under /_astro/ (guarded by
+			// `npm run check:inline-scripts`). Fonts stay external too: a small
+			// subset inlined as a data: URI breaks `font-src 'self'`. Other
+			// assets keep Vite's default 4 KB limit.
+			assetsInlineLimit: (filePath) => (/\.(?:[cm]?js|woff2?|ttf|otf)$/.test(filePath) ? false : undefined),
 		},
 	},
 	session: {

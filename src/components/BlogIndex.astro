@@ -1,23 +1,22 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import PostCard from "./PostCard.astro";
+import StoryCard from "./StoryCard.astro";
+import PageHeader from "./PageHeader.astro";
 import SidebarLayout from "./SidebarLayout.astro";
 import Sidebar from "./Sidebar.astro";
 import Button from "./Button.astro";
 import { blogHref, type BlogPage } from "../lib/blog-listing";
-import type { CategoryWithCount, PostSummary } from "../lib/content";
+import type { CategoryWithCount } from "../lib/content";
 
 // Shared by /blog (page 1) and /blog/page/[page]. Pure server rendering: search,
 // sort and paging are plain GET links and a GET form, so everything works without JS.
 interface Props {
   listing: BlogPage;
   categories: CategoryWithCount[];
-  recent: PostSummary[];
 }
-const { listing, categories, recent } = Astro.props;
+const { listing, categories } = Astro.props;
 const { posts, page, total, totalPages, filters, pageSize } = listing;
 const formatDate = (value: number) => new Date(value).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
-const recentPosts = recent.map((post) => ({ slug: post.slug, title: post.title, dateLabel: formatDate(post.publishedAt ?? post.createdAt) }));
 const isFiltered = filters.q !== "" || filters.sort !== "newest";
 const first = (page - 1) * pageSize + 1;
 const last = first + posts.length - 1;
@@ -40,10 +39,7 @@ for (let n = 1; n <= totalPages; n++) {
 ---
 
 <BaseLayout title={title} description={description}>
-  <section class="blog-header">
-    <h1>Blog</h1>
-    <p class="subtitle">Guides, analysis, and opinion on World of Warcraft, Path of Exile 2, and other games.</p>
-  </section>
+  <PageHeader slot="hero" title="Blog" lede="Guides, analysis and opinion on World of Warcraft, Path of Exile 2 and other games." />
 
   {total === 0 && !isFiltered ? (
     <div class="empty-state">
@@ -82,9 +78,9 @@ for (let n = 1; n <= totalPages; n++) {
         ) : (
           <div id="blog-grid" class="posts-grid">
             {posts.map((post) => (
-              <PostCard title={post.title} slug={post.slug} image={post.featuredImageUrl}
+              <StoryCard title={post.title} slug={post.slug} image={post.featuredImageUrl}
                 dateIso={new Date(post.date).toISOString()} dateLabel={formatDate(post.date)}
-                categories={post.categories} excerpt={post.excerpt} />
+                category={post.categories[0] ? { name: post.categories[0] } : null} excerpt={post.excerpt} headingLevel="h2" />
             ))}
           </div>
         )}
@@ -106,26 +102,12 @@ for (let n = 1; n <= totalPages; n++) {
           </nav>
         )}
       </section>
-      <Sidebar slot="sidebar" categories={categories} recentPosts={recentPosts} />
+      <Sidebar slot="sidebar" categories={categories} />
     </SidebarLayout>
   )}
 </BaseLayout>
 
 <style>
-  .blog-header {
-    margin-bottom: 2rem;
-  }
-
-  .blog-header h1 {
-    margin-top: 0;
-  }
-
-  .subtitle {
-    font-size: 1.1rem;
-    color: var(--muted);
-    margin: 0;
-  }
-
   .blog-controls {
     display: flex;
     align-items: center;
@@ -177,8 +159,8 @@ for (let n = 1; n <= totalPages; n++) {
 
   .posts-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+    gap: 2.5rem 1.5rem;
   }
 
 

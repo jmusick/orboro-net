@@ -1,49 +1,118 @@
 ---
 import type { ContentRecord } from "../lib/content";
 import { excerptFromMarkdown } from "../lib/content";
+import { topicTone } from "../lib/topics";
 interface Props { pages: ContentRecord[]; }
 const { pages } = Astro.props;
+// Groups keep their order (WoW, PoE 2, other); each tile carries its game as a chip.
 const groups = [
-  { key: "wow", title: "World of Warcraft" },
-  { key: "poe2", title: "Path of Exile 2" },
-  { key: "other", title: "More tools & resources" },
-].map(group => ({ ...group, pages: pages.filter(page => page.homepageGroup === group.key).map(page => ({
+  { key: "wow", title: "World of Warcraft", mark: "WoW" },
+  { key: "poe2", title: "Path of Exile 2", mark: "PoE 2" },
+  { key: "other", title: "Tools & resources", mark: "Tools" },
+];
+const tiles = groups.flatMap(group => pages.filter(page => page.homepageGroup === group.key).map(page => ({
   ...page,
-  description: page.homepageDescription || excerptFromMarkdown(page.markdown.replace(/\{\{[\s\S]*?\}\}/g, "").replace(/<[^>]*>/g, ""), 180),
-})) })).filter(group => group.pages.length);
+  group,
+  tone: topicTone(group.key),
+  description: page.homepageDescription || excerptFromMarkdown(page.markdown.replace(/\{\{[\s\S]*?\}\}/g, "").replace(/<[^>]*>/g, ""), 140),
+})));
 ---
-{groups.length > 0 && (
-  <section class="featured-tools" aria-labelledby="tools-title">
-    <h2 id="tools-title">Featured tools</h2>
-    <p class="tools-intro">Simulators, analysis, and quick references for your next session.</p>
-    {groups.map(group => (
-      <section class="tool-group" aria-labelledby={`tools-${group.key}`}>
-        <h3 id={`tools-${group.key}`}>{group.title}</h3>
-        <div class="tool-grid">
-          {group.pages.map(page => (
-              <a class="ui-panel tool-card" href={`/pages/${page.slug}`}>
-                <h4>{page.title}</h4>
-                {page.description && <p>{page.description}</p>}
-                <span class="tool-action">Explore tool</span>
-              </a>
-          ))}
-        </div>
-      </section>
-    ))}
+{tiles.length > 0 && (
+  <section class="toolkit" aria-labelledby="tools-title">
+    <div class="section-head">
+      <h2 id="tools-title">Your toolkit</h2>
+      <p>Simulators, analysis and quick references for your next session.</p>
+    </div>
+    <ul class="tile-grid">
+      {tiles.map(tile => (
+        <li>
+          <a class="tile" href={`/pages/${tile.slug}`} data-tone={tile.tone}>
+            <div class:list={["tile__art", !tile.featuredImageUrl && "tile__art--plain"]}>
+              {tile.featuredImageUrl ? (
+                <img src={tile.featuredImageUrl} alt="" loading="lazy" />
+              ) : (
+                <span class="tile__mark" aria-hidden="true">{tile.group.mark}</span>
+              )}
+              <span class="tile__game">{tile.group.title}</span>
+            </div>
+            <div class="tile__body">
+              <h3>{tile.title}</h3>
+              {tile.description && <p>{tile.description}</p>}
+              <span class="tile__cta">Open tool</span>
+            </div>
+          </a>
+        </li>
+      ))}
+    </ul>
   </section>
 )}
 <style>
-  .featured-tools { margin-bottom: 2.5rem; }
-  h2 { margin: 0; font-size: 1.25rem; }
-  .tools-intro { margin: 0.5rem 0 1.5rem; color: var(--muted); }
-  .tool-group + .tool-group { margin-top: 1.5rem; }
-  h3 { margin: 0 0 0.75rem; font-size: 1rem; }
-  .tool-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
-  .tool-card { display: flex; flex-direction: column; gap: 0.65rem; padding: 1.25rem; text-decoration: none; transition: border-color var(--transition-fast); }
-  .tool-card:hover { border-color: var(--accent); }
-  .tool-card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-  h4 { margin: 0; font-size: 1.05rem; line-height: 1.35; }
-  .tool-card p { margin: 0; color: var(--muted); font-size: 0.9rem; line-height: 1.55; }
-  .tool-action { margin-top: auto; padding-top: 0.35rem; color: var(--accent); font-size: 0.875rem; font-weight: 600; }
-  @media (max-width: 600px) { .tool-grid { grid-template-columns: 1fr; } }
+  .section-head { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-6); }
+  .section-head h2 { margin: 0; font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem); }
+  .section-head p { margin: 0; color: var(--muted); }
+
+  .tile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16.5rem), 1fr)); gap: 1.25rem; margin: 0; padding: 0; list-style: none; }
+  .tile-grid li { margin: 0; display: flex; }
+
+  .tile {
+    --tone: var(--accent);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: var(--r-lg,16px);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--text);
+    text-decoration: none;
+    transition: border-color var(--transition-fast);
+  }
+  .tile[data-tone="wow"] { --tone: var(--game-wow); }
+  .tile[data-tone="poe"] { --tone: var(--game-poe); }
+  .tile:hover { border-color: var(--line-strong); }
+  .tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .tile__art { position: relative; aspect-ratio: 16 / 10; overflow: hidden; }
+  .tile__art img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
+  .tile:hover .tile__art img { transform: scale(1.04); }
+
+  /* Without artwork, the game's color and a large wordmark carry the tile. */
+  .tile__art--plain {
+    aspect-ratio: 16 / 7;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    background:
+      radial-gradient(circle at 80% 15%, rgb(from var(--tone) r g b / 30%), transparent 60%),
+      radial-gradient(circle at 10% 110%, rgb(from var(--accent) r g b / 12%), transparent 55%),
+      var(--surface-2);
+  }
+  .tile__mark {
+    padding: 0 0.9rem 0.4rem 0;
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 2rem + 2vw, 3.5rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: rgb(from var(--tone) r g b / 30%);
+    transition: color var(--transition-fast);
+  }
+  .tile:hover .tile__mark { color: rgb(from var(--tone) r g b / 45%); }
+
+  .tile__game {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: var(--r-pill,999px);
+    background: rgb(from var(--bg) r g b / 78%);
+    color: var(--tone);
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .tile__body { flex: 1; display: flex; flex-direction: column; gap: var(--space-2); padding: 1.25rem 1.25rem 1.35rem; }
+  .tile__body h3 { margin: 0; font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; line-height: 1.3; }
+  .tile__body p { margin: 0; color: var(--muted); font-size: 0.95rem; line-height: 1.5; }
+  .tile__cta { margin-top: auto; padding-top: var(--space-3); color: var(--accent); font-size: 0.9rem; font-weight: 700; }
 </style>

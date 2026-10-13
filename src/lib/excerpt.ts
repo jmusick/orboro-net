@@ -12,5 +12,11 @@ export function excerptFromMarkdown(markdown: string, maxLen = 155): string {
     .replace(/\n+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-  return plain.length > maxLen ? plain.slice(0, maxLen).trimEnd() + "…" : plain;
+  if (plain.length <= maxLen) return plain;
+  // Cut at the last word boundary so an excerpt never ends mid-word, unless
+  // that would throw away most of the allowance (one very long token).
+  const cut = plain.slice(0, maxLen + 1);
+  const boundary = cut.search(/\s\S*$/);
+  const end = boundary >= maxLen * 0.6 ? boundary : maxLen;
+  return plain.slice(0, end).replace(/[\s,;:.–—-]+$/, "") + "…";
 }
