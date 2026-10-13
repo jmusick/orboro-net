@@ -163,9 +163,11 @@ const structuredData = graphOf(blogPosting, breadcrumbList(trail, BASE));
     margin: 0 0 1.75rem;
   }
 
+  /* A fixed 3:1 box (the header art's usual ratio) reserves space before the image loads. */
   .hero {
     display: block;
     width: 100%;
+    aspect-ratio: 3 / 1;
     max-height: 380px;
     object-fit: cover;
     border-radius: var(--r-md,10px);

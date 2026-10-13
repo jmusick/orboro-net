@@ -107,9 +107,11 @@ const structuredData = graphOf(
     margin: -0.5rem 0 1.5rem;
   }
 
+  /* A fixed 3:1 box (the header art's usual ratio) reserves space before the image loads. */
   .hero {
     display: block;
     width: 100%;
+    aspect-ratio: 3 / 1;
     max-height: 360px;
     object-fit: cover;
     border-radius: var(--r-md,10px);

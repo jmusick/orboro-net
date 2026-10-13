@@ -17,6 +17,10 @@ updates:
     cooldown:
       default-days: 7
       semver-major-days: 14
+    ignore:
+      # @types/node tracks the Node runtime in .nvmrc; bump its major by hand alongside a runtime upgrade.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       # The framework, its adapter and the Workers toolchain move together and are tested together.
       astro-and-cloudflare:
