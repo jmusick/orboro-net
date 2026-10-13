@@ -614,11 +614,9 @@ function isActive(url: string): boolean {
         clear: both;
       }
       .prose h4 {
-        font-size: 0.78rem;
+        font-size: 1rem;
         font-weight: 700;
-        letter-spacing: 0.07em;
-        text-transform: uppercase;
-        color: var(--muted);
+        color: var(--text-soft);
         margin: 1.25rem 0 0.4rem;
       }
 
@@ -733,13 +731,11 @@ function isActive(url: string): boolean {
         padding: 0.85rem 1rem;
         background: var(--surface-2);
         border: 1px solid var(--line);
-        border-top: 2px solid var(--accent);
         border-radius: var(--r-md,10px);
         transition: border-color 0.2s ease;
       }
       .prose .overview-card:hover {
-        border-color: rgb(from var(--accent) r g b / 40%);
-        border-top-color: var(--accent);
+        border-color: var(--line-strong);
       }
       .prose .overview-label {
         font-size: 0.7rem;
@@ -844,9 +840,7 @@ function isActive(url: string): boolean {
         text-align: center;
         font-size: 1.15rem;
         color: var(--accent);
-        background:var(--surface-2);
-
-        text-shadow: 0 0 8px rgb(from var(--accent) r g b / 70%);
+        background: rgb(from var(--accent) r g b / 10%);
       }
       .prose td[data-node="off"] {
         text-align: center;
