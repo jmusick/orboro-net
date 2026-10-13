@@ -177,6 +177,24 @@ test('admin, login and auth routes never load or send analytics', () => {
   assert.equal(lookalike.pageViews.length, 1);
 });
 
+test('client navigation into excluded routes falls back to a full load once the tag runs', () => {
+  const navigate = (browser, href, formData) => {
+    const event = { to: new URL(href), formData, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; } };
+    browser.emit('astro:before-preparation', event);
+    return event.defaultPrevented;
+  };
+  const tracked = browserHarness('granted');
+  for (const href of ['https://www.orboro.net/admin', 'https://www.orboro.net/admin/nav', 'https://www.orboro.net/api/auth/login']) {
+    assert.equal(navigate(tracked, href), true, href);
+  }
+  assert.equal(navigate(tracked, 'https://www.orboro.net/blog'), false);
+  assert.equal(navigate(tracked, 'https://www.orboro.net/administration'), false);
+  assert.equal(navigate(tracked, 'https://www.orboro.net/api/search', {}), false);
+  // Without a running tag there is nothing to leave behind, so swaps stay client-side.
+  assert.equal(navigate(browserHarness(null), 'https://www.orboro.net/admin'), false);
+  assert.equal(navigate(browserHarness('denied'), 'https://www.orboro.net/admin'), false);
+});
+
 test('login page is rendered without the consent banner', () => {
   const login = readFileSync(new URL('../src/pages/admin/index.astro', import.meta.url), 'utf8');
   assert.match(login, /<BaseLayout[^>]*analytics=\{false\}/);

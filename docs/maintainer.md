@@ -53,3 +53,11 @@ The [October 10 audit issues](https://github.com/jmusick/orboro-net/issues?q=is%
 ## Privacy claims
 
 The live site loads Google Analytics through the consent banner. Analytics retention, Google data-sharing settings, Cloudflare log retention and live edge rules can't be established from this repository: check those dashboards before changing claims in `/privacy-policy`.
+
+Live settings the policy relies on, last checked October 13, 2026 (recheck after any plan, property or tag change):
+
+- **GA4 property** (stream "Orboro", `G-BLR72SL0L6`): event data retention 2 months, user data 14 months with reset on new activity. Google signals off; user-provided data collection off; granular location and device collection on. Only product link is Search Console (Domain property). Redact data: email on, URL query parameters off (the tag already sends origin and path only).
+- **GA4 Enhanced measurement**: all seven events on, including page changes from browser history events and site search (`q,s,search,query,keyword`). Both read the minimized `page_location`, so neither sends query values; a live ClientRouter navigation produced one path-only `page_view` and no `view_search_results`.
+- **GA4 account data sharing**: "Google products & services" off; modeling and business insights, technical support and business recommendations on. Data Processing Terms accepted May 4, 2025.
+- **Google tag trust**: `gtag.js` loads from `www.googletagmanager.com` without SRI because Google updates the file. CSP `script-src` restricts the host; `img-src https:` means CSP does not restrict where the tag can beacon, so the policy doesn't claim it does.
+- **Cloudflare**: Workers Paid (Workers Logs kept 7 days), zone on the Free plan, no account or zone Logpush jobs. Worker logs sample 100% and traces 10% (`wrangler.toml`).

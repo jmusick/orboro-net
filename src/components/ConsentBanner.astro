@@ -141,6 +141,12 @@ const nonce = Astro.locals.nonce;
       if (choice !== 'granted' && loaded) withdraw();
       else { init(); if (choice === 'granted') pageView(); }
     });
+    // A running tag can't be unloaded, so enter excluded routes with a full page load
+    // instead of a swap that would carry the tag's listeners onto the login screen.
+    // Cancelling preparation makes ClientRouter fall back to a normal navigation.
+    document.addEventListener('astro:before-preparation', function (event) {
+      if (loaded && !event.formData && EXCLUDED.test(event.to.pathname)) event.preventDefault();
+    });
     document.addEventListener('astro:page-load', function () { init(); pageView(); });
     init();
   })();

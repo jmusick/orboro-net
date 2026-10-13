@@ -39,8 +39,10 @@ const recentPosts = posts.map((p) => ({
       Cloudflare processes requests to deliver pages and images and operate its network.
       Request information can include your IP address, the requested URL, browser details,
       and referring information. Worker request/error logging and sampled tracing are enabled
-      to diagnose failures and monitor operation. Log retention depends on Cloudflare's service
-      and account settings; this site does not promise a fixed deletion period for those records.
+      to diagnose failures and monitor operation. On the site's current Cloudflare plan, Worker
+      logs are kept for 7 days, and no log export to other services is configured. Cloudflare's
+      own network records follow its service terms, and plan or setting changes can change these
+      periods, so this site does not promise a fixed deletion period for those records.
     </p>
 
     <h3>Analytics</h3>
@@ -63,9 +65,23 @@ const recentPosts = posts.map((p) => ({
     <p>
       The site's tag configuration keeps advertising storage, advertising user data, and
       advertising personalization consent denied, even when you accept analytics.
-      Analytics retention and Google's additional data-sharing or advertising features depend
-      on the Google Analytics account settings. Those settings have not been verified for this
-      policy update. The site code does not include a separate advertising pixel.
+      The site code does not include a separate advertising pixel.
+    </p>
+    <p>
+      As of the date of this policy, the Google Analytics property keeps event-level data for
+      2 months and user-level data for 14 months, extended while a returning browser stays
+      active. Google signals is off, and the property is linked to no advertising product;
+      its only product link is Google Search Console. Sharing analytics data with Google to
+      improve Google's products is off. Google may still use aggregated, de-identified data
+      for modeling and benchmarks, Google support staff may access the account when asked to
+      help, and Google may use account usage information to make recommendations. Reports
+      built from aggregated data can be kept longer than these periods.
+    </p>
+    <p>
+      After you accept, your browser loads Google's current analytics script directly from
+      Google. Google updates that script, so the site cannot pin or verify its exact contents
+      the way it does its own files. The site's security policy only accepts that script from
+      Google's tag domain, so a script from another host cannot take its place.
     </p>
 
     <p>
