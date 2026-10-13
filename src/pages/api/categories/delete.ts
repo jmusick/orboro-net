@@ -11,6 +11,7 @@ export const POST: APIRoute = async (context) => {
   if (!body.ok) return bodyRejection(body);
   const id = parseRecordId(formText(body.form, "id"));
   if (!id) return context.redirect("/admin/categories?error=invalid");
+  context.locals.auditTarget = id;
   await deleteCategoryById(context.locals, id);
   return context.redirect("/admin/categories");
 };

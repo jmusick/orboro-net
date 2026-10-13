@@ -21,5 +21,7 @@ declare namespace App {
     session: SessionRecord | null;
     /** Per-request CSP nonce, set in middleware. See AGENTS.md#security-response-headers. */
     nonce: string;
+    /** Record ID a mutation route touched, for its admin.action security event. */
+    auditTarget?: string;
   }
 }

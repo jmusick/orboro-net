@@ -8,6 +8,7 @@ import {
   readSessionCookie,
 } from "./lib/auth";
 import { isPrivatePath, privateCacheControl } from "./lib/cache-policy";
+import { adminActionEvent, logSecurityEvent } from "./lib/security-events";
 
 function buildCsp(nonce: string): string {
   return [
@@ -46,13 +47,32 @@ export const onRequest = defineMiddleware(async (context, next) => {
       // Expired, revoked and pre-digest cookies are cleared, as is the
       // unprefixed legacy name over HTTPS.
       if (session) clearStaleSessionCookies(context.cookies, context.url);
-      else clearSessionCookies(context.cookies, context.url);
+      else {
+        // Expired, revoked or forged; only the fact is logged, never the cookie.
+        logSecurityEvent("auth.session.rejected", {}, context.request);
+        clearSessionCookies(context.cookies, context.url);
+      }
     } catch {
+      logSecurityEvent("auth.session.lookup-failed", {}, context.request);
       clearSessionCookies(context.cookies, context.url);
     }
   }
 
-  const response = await next();
+  // Every admin POST gets one admin.action event with its outcome, so a new
+  // mutation route is covered without its own logging code.
+  const pathname = new URL(context.request.url).pathname;
+  const audit = (response: Response | null) => {
+    const fields = adminActionEvent(context.request.method, pathname, context.locals.user, response, context.locals.auditTarget);
+    if (fields) logSecurityEvent("admin.action", fields, context.request);
+  };
+  let response: Response;
+  try {
+    response = await next();
+  } catch (error) {
+    audit(null);
+    throw error;
+  }
+  audit(response);
 
   response.headers.set(
     "Strict-Transport-Security",

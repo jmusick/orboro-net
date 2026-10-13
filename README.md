@@ -176,7 +176,28 @@ The homepage combines a latest-article hero, featured tool pages grouped by game
 
 ### Disaster recovery
 
-If D1 is ever emptied or restored without a user, no one can sign in. Create a new admin with `npm run admin:create -- --remote` using the same `ADMIN_EMAIL` and `ADMIN_PASSWORD` variables. It does nothing while any user exists.
+Pick the path by what was lost. All three were rehearsed against throwaway copies on October 13, 2026 ([docs/operations.md](docs/operations.md)).
+
+**A bad write or deletion in D1 within the last 30 days (Workers Paid; 7 on Free).** Use D1 Time Travel, which restores the database in place to a minute or a bookmark. Note the current bookmark first so the restore itself can be undone:
+
+```bash
+npx wrangler d1 time-travel info orboro-db
+npx wrangler d1 time-travel restore orboro-db --timestamp=2026-10-13T20:00:00Z
+```
+
+**A lost database, or recovery older than Time Travel.** Restore from an export taken earlier with `npx wrangler d1 export orboro-db --remote --output=<file>.sql`. The export holds password hashes and session digests, so keep it out of the repository and treat it as a credential. Rehearse into a new database first, never straight into production:
+
+```bash
+npx wrangler d1 create orboro-db-restore
+node scripts/split-d1-export.mjs backup.sql restore-parts
+npx wrangler d1 execute orboro-db-restore --remote --file=restore-parts/01-d1_migrations.sql
+```
+
+Import every part in name order. The splitter exists because importing the whole export in one `--file` call failed with `{"D1_RESET_DO":true}` while each table imported cleanly. Check row counts and `PRAGMA foreign_key_check` against what you expect, then point `database_id` in `wrangler.toml` at the restored database and deploy. A restore fails if any row references a missing parent (for example content whose author was deleted outside the app); `scripts/content/repair-orphaned-authors.sql` fixes the known case.
+
+**Lost or damaged R2 media.** R2 has no versioning or point-in-time restore here, so recovery needs a copy made beforehand. Every object the site uses is referenced from D1 (`media.url`, `content.featured_image_url` and URLs in Markdown under `MEDIA_ORIGIN`). Fetch each one with `npx wrangler r2 object get orboro-net-media/<key> --remote --file=<path>`, and restore with `wrangler r2 object put … --content-type <type> --cache-control "public, max-age=31536000, immutable"`. Wrangler cannot list a bucket, so objects nothing references are not covered by this method.
+
+**No user after a restore.** If D1 is ever emptied or restored without a user, no one can sign in. Create a new admin with `npm run admin:create -- --remote` using the same `ADMIN_EMAIL` and `ADMIN_PASSWORD` variables. It does nothing while any user exists.
 
 ### Credential recovery
 
@@ -187,6 +208,22 @@ ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='15 to 128 characters' npm run admin:
 ```
 
 It reports `matching_users` (0 means no account has that email) and `sessions_remaining`, which should be 0. To sign an account out everywhere without changing the password, use `npm run sessions:revoke -- --email you@example.com --remote` (or `--all` for every account), or **Sign out all sessions** on the admin dashboard. Without `--remote`, `sessions:revoke` runs against local D1.
+
+The app holds no runtime secrets, so credential rotation is the admin password (above) plus the Cloudflare side: the Workers Builds API token (Worker → Settings → Builds) and any Wrangler login on a machine that may be compromised (`npx wrangler logout`, then revoke the session under the Cloudflare profile's API tokens).
+
+### Security events
+
+The Worker writes one structured log line per security event (`src/lib/security-events.ts`), queryable in Workers Logs by the `security_event` field:
+
+| Event | When |
+| --- | --- |
+| `auth.login.succeeded` / `auth.login.failed` | Sign-in outcome; failures carry `reason` (`credentials`, `malformed`, `too-large`…) and `account` (`known`/`unknown`) |
+| `auth.login.throttled` / `auth.login.unavailable` | The in-Worker limiter refused (`429`) or failed closed (`503`) |
+| `auth.session.rejected` / `auth.session.lookup-failed` | A session cookie matched no live session, or the lookup errored |
+| `authz.denied` | An admin page or endpoint was refused (`signed-out` or `forbidden`) |
+| `admin.action` | Every signed-in POST under `/api/` (content, categories, media, nav, logout, sign out everywhere) with `action`, `target`, `outcome` and `status` |
+
+Each line also has the method, path (never the query string), Cloudflare ray ID, country and ASN. Events never contain emails, passwords, cookies, tokens, request bodies or IP addresses: fields outside a fixed allowlist, or values that don't match their pattern, are dropped and counted in `dropped`.
 
 ## Content rendering
 

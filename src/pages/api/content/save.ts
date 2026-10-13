@@ -28,6 +28,7 @@ export const POST: APIRoute = async (context) => {
   }
 
   const id = text.id.trim() || undefined;
+  context.locals.auditTarget = id;
   const editor = (code: string) => `/admin/content/${id ? encodeURIComponent(id) : "new"}?error=${code}`;
   if (malformed) return context.redirect(editor("invalid"));
 
@@ -68,6 +69,7 @@ export const POST: APIRoute = async (context) => {
     if (error instanceof WriteValidationError) return context.redirect(editor(error.code));
     throw error;
   }
+  context.locals.auditTarget = savedId;
 
   const isProduction = new URL(context.request.url).hostname === "orboro.net";
   if (status === "published" && isProduction) {

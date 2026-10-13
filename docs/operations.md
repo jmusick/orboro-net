@@ -34,6 +34,25 @@ For [issue #6](https://github.com/jmusick/orboro-net/issues/6), a throwaway Work
 
 The OWASP figure of 600,000 is therefore not deployable. [cloudflare/workerd#7550](https://github.com/cloudflare/workerd/pull/7550), which would raise the default cap to 1,000,000, was still open. The site keeps 100,000 and is ready to migrate: raise the bounds in `src/lib/passwords.js` after re-measuring, and each account is rehashed on its next sign-in.
 
+## Security events and recovery drill — October 13, 2026
+
+For [issue #13](https://github.com/jmusick/orboro-net/issues/13).
+
+**Events.** The allowlisted security events described in the README were exercised against an isolated `wrangler dev` (its own local D1 and a generated test admin): unknown-account and wrong-password sign-ins, a successful sign-in, a valid and an invalid admin save, an anonymous delete, a forged session cookie and sign-out each produced the expected record. Canary values sent in the email, password, cookie, query string, `cf-connecting-ip` and user agent appeared nowhere in the server log.
+
+**Log access and retention.** Workers Logs on the Workers Paid plan keeps 7 days; no Logpush jobs exist (see [maintainer.md](maintainer.md)). Reading them requires a Cloudflare login on this account with Workers access (Workers & Pages → orboro-net → Observability); account membership was not reviewed here. Cloudflare's announced unified observability pricing (effective December 1, 2026) lists longer paid retention as "coming soon"; recheck then.
+
+**Session revocation and password rotation**, rehearsed on the same isolated copy: a signed-in cookie got `200` on `/admin/content`; after `sessions:revoke` it got `302` to sign-in; after `admin:reset-password` the earlier cookie was refused, the old password failed and the new one worked.
+
+**D1 recovery.** Production `orboro-db` was exported (124 KB) and restored into a throwaway database in the same account, which was then deleted. Findings:
+
+- The first import failed its foreign key check: production pages `about` and `path-of-exile-ii` named an author ID that matched no user (an older local-database ID). Production therefore could not be rebuilt from its own export. `scripts/content/repair-orphaned-authors.sql` was run against production (2 rows written) and `PRAGMA foreign_key_check` there now returns nothing.
+- With that repaired, importing the whole export in one `wrangler d1 execute --remote --file` call still failed with `{"D1_RESET_DO":true}` (Wrangler 4.148.0) on two fresh databases, while each table imported cleanly on its own. `scripts/split-d1-export.mjs` produces those per-table files.
+- The per-table restore matched production exactly: users 1, sessions 4, content 23, media 18, categories 5, content_categories 33, nav_items 15, login_attempts 2, migrations 13, 87,287 Markdown characters, and an identical SHA-256 over every content ID, length and update time and every media URL. No foreign key violations.
+- D1 Time Travel was available (30 days on Workers Paid) and reported a current bookmark. An in-place Time Travel restore of production was not rehearsed because it is destructive.
+
+**R2 recovery.** `orboro-net-media` held 19 objects (5.98 MB). Production D1 references 18 of them; those were downloaded with Wrangler (3.6 MB, 41 s), uploaded to a throwaway bucket with their content type and cache headers, read back, and matched by SHA-256 (79 s round trip). The throwaway bucket was emptied and deleted. The 19th object is referenced by nothing, and Wrangler cannot list buckets, so this method does not cover it. The drill's export and media copies were deleted afterwards; no standing backup was created.
+
 ## Decision history
 
 These rationales were consolidated from earlier project notes; they are historical, not new deployment changes.

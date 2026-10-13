@@ -15,6 +15,7 @@ export const POST: APIRoute = async (context) => {
     return context.redirect("/admin/media?error=invalid");
   }
 
+  context.locals.auditTarget = id;
   await deleteMediaById(context.locals, id);
   return context.redirect("/admin/media");
 };

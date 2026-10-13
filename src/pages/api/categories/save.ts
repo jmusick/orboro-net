@@ -14,6 +14,7 @@ export const POST: APIRoute = async (context) => {
   const name = formText(form, "name");
   const slug = formText(form, "slug");
   const id = rawId?.trim() || undefined;
+  context.locals.auditTarget = id;
   const editor = `/admin/categories/${id ? encodeURIComponent(id) : "new"}?error=invalid`;
   if (rawId === null || name === null || slug === null) return context.redirect(editor);
 
@@ -24,5 +25,6 @@ export const POST: APIRoute = async (context) => {
     if (error instanceof WriteValidationError) return context.redirect(editor);
     throw error;
   }
+  context.locals.auditTarget = savedId;
   return context.redirect(`/admin/categories/${encodeURIComponent(savedId)}?saved=1`);
 };

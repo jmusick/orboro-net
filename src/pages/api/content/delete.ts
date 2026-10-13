@@ -15,6 +15,7 @@ export const POST: APIRoute = async (context) => {
     return context.redirect("/admin/content?error=invalid");
   }
 
+  context.locals.auditTarget = id;
   await deleteContentById(context.locals, id);
   return context.redirect("/admin/content");
 };

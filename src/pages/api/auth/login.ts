@@ -17,6 +17,7 @@ import {
   reserveLoginAttempt,
 } from "../../../lib/login-throttle";
 import { MULTIPART, URLENCODED, formText, readBoundedForm } from "../../../lib/request-limits";
+import { logSecurityEvent } from "../../../lib/security-events";
 
 function refusal(status: number, message: string, retryAfterSeconds?: number): Response {
   const headers: Record<string, string> = { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" };
@@ -34,12 +35,14 @@ export const POST: APIRoute = async ({ request, locals, cookies, url, redirect }
     maxFields: 8,
   });
   if (!body.ok) {
+    logSecurityEvent("auth.login.failed", { reason: body.reason }, request);
     return body.status === 413 ? refusal(413, "Request too large.") : redirect("/admin?error=invalid");
   }
   const email = (formText(body.form, "email") ?? "").trim().toLowerCase();
   const password = formText(body.form, "password") ?? "";
 
   if (!email || !password || email.length > MAX_EMAIL_LENGTH || password.length > MAX_PASSWORD_LENGTH) {
+    logSecurityEvent("auth.login.failed", { reason: "malformed" }, request);
     return redirect("/admin?error=invalid");
   }
 
@@ -52,9 +55,11 @@ export const POST: APIRoute = async ({ request, locals, cookies, url, redirect }
   try {
     throttle = await reserveLoginAttempt(db, ip, email);
   } catch {
+    logSecurityEvent("auth.login.unavailable", { status: 503 }, request);
     return refusal(503, "Sign-in is temporarily unavailable. Try again shortly.", 30);
   }
   if (!throttle.allowed) {
+    logSecurityEvent("auth.login.throttled", { status: 429, retry_after_s: throttle.retryAfterSeconds }, request);
     return refusal(429, "Too many sign-in attempts. Try again later.", throttle.retryAfterSeconds);
   }
 
@@ -65,6 +70,8 @@ export const POST: APIRoute = async ({ request, locals, cookies, url, redirect }
 
   const ok = user ? await verifyPassword(password, user.password_hash) : await verifyDummyPassword(password);
   if (!user || !ok) {
+    // The email is never logged: a mistyped password pasted into it would leak.
+    logSecurityEvent("auth.login.failed", { reason: "credentials", account: user ? "known" : "unknown", user: user?.id }, request);
     return redirect("/admin?error=invalid");
   }
 
@@ -92,6 +99,7 @@ export const POST: APIRoute = async ({ request, locals, cookies, url, redirect }
 
   const session = await createSession(locals, user.id);
   setSessionCookie(cookies, url, session.token, session.expiresAt);
+  logSecurityEvent("auth.login.succeeded", { user: user.id }, request);
 
   return redirect("/admin");
 };
