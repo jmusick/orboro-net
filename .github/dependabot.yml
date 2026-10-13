@@ -1,5 +1,5 @@
 # Dependabot version updates. Security updates are a separate repository setting (Settings > Advanced
-# Security > Dependabot security updates) and are not controlled by this file; see README.md.
+# Security > Dependabot security updates) and are not controlled by this file; see docs/maintainer.md.
 #
 # Cadence: one weekly batch per ecosystem keeps review to a single sitting. The cooldown holds each new
 # release back for a week (two for majors) so a yanked or compromised release is usually caught before it

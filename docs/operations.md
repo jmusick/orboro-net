@@ -1,6 +1,6 @@
 # Operations and decision history
 
-Use [README.md](../README.md) for setup and deployment, [AGENTS.md](../AGENTS.md) for code conventions, and git commits and tags for the detailed change record.
+Use [README.md](../README.md) for setup and deployment, [maintainer.md](maintainer.md) for how the live site is run, [AGENTS.md](../AGENTS.md) for code conventions, and git commits and tags for the detailed change record.
 
 ## Deployment configuration check — October 10, 2026
 
