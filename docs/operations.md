@@ -53,6 +53,20 @@ For [issue #13](https://github.com/jmusick/orboro-net/issues/13).
 
 **R2 recovery.** `orboro-net-media` held 19 objects (5.98 MB). Production D1 references 18 of them; those were downloaded with Wrangler (3.6 MB, 41 s), uploaded to a throwaway bucket with their content type and cache headers, read back, and matched by SHA-256 (79 s round trip). The throwaway bucket was emptied and deleted. The 19th object is referenced by nothing, and Wrangler cannot list buckets, so this method does not cover it. The drill's export and media copies were deleted afterwards; no standing backup was created.
 
+## Release gate enforcement — October 13, 2026
+
+For [issue #14](https://github.com/jmusick/orboro-net/issues/14). This supersedes the GitHub part of the October 10 observation above.
+
+**Repository settings** (confirmed with the GitHub API): Dependabot alerts and Dependabot security updates enabled; secret scanning and push protection still enabled. No Dependabot alerts were open.
+
+**Ruleset** `master: require Release gate` (ID `25040552`, active, targets the default branch): requires the `Release gate` check from the GitHub Actions app (integration `15368`, so a same-named check from another app doesn't count), blocks force pushes and blocks deletion. The Repository admin role may bypass it at any time, so direct release pushes (`/patch`, `/minor`) still land; GitHub records them as bypasses. Pull requests, Dependabot's included, can't merge until the gate passes. "Require branches to be up to date" is off.
+
+**Proof.** Draft PR [#42](https://github.com/jmusick/orboro-net/pull/42) added a deliberately failing test. [CI run 38492351512](https://github.com/jmusick/orboro-net/actions/runs/38492351512) failed `Test, check and build` (159 passed, 1 failed) and therefore `Release gate`; GitHub reported the PR `BLOCKED` both as a draft and when ready, and `gh pr merge` without `--admin` was refused ("the base branch policy prohibits the merge"). The PR was closed unmerged and its branch deleted.
+
+**Limit: the ruleset doesn't gate deploys.** Workers Builds deploys every commit that reaches `master`, independently of GitHub checks, and starts before CI finishes. An admin push that bypasses the rule, or a merged commit whose CI later fails, still goes live. Example: after Dependabot PR [#41](https://github.com/jmusick/orboro-net/pull/41) merged, the first CI run on `2df10fa` failed `npm audit signatures` with an "invalid attestation" for `@astrojs/check@0.9.10` (a dev dependency the PR didn't touch; tarball integrity still matched the lockfile and the registry, and the check passed locally) while Workers Builds had already deployed. A rerun passed. Check CI on every release commit.
+
+**Workers Builds token.** The build uses `orboro-net build token`, a user API token (not an account token) covering 1 account and all zones, with no expiry or IP restriction. Its 25 permissions include Workers Scripts, D1, R2, KV, Secrets Store, Containers, Queues, AI and other account products, User Memberships and Details, and zone-level Workers Routes, SSL and Certificates and Email Routing Rules; the token list doesn't show read or edit levels. That is far wider than a deploy binding only D1 and R2 needs. Narrowing it is tracked in [issue #43](https://github.com/jmusick/orboro-net/issues/43). No Cloudflare settings were changed during this review.
+
 ## Decision history
 
 These rationales were consolidated from earlier project notes; they are historical, not new deployment changes.
