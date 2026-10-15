@@ -6,7 +6,7 @@ The CMS is built for a single admin. The `users.role` column also accepts `edito
 
 ## Features
 
-- Astro SSR on Cloudflare (`@astrojs/cloudflare`), with D1 migrations for users, sessions, content, media, categories and nav items
+- Astro SSR on Cloudflare (`@astrojs/cloudflare`), with D1 migrations for users, sessions, content, media, categories, nav items, and member accounts, comments, votes and reports
 - Custom email/password auth (PBKDF2 hashes, D1-backed sessions; no JWT or third-party service)
 - CMS editor for Markdown posts and pages with live preview (EasyMDE and its fonts are bundled npm dependencies)
 - Shortcodes for rich, self-contained widgets embedded in Markdown, such as the bookmarks list and featured-link cards (`src/lib/shortcodes.ts`)
@@ -241,8 +241,8 @@ The Worker writes one structured log line per security event (`src/lib/security-
 | --- | --- |
 | `auth.login.succeeded` / `auth.login.failed` | Sign-in outcome; failures carry `reason` (`credentials`, `malformed`, `too-large`…) and `account` (`known`/`unknown`) |
 | `auth.login.throttled` / `auth.login.unavailable` | The in-Worker limiter refused (`429`) or failed closed (`503`) |
-| `auth.session.rejected` / `auth.session.lookup-failed` | A session cookie matched no live session, or the lookup errored |
-| `authz.denied` | An admin page or endpoint was refused (`signed-out` or `forbidden`) |
+| `auth.session.rejected` / `auth.session.lookup-failed` | An admin or member session cookie matched no live session, or the lookup errored (`reason: member` for member cookies) |
+| `authz.denied` | An admin page or endpoint was refused (`signed-out` or `forbidden`), or a member action was (`member-signed-out` or `unverified`) |
 | `admin.action` | Every signed-in admin POST under `/api/` (content, categories, media, nav, moderation, logout, sign out everywhere) with `action`, `target`, `outcome` and `status` |
 | `member.registered` / `member.login.succeeded` / `member.login.failed` | Member sign-up and sign-in outcomes, by member ID; failures carry `reason` (`credentials`, `suspended`, `malformed`) |
 | `member.limited` / `member.unavailable` | A member budget refused a request, or the limiter or breach check failed |

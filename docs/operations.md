@@ -69,6 +69,14 @@ For [issue #14](https://github.com/jmusick/orboro-net/issues/14). This supersede
 
 **Workers Builds token.** The build uses `orboro-net build token`, a user API token (not an account token) covering 1 account and all zones, with no expiry or IP restriction. Its 25 permissions include Workers Scripts, D1, R2, KV, Secrets Store, Containers, Queues, AI and other account products, User Memberships and Details, and zone-level Workers Routes, SSL and Certificates and Email Routing Rules; the token list doesn't show read or edit levels. That is far wider than a deploy binding only D1 and R2 needs. Narrowing it is tracked in [issue #43](https://github.com/jmusick/orboro-net/issues/43). No Cloudflare settings were changed during this review.
 
+## Member accounts setup — October 15, 2026
+
+Done for v1.52.0 (member accounts and comments) through the authenticated dashboard and Wrangler. These are dated observations, not a claim that settings cannot change.
+
+- **Turnstile:** created widget `orboro-net-members`, Managed mode, hostname `orboro.net` only, pre-clearance off. Its site key is `TURNSTILE_SITE_KEY` in `wrangler.toml`; the secret was stored with `wrangler secret put TURNSTILE_SECRET_KEY`, the Worker's only runtime secret. The dashboard can show the secret again under the widget's **View Turnstile Keys** (**Show**); **Rotate Secret Key** replaces it and needs a new `secret put`.
+- **Email Sending:** onboarded `orboro.net` at the top level for the `EMAIL` binding (sender `no-reply@orboro.net`). Cloudflare added three MX records and an SPF TXT on `cf-bounce.orboro.net` and DKIM at `cf-bounce._domainkey.orboro.net`. Its review screen listed `_dmarc` as `v=DMARC1; p=reject;`, but the existing `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com` was kept, confirmed by public DNS afterwards. Keep `p=none` unless everything else that sends as @orboro.net (Brevo, other mailboxes) is DKIM-aligned. Inbound mail still goes through Email Routing (root MX unchanged).
+- **D1:** migration `0014_members_comments` applied to production before the release was pushed.
+
 ## Decision history
 
 These rationales were consolidated from earlier project notes; they are historical, not new deployment changes.
