@@ -42,6 +42,8 @@ For [issue #13](https://github.com/jmusick/orboro-net/issues/13).
 
 **Log access and retention.** Workers Logs on the Workers Paid plan keeps 7 days; no Logpush jobs exist (see [maintainer.md](maintainer.md)). Reading them requires a Cloudflare login on this account with Workers access (Workers & Pages → orboro-net → Observability); account membership was not reviewed here. Cloudflare's announced unified observability pricing (effective December 1, 2026) lists longer paid retention as "coming soon"; recheck then.
 
+**Alerts: not configured.** After v1.51.0 deployed, a production smoke test produced an `auth.login.failed` event that the Workers Logs view showed with every field. Cloudflare's Custom Alerts (beta, Alerts → Create an alert → Custom alert) query the SQL dataset `logs.workersLogs`, which exposes only fixed columns (`level`, `message`, `scriptName`, `url`, `httpStatus`, `logType`…) and no custom fields such as `security_event`. For orboro-net it held a few `log`/`info` rows per hour and no `warn` rows, so neither `level = 'warn'` nor a `message` match found the event. No alert was created. The likely fix is writing each security event to a Workers Analytics Engine dataset, which Custom Alerts can query; an alert on login `429`/`503` statuses alone would miss wrong-password failures.
+
 **Session revocation and password rotation**, rehearsed on the same isolated copy: a signed-in cookie got `200` on `/admin/content`; after `sessions:revoke` it got `302` to sign-in; after `admin:reset-password` the earlier cookie was refused, the old password failed and the new one worked.
 
 **D1 recovery.** Production `orboro-db` was exported (124 KB) and restored into a throwaway database in the same account, which was then deleted. Findings:
