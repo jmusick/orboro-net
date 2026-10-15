@@ -23,6 +23,8 @@ const mediaActive = currentPath.startsWith('/admin/media');
 const categoriesActive = currentPath.startsWith('/admin/categories');
 const designActive = currentPath === "/admin/design-system";
 const navActive = currentPath.startsWith('/admin/nav');
+const commentsActive = currentPath.startsWith('/admin/comments');
+const membersActive = currentPath.startsWith('/admin/members');
 ---
 
 <!doctype html>
@@ -217,6 +219,12 @@ const navActive = currentPath.startsWith('/admin/nav');
           </a>
           <a href="/admin/nav" class={`nav-link${navActive ? " active" : ""}`}>
             <Icon name="menu" size={20} /><span>Navigation</span>
+          </a>
+          <a href="/admin/comments" class={`nav-link${commentsActive ? " active" : ""}`}>
+            <Icon name="message-square" size={20} /><span>Comments</span>
+          </a>
+          <a href="/admin/members" class={`nav-link${membersActive ? " active" : ""}`}>
+            <Icon name="user" size={20} /><span>Members</span>
           </a>
           <a href="/admin/design-system" class={`nav-link${designActive ? " active" : ""}`}><Icon name="grid" size={20} /><span>Design system</span></a>
         </nav>

@@ -2,13 +2,28 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { test } from 'node:test';
-import { isAdmin, requireAdmin, requireUser } from '../src/lib/http.ts';
+import { isAdmin, requireAdmin, requireMember, requireUser } from '../src/lib/http.ts';
 
 // The app is admin-only by design (issue #16). editor/author exist in the
 // schema but grant nothing, so every admin page and mutation endpoint must
 // call requireAdmin before doing any work.
 
 const ROUTE_ROOTS = ['src/pages/api', 'src/pages/admin'];
+
+// Public member routes (accounts and comments). They are not admin routes:
+// each one either guards with requireMember or is listed in MEMBER_EXCEPTIONS.
+const MEMBER_PREFIXES = ['src/pages/api/members/', 'src/pages/api/comments/'];
+
+const MEMBER_EXCEPTIONS: Record<string, string> = {
+  'src/pages/api/members/register.ts': 'registration is for signed-out visitors',
+  'src/pages/api/members/login.ts': 'sign-in must be reachable while signed out',
+  'src/pages/api/members/logout.ts': 'any member session may end itself',
+  'src/pages/api/members/verify.ts': 'authorized by the single-use emailed token',
+  'src/pages/api/members/forgot.ts': 'password reset is for signed-out visitors',
+  'src/pages/api/members/reset.ts': 'authorized by the single-use emailed token',
+};
+
+const isMemberRoute = (route: string) => MEMBER_PREFIXES.some((prefix) => route.startsWith(prefix));
 
 // Routes that deliberately do not call requireAdmin, with the reason.
 const EXCEPTIONS: Record<string, string> = {
@@ -40,19 +55,39 @@ test('route enumeration finds the API and admin routes', () => {
 });
 
 test('every exception names an existing route', () => {
-  for (const route of Object.keys(EXCEPTIONS)) {
+  for (const route of [...Object.keys(EXCEPTIONS), ...Object.keys(MEMBER_EXCEPTIONS)]) {
     assert.ok(routes.includes(route), `${route} is listed as an exception but does not exist`);
   }
 });
 
 test('every other admin page and API route guards with requireAdmin before any work', () => {
   for (const route of routes) {
-    if (route in EXCEPTIONS) continue;
+    if (route in EXCEPTIONS || isMemberRoute(route)) continue;
     const text = source(route);
     const guard = text.match(/(\w+) = requireAdmin\((context|Astro)\);\n\s*if \(\1 instanceof Response\) return \1;/);
     assert.ok(guard, `${route} must call requireAdmin and return its Response`);
     const before = text.slice(0, guard.index);
     assert.ok(!/\bawait\b|readBoundedForm\(|\.formData\(|\.json\(\)/.test(before), `${route} does work before its admin guard`);
+  }
+});
+
+test('every member route guards with requireMember before any work, or is a listed exception', () => {
+  const memberRoutes = routes.filter(isMemberRoute);
+  assert.ok(memberRoutes.length >= 15, `only found ${memberRoutes.length} member routes`);
+  for (const route of memberRoutes) {
+    const text = source(route);
+    assert.doesNotMatch(text, /requireAdmin|requireUser|locals\.user\b/, `${route} must not touch admin sessions`);
+    if (route in MEMBER_EXCEPTIONS) continue;
+    const guard = text.match(/(\w+) = requireMember\(context(, \{ verified: false \})?\);\n\s*if \(\1 instanceof Response\) return \1;/);
+    assert.ok(guard, `${route} must call requireMember and return its Response`);
+    const before = text.slice(0, guard.index);
+    assert.ok(!/\bawait\b|readBoundedForm\(|readMemberFields\(|\.formData\(|\.json\(\)/.test(before), `${route} does work before its member guard`);
+  }
+});
+
+test('comment routes need a verified member; account routes allow unverified ones', () => {
+  for (const route of routes.filter((r) => r.startsWith('src/pages/api/comments/'))) {
+    assert.match(source(route), /= requireMember\(context\);/, `${route} must require a verified email`);
   }
 });
 
@@ -72,6 +107,8 @@ test('exceptions keep the guards they rely on', () => {
     routes.filter((r) => r.startsWith('src/pages/api/auth/')),
     ['src/pages/api/auth/login.ts', 'src/pages/api/auth/logout.ts', 'src/pages/api/auth/revoke-all.ts'],
   );
+  // The member account page is guarded too, though it is not under /admin.
+  assert.match(source('src/pages/account/index.astro'), /= requireMember\(Astro, \{ verified: false \}\);\n\s*if \(signedIn instanceof Response\) return signedIn;/);
 });
 
 function context(user: UserRecord | null) {
@@ -115,4 +152,28 @@ test('requireUser still admits any signed-in role (revoke-all)', () => {
   const anonymous = requireUser(context(null));
   assert.ok(anonymous instanceof Response);
   assert.equal(anonymous.headers.get('Location'), '/admin');
+});
+
+const member = (verified: boolean): MemberRecord => ({ id: 'm1', username: 'reader', displayName: '', email: 'reader@example.com', emailVerified: verified });
+
+test('a member session never satisfies the admin guards, and an admin session never satisfies requireMember', () => {
+  const asMember = { locals: { user: null, member: member(true) } as unknown as App.Locals, redirect: context(null).redirect };
+  const adminOnly = requireAdmin(asMember);
+  assert.ok(adminOnly instanceof Response);
+  assert.equal(adminOnly.headers.get('Location'), '/admin');
+  assert.ok(requireUser(asMember) instanceof Response);
+
+  const asAdmin = { locals: { user: user('admin'), member: null } as unknown as App.Locals, redirect: context(null).redirect };
+  const memberOnly = requireMember(asAdmin);
+  assert.ok(memberOnly instanceof Response);
+  assert.equal(memberOnly.headers.get('Location'), '/account/login');
+});
+
+test('requireMember refuses unverified members unless the route allows them', () => {
+  const ctx = (m: MemberRecord) => ({ locals: { user: null, member: m } as unknown as App.Locals, redirect: context(null).redirect });
+  const refused = requireMember(ctx(member(false)));
+  assert.ok(refused instanceof Response);
+  assert.equal(refused.headers.get('Location'), '/account?error=unverified');
+  assert.equal((requireMember(ctx(member(false)), { verified: false }) as MemberRecord).id, 'm1');
+  assert.equal((requireMember(ctx(member(true))) as MemberRecord).id, 'm1');
 });

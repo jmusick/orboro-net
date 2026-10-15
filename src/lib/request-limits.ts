@@ -11,6 +11,10 @@ export const MULTIPART = "multipart/form-data";
 export const BODY_LIMITS = {
   /** Single-ID forms: deletes. */
   small: 4 * 1024,
+  /** Member account forms: sign-in, registration, profile, password. */
+  member: 8 * 1024,
+  /** A comment or edit (10,000 characters, URL-encoded or multipart). */
+  comment: 128 * 1024,
   /** Category and media-URL forms. */
   record: 16 * 1024,
   /** Navigation tree JSON (up to 500 items, URL-encoded). */

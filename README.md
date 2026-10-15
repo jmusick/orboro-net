@@ -2,7 +2,7 @@
 
 Orboro.net is a personal site and Markdown CMS built with Astro 7 and deployed as a Cloudflare Worker. Content and accounts live in Cloudflare D1, and uploaded images live in Cloudflare R2. It runs the live site at [orboro.net](https://orboro.net), and you can run your own copy with the steps below. See `package.json` for the current version.
 
-The CMS is built for a single admin. The `users.role` column also accepts `editor` and `author`, but those roles grant no access: every admin page and mutation endpoint requires `admin`, and a signed-in non-admin sees only an access-denied page with a sign-out button. There is no public registration or user-management UI.
+The CMS is built for a single admin. The `users.role` column also accepts `editor` and `author`, but those roles grant no access: every admin page and mutation endpoint requires `admin`, and a signed-in non-admin sees only an access-denied page with a sign-out button. Public visitors can register a separate **member** account (its own table, sessions and cookie) to comment and vote; members can never reach the admin area.
 
 ## Features
 
@@ -18,6 +18,9 @@ The CMS is built for a single admin. The `users.role` column also accepts `edito
 - Server-side code highlighting, Markdown sanitizing and HTML-safe inline JSON
 - Accessible filters and form feedback: errors focus a summary that links to the relevant fields, including EasyMDE
 - Opt-in Google Analytics through a consent banner, and security response headers set in `src/middleware.ts`
+- Member accounts (`/account`): registration with email confirmation, sign-in by username or email, password reset, email change, profile, sign out everywhere and account deletion, plus public profiles at `/u/[username]`
+- Threaded comments on pages and posts with reddit-style up/down votes, Best/Top/New/Old sorting, nested replies, edits, deletes and reports; each page's comments can be open, locked or hidden
+- Admin moderation: a reported-comments queue and recent comments (`/admin/comments`), and member management (`/admin/members`: search, suspend, reinstate, confirm email, sign out, delete)
 
 ## Requirements
 
@@ -38,19 +41,25 @@ These steps run the site locally with simulated D1 and R2. Nothing touches a Clo
    npm ci
    ```
 
-2. Apply migrations to the local D1 database:
+2. Copy the local settings. `.dev.vars.example` holds Cloudflare's public Turnstile test keys, which always pass:
+
+   ```bash
+   cp .dev.vars.example .dev.vars
+   ```
+
+3. Apply migrations to the local D1 database:
 
    ```bash
    npm run d1:migrate:local
    ```
 
-3. Create the first admin. There is no setup page; the script inserts a user only while the users table is empty. The password must be 15 to 128 characters (counted as Unicode code points, never trimmed or truncated) and must not contain the site name or the email's name. It is also screened against known breaches through the [Pwned Passwords](https://haveibeenpwned.com/API/v3#PwnedPasswords) range API, which receives only the first five characters of the password's SHA-1. If that service can't be reached the script refuses; `--skip-breach-check` proceeds without screening:
+4. Create the first admin. There is no setup page; the script inserts a user only while the users table is empty. The password must be 15 to 128 characters (counted as Unicode code points, never trimmed or truncated) and must not contain the site name or the email's name. It is also screened against known breaches through the [Pwned Passwords](https://haveibeenpwned.com/API/v3#PwnedPasswords) range API, which receives only the first five characters of the password's SHA-1. If that service can't be reached the script refuses; `--skip-breach-check` proceeds without screening:
 
    ```bash
    ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='15 to 128 characters' npm run admin:create -- --local
    ```
 
-4. Start local dev with the full Cloudflare runtime, then open `http://127.0.0.1:8787/admin`:
+5. Start local dev with the full Cloudflare runtime, then open `http://127.0.0.1:8787/admin`:
 
    ```bash
    npm run dev
@@ -63,6 +72,8 @@ npm run dev:astro
 ```
 
 Use `127.0.0.1` rather than `localhost`; some integrations need an exact origin match.
+
+Member email is simulated locally: `wrangler dev` doesn't send it, and instead prints `send_email binding called` with the paths of the text and HTML files it wrote under `.wrangler/tmp/email/`. Open the text file to follow a confirmation or reset link.
 
 ## Making it your own
 
@@ -77,6 +88,8 @@ The repository is the source of the live orboro.net site, so several values are 
 | IndexNow and WebSub | `src/lib/indexnow.ts` (host and key), the key file in `public/`, and the production hostname check in `src/pages/api/content/save.ts` |
 | Site owner and profiles | the `WebSite` and `Person` JSON-LD in `src/pages/index.astro`, and `src/lib/profiles.ts` (footer profiles and Patreon link) |
 | Privacy policy | `src/pages/privacy-policy.astro` and `PRIVACY_UPDATED_AT` in `src/lib/privacy.ts` |
+| Member email sender | `MEMBER_EMAIL_FROM` in `src/lib/member-email.ts` and `allowed_sender_addresses` in `wrangler.toml` |
+| Turnstile | `TURNSTILE_SITE_KEY` in `wrangler.toml` and the `TURNSTILE_SECRET_KEY` secret |
 | Logo and artwork | `public/images/`, then `node scripts/build-brand-images.mjs` to rebuild the social and header images |
 
 Generate a new IndexNow key rather than reusing the published one. The SQL files in `scripts/content/` seed orboro.net's own articles and tool pages; they are examples of the seed pattern, not setup steps.
@@ -105,7 +118,16 @@ Generate a new IndexNow key rather than reusing the published one. The SQL files
    ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='15 to 128 characters' npm run admin:create -- --remote
    ```
 
-4. Deploy:
+4. Set up member accounts:
+   - Create a Turnstile widget (Cloudflare dashboard, Turnstile) for your hostname, put its site key in `TURNSTILE_SITE_KEY` in `wrangler.toml`, and store its secret key:
+
+     ```bash
+     npx wrangler secret put TURNSTILE_SECRET_KEY
+     ```
+
+   - Onboard your sending domain in Cloudflare Email Service (Email Sending) so the `EMAIL` binding can send from the address in `allowed_sender_addresses`. Until it is set up, registration still succeeds but confirmation and reset emails fail (logged as `member.email.failed`).
+
+5. Deploy:
 
    ```bash
    npm run deploy
@@ -113,9 +135,9 @@ Generate a new IndexNow key rather than reusing the published one. The SQL files
 
 `astro build` writes the real deploy config to `dist/server/wrangler.json`, which `wrangler deploy` and `wrangler dev` pick up. To deploy on every push instead, connect the repository to [Cloudflare Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/) with build command `npm run build` and deploy command `npx wrangler deploy`; it reads `.nvmrc` for the Node version.
 
-- Bindings are `DB` (D1), `MEDIA` (R2) and `ASSETS` (static assets). Custom domains, production secrets and edge security rules are configured in Cloudflare, outside the repository. Wrangler enables Workers logs and sampled traces.
+- Bindings are `DB` (D1), `MEDIA` (R2), `ASSETS` (static assets) and `EMAIL` (Cloudflare Email Service, member account email). Custom domains, production secrets and edge security rules are configured in Cloudflare, outside the repository. Wrangler enables Workers logs and sampled traces.
 - Apply new schema migrations locally, verify them, then apply them remotely **before** deploying code that needs them. Content you create in local D1 stays local; deploying code doesn't copy it to production.
-- The app needs no runtime secrets. If you add one, put it in `.dev.vars` for local dev (gitignored) and set it in production with `wrangler secret put <NAME>`.
+- The one runtime secret is `TURNSTILE_SECRET_KEY`. Local dev reads it from `.dev.vars` (gitignored; copy `.dev.vars.example`), production from `wrangler secret put`. Without it, registration and password reset refuse with "temporarily unavailable" rather than skipping the check.
 
 ## Scripts
 
@@ -209,7 +231,7 @@ ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='15 to 128 characters' npm run admin:
 
 It reports `matching_users` (0 means no account has that email) and `sessions_remaining`, which should be 0. To sign an account out everywhere without changing the password, use `npm run sessions:revoke -- --email you@example.com --remote` (or `--all` for every account), or **Sign out all sessions** on the admin dashboard. Without `--remote`, `sessions:revoke` runs against local D1.
 
-The app holds no runtime secrets, so credential rotation is the admin password (above) plus the Cloudflare side: the Workers Builds API token (Worker → Settings → Builds) and any Wrangler login on a machine that may be compromised (`npx wrangler logout`, then revoke the session under the Cloudflare profile's API tokens).
+The app's only runtime secret is the Turnstile secret key (rotate it in the Turnstile dashboard, then `npx wrangler secret put TURNSTILE_SECRET_KEY`), so credential rotation is the admin password (above), that key, plus the Cloudflare side: the Workers Builds API token (Worker → Settings → Builds) and any Wrangler login on a machine that may be compromised (`npx wrangler logout`, then revoke the session under the Cloudflare profile's API tokens).
 
 ### Security events
 
@@ -221,7 +243,11 @@ The Worker writes one structured log line per security event (`src/lib/security-
 | `auth.login.throttled` / `auth.login.unavailable` | The in-Worker limiter refused (`429`) or failed closed (`503`) |
 | `auth.session.rejected` / `auth.session.lookup-failed` | A session cookie matched no live session, or the lookup errored |
 | `authz.denied` | An admin page or endpoint was refused (`signed-out` or `forbidden`) |
-| `admin.action` | Every signed-in POST under `/api/` (content, categories, media, nav, logout, sign out everywhere) with `action`, `target`, `outcome` and `status` |
+| `admin.action` | Every signed-in admin POST under `/api/` (content, categories, media, nav, moderation, logout, sign out everywhere) with `action`, `target`, `outcome` and `status` |
+| `member.registered` / `member.login.succeeded` / `member.login.failed` | Member sign-up and sign-in outcomes, by member ID; failures carry `reason` (`credentials`, `suspended`, `malformed`) |
+| `member.limited` / `member.unavailable` | A member budget refused a request, or the limiter or breach check failed |
+| `member.turnstile.failed` / `member.email.failed` | Turnstile refused or couldn't be reached, or an account email couldn't be sent |
+| `member.action` | Every signed-in member POST under `/api/members/` and `/api/comments/`, with `member` instead of `user` |
 
 Each line also has the method, path (never the query string), Cloudflare ray ID, country and ASN. Events never contain emails, passwords, cookies, tokens, request bodies or IP addresses: fields outside a fixed allowlist, or values that don't match their pattern, are dropped and counted in `dropped`.
 
@@ -247,6 +273,7 @@ Each line also has the method, path (never the query string), Cloudflare ray ID,
 
 ## Security and privacy
 
+- Member accounts are separate from admin accounts: `members`, `member_sessions` and the `__Host-orboro_member` cookie never satisfy `requireAdmin`, and an admin session never satisfies `requireMember`. Members use the same password rules and hasher as the admin, plus breach screening that fails open (an outage at Pwned Passwords doesn't block sign-ups). Registration and password reset are protected by Turnstile and in-Worker budgets, and neither reveals whether an email has an account. Comments are plain text, escaped on output, with `rel="ugc nofollow"` links.
 - Admin login is password-only, with in-Worker throttling and no MFA or self-service password recovery. Passwords are stored as PBKDF2-HMAC-SHA256 at 100,000 iterations, the most Cloudflare's deployed runtime accepts; a later increase rehashes each account on its next sign-in. Sessions last an absolute 14 days from sign-in, with no idle timeout. D1 stores only a SHA-256 digest of each session token, and over HTTPS the cookie is `__Host-orboro_session`.
 - Author Markdown is sanitized, inline JSON is encoded for HTML, and a nonce-based CSP is enforced. Inline style attributes are blocked. Publishing is a trusted-admin capability; these controls don't make it safe to publish untrusted content.
 - Google Analytics loads only after acceptance in `ConsentBanner.astro`, and never in the authenticated admin layout. Without acceptance or JavaScript the Google tag is never fetched. The choice is stored in localStorage as `orboro-analytics-consent`, and footer **Cookie preferences** reopens the banner. Withdrawing consent disables analytics, clears GA cookies and reloads.

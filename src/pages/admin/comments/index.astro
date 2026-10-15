@@ -1,0 +1,57 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import FormMessage from "../../../components/FormMessage.astro";
+import ModerationList from "../../../components/ModerationList.astro";
+import { listRecentComments, listReportedComments } from "../../../lib/comments";
+import { ensureDB } from "../../../lib/db";
+import { requireAdmin } from "../../../lib/http";
+
+const access = requireAdmin(Astro);
+if (access instanceof Response) return access;
+
+const params = Astro.url.searchParams;
+const view = params.get("view") === "recent" ? "recent" : "reports";
+const db = ensureDB(Astro.locals);
+const [reported, recent] = await Promise.all([
+  listReportedComments(db),
+  view === "recent" ? listRecentComments(db, 100) : Promise.resolve([]),
+]);
+const done = params.get("done");
+const doneMessage = done === "remove" ? "Comment removed." : done === "restore" ? "Comment restored." : done === "dismiss" ? "Reports dismissed." : null;
+const error = params.get("error");
+---
+
+<AdminLayout title="Comments">
+  {doneMessage && <FormMessage>{doneMessage}</FormMessage>}
+  {error && <FormMessage error>{error === "missing" ? "That comment no longer exists." : "That moderation request couldn't be processed."}</FormMessage>}
+  <nav class="mod-tabs" aria-label="Comment views">
+    <a href="/admin/comments" aria-current={view === "reports" ? "page" : undefined}>Reported ({reported.length})</a>
+    <a href="/admin/comments?view=recent" aria-current={view === "recent" ? "page" : undefined}>Recent</a>
+  </nav>
+  <section aria-label={view === "reports" ? "Reported comments" : "Recent comments"}>
+    <p class="mod-note">
+      {view === "reports"
+        ? "Comments members have reported. Removing hides a comment publicly as [removed] (its text is kept so you can restore it) and resolves its reports."
+        : "The newest 100 comments across the site, removed ones included. Comments their authors deleted aren't listed."}
+    </p>
+    {view === "reports"
+      ? <ModerationList items={reported} view="reports" empty="No open reports." />
+      : <ModerationList items={recent} view="recent" empty="No comments yet." />}
+  </section>
+</AdminLayout>
+
+<style>
+  .mod-tabs { display: flex; gap: 0.5rem; }
+  .mod-tabs a {
+    padding: 0.6rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    color: var(--muted);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+  }
+  .mod-tabs a:hover { color: var(--accent); border-color: var(--accent); }
+  .mod-tabs a[aria-current="page"] { color: var(--accent); border-color: var(--accent); }
+  .mod-note { color: var(--muted); }
+</style>

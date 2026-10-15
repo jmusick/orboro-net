@@ -1,0 +1,30 @@
+---
+// Landing page for emailed confirmation links. Spending the token takes a
+// button press (a POST), so mail scanners that prefetch links can't use it up.
+import AccountShell from "../../components/AccountShell.astro";
+import Button from "../../components/Button.astro";
+import FormMessage from "../../components/FormMessage.astro";
+import { memberMessage } from "../../lib/member-messages";
+
+const params = Astro.url.searchParams;
+const token = params.get("token") ?? "";
+const purpose = params.get("purpose") === "email" ? "email" : "verify";
+const code = params.get("error");
+const error = code === "invalid" ? memberMessage("expired") : memberMessage(code);
+const usable = /^[A-Za-z0-9_-]{43}$/.test(token);
+---
+
+<AccountShell title={purpose === "email" ? "Confirm new email" : "Confirm your email"} description="Confirm the email address for your Orboro.net account.">
+  {error && <FormMessage error>{error}</FormMessage>}
+  {usable ? (
+    <form method="post" action="/api/members/verify">
+      <input type="hidden" name="token" value={token} />
+      <input type="hidden" name="purpose" value={purpose} />
+      <p>{purpose === "email" ? "Confirm to make this the email address for your account." : "Confirm this address to finish setting up your account and start commenting."}</p>
+      <Button type="submit" variant="primary">Confirm email</Button>
+    </form>
+  ) : !error ? (
+    <FormMessage error>This confirmation link is incomplete. Open the link from your email again, or request a new one from your account page.</FormMessage>
+  ) : null}
+  <p class="account__links"><a href="/account">Your account</a><a href="/account/login">Sign in</a></p>
+</AccountShell>

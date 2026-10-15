@@ -1,0 +1,16 @@
+---
+// Editor control for a page's or post's comments: open, locked or hidden.
+interface Props {
+  mode?: string;
+}
+const { mode = "open" } = Astro.props;
+---
+<div class="form-group full">
+  <label for="commentsMode">Comments</label>
+  <select id="commentsMode" name="commentsMode" aria-describedby="comments-mode-hint">
+    <option value="open" selected={mode === "open"}>Open: members can comment and vote</option>
+    <option value="locked" selected={mode === "locked"}>Locked: existing comments shown read-only</option>
+    <option value="hidden" selected={mode === "hidden"}>Hidden: no comments section</option>
+  </select>
+  <small id="comments-mode-hint">Moderate comments and members under Comments and Members in the sidebar.</small>
+</div>

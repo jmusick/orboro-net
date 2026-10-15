@@ -8,12 +8,19 @@ import {
   readSessionCookie,
 } from "./lib/auth";
 import { isPrivatePath, privateCacheControl } from "./lib/cache-policy";
-import { adminActionEvent, logSecurityEvent } from "./lib/security-events";
+import { clearMemberCookie, hasMemberCookie, readMemberCookie } from "./lib/member-cookie";
+import { findMemberSession, pruneMemberRecords } from "./lib/members";
+import { adminActionEvent, logSecurityEvent, memberActionEvent } from "./lib/security-events";
+
+// Cloudflare Turnstile (registration and password reset) loads its script and
+// challenge frame from this origin. It is allowed sitewide because ClientRouter
+// keeps the first document's policy across in-site navigation.
+const TURNSTILE_ORIGIN = "https://challenges.cloudflare.com";
 
 function buildCsp(nonce: string): string {
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' https://www.googletagmanager.com`,
+    `script-src 'self' 'nonce-${nonce}' https://www.googletagmanager.com ${TURNSTILE_ORIGIN}`,
     `style-src 'self' 'nonce-${nonce}'`,
     "style-src-attr 'none'",
     // Published Markdown, Atlas artwork and bookmark favicons may use HTTPS
@@ -21,6 +28,7 @@ function buildCsp(nonce: string): string {
     "img-src 'self' data: https:",
     "font-src 'self'",
     "connect-src 'self' https://www.google-analytics.com https://region1.google-analytics.com",
+    `frame-src ${TURNSTILE_ORIGIN}`,
     "object-src 'none'",
     "base-uri 'self'",
     "frame-ancestors 'none'",
@@ -35,6 +43,7 @@ function generateNonce(): string {
 export const onRequest = defineMiddleware(async (context, next) => {
   context.locals.user = null;
   context.locals.session = null;
+  context.locals.member = null;
   context.locals.nonce = generateNonce();
 
   const hasSession = hasSessionCookie(context.cookies, context.url);
@@ -58,12 +67,36 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
   }
 
+  // Member sessions are resolved separately from admin ones and never set
+  // locals.user, so they can't reach requireAdmin.
+  const hasMember = hasMemberCookie(context.cookies, context.url);
+  const memberToken = readMemberCookie(context.cookies, context.url);
+  const db = ((workerEnv as unknown) as { DB?: D1Database }).DB;
+  if (hasMember && db) {
+    try {
+      const found = memberToken ? await findMemberSession(db, memberToken) : null;
+      if (found) {
+        const { id, username, displayName, email, emailVerified } = found.member;
+        context.locals.member = { id, username, displayName, email, emailVerified };
+      } else {
+        logSecurityEvent("auth.session.rejected", { reason: "member" }, context.request);
+        clearMemberCookie(context.cookies, context.url);
+      }
+      if (crypto.getRandomValues(new Uint32Array(1))[0] % 100 === 0) await pruneMemberRecords(db);
+    } catch {
+      logSecurityEvent("auth.session.lookup-failed", { reason: "member" }, context.request);
+      clearMemberCookie(context.cookies, context.url);
+    }
+  }
+
   // Every admin POST gets one admin.action event with its outcome, so a new
   // mutation route is covered without its own logging code.
   const pathname = new URL(context.request.url).pathname;
   const audit = (response: Response | null) => {
     const fields = adminActionEvent(context.request.method, pathname, context.locals.user, response, context.locals.auditTarget);
     if (fields) logSecurityEvent("admin.action", fields, context.request);
+    const memberFields = memberActionEvent(context.request.method, pathname, context.locals.member, response, context.locals.auditTarget);
+    if (memberFields) logSecurityEvent("member.action", memberFields, context.request);
   };
   let response: Response;
   try {
@@ -92,7 +125,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   const cacheControl = privateCacheControl(
     new URL(context.request.url).pathname,
-    hasSession,
+    hasSession || hasMember,
     response.headers.get("Content-Type"),
     response.headers.get("Cache-Control"),
   );

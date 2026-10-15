@@ -5,6 +5,8 @@ import Card from "../../components/Card.astro";
 import FormMessage from "../../components/FormMessage.astro";
 import Button from "../../components/Button.astro";
 import { isAdmin } from "../../lib/http";
+import { moderationCounts } from "../../lib/comments";
+import { ensureDB } from "../../lib/db";
 
 // Admin-only by design (issue #16): only an admin session sees the dashboard.
 // A signed-in user with any other role gets a forbidden notice and sign out.
@@ -13,6 +15,7 @@ const loggedIn = isAdmin(user);
 const forbidden = Boolean(user) && !loggedIn;
 const error = Astro.url.searchParams.get("error");
 const signedOutAll = Astro.url.searchParams.get("signedout") === "all";
+const counts = loggedIn ? await moderationCounts(ensureDB(Astro.locals)) : null;
 ---
 
 {loggedIn ? (
@@ -28,6 +31,12 @@ const signedOutAll = Astro.url.searchParams.get("signedout") === "all";
         </Card>
         <Card icon="image" title="Manage Media" href="/admin/media">
           <p>Upload and organize media files</p>
+        </Card>
+        <Card icon="message-square" title="Moderate Comments" href="/admin/comments">
+          <p>{counts?.openReports ? `${counts.openReports} reported ${counts.openReports === 1 ? "comment needs" : "comments need"} review` : "No reported comments"}</p>
+        </Card>
+        <Card icon="user" title="Manage Members" href="/admin/members">
+          <p>{counts?.members ?? 0} public {counts?.members === 1 ? "account" : "accounts"}</p>
         </Card>
       </div>
     </section>

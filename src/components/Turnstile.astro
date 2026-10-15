@@ -1,0 +1,58 @@
+---
+// Cloudflare Turnstile for the registration and reset forms. The widget is
+// rendered explicitly by the bundled script below, so it also appears after a
+// ClientRouter navigation. It adds a hidden `cf-turnstile-response` field to
+// the surrounding form, which the API route checks with Siteverify.
+import { turnstileSiteKey } from "../lib/member-actions";
+
+interface Props {
+  action: "register" | "reset";
+}
+const { action } = Astro.props;
+const siteKey = turnstileSiteKey();
+---
+
+<div class="turnstile" data-turnstile data-sitekey={siteKey} data-action={action}></div>
+<noscript><p class="turnstile-note">This form needs JavaScript for its security check.</p></noscript>
+{!siteKey && <p class="turnstile-note">The security check isn't configured, so this form can't be submitted right now.</p>}
+
+<script>
+  const SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+  type TurnstileApi = { render: (el: HTMLElement, options: Record<string, string>) => string };
+  let loading: Promise<TurnstileApi> | null = null;
+
+  function loadTurnstile(): Promise<TurnstileApi> {
+    const existing = (window as { turnstile?: TurnstileApi }).turnstile;
+    if (existing) return Promise.resolve(existing);
+    loading ??= new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = SRC;
+      script.async = true;
+      script.addEventListener("load", () => resolve((window as unknown as { turnstile: TurnstileApi }).turnstile));
+      script.addEventListener("error", () => { loading = null; reject(new Error("turnstile")); });
+      document.head.appendChild(script);
+    });
+    return loading;
+  }
+
+  function initTurnstile() {
+    document.querySelectorAll<HTMLElement>("[data-turnstile]").forEach((el) => {
+      if (el.dataset.turnstileInit || !el.dataset.sitekey) return;
+      el.dataset.turnstileInit = "1";
+      loadTurnstile()
+        .then((api) => api.render(el, { sitekey: el.dataset.sitekey!, action: el.dataset.action ?? "", theme: "dark" }))
+        .catch(() => {
+          el.dataset.turnstileInit = "";
+          el.textContent = "The security check couldn't load. Reload the page to try again.";
+        });
+    });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initTurnstile);
+  else initTurnstile();
+  document.addEventListener("astro:page-load", initTurnstile);
+</script>
+
+<style>
+  .turnstile { min-height: 65px; }
+  .turnstile-note { margin: 0; color: var(--muted); font-size: 0.95rem; }
+</style>

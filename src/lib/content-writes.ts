@@ -22,6 +22,8 @@ export const MAX_CAPTION_LENGTH = 1000;
 export const PAGE_TYPES = ["post", "page"] as const;
 export const CONTENT_STATUSES = ["draft", "published"] as const;
 export const HOMEPAGE_GROUPS = ["wow", "poe2", "other"] as const;
+/** Mirrors COMMENTS_MODES in comments.ts and the column's CHECK constraint. */
+export const COMMENTS_MODES = ["open", "locked", "hidden"] as const;
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const CONTROL_OR_SPACE = /[\s\u0000-\u001f\u007f-\u009f]/;
@@ -228,6 +230,7 @@ export interface ContentWriteInput {
   homepageGroup?: string;
   homepageOrder?: number;
   homepageDescription?: string;
+  commentsMode?: string;
   categoryIds: string[];
 }
 
@@ -257,6 +260,7 @@ export function validateContentInput(input: ContentWriteInput): void {
       || !within(input.homepageDescription ?? "", MAX_HOMEPAGE_DESCRIPTION_LENGTH, true)) {
     throw new WriteValidationError("Invalid homepage settings.", "homepage");
   }
+  if (!(COMMENTS_MODES as readonly string[]).includes(input.commentsMode ?? "open")) throw new WriteValidationError("Invalid comments setting.");
 }
 
 async function idsWhere(db: WriteDB, sql: string, value: string): Promise<string[]> {
@@ -290,6 +294,7 @@ export async function saveContentWithCategories(
     input.homepageGroup ?? "other",
     input.homepageOrder ?? 0,
     input.homepageDescription ?? "",
+    input.commentsMode ?? "open",
   ];
 
   const id = input.id ?? newId();
@@ -302,7 +307,8 @@ export async function saveContentWithCategories(
            SET slug = ?, title = ?, markdown = ?, page_type = ?, status = ?,
                published_at = CASE WHEN status = 'draft' AND ? = 'published' THEN ? ELSE published_at END,
                updated_at = ?, featured_image_url = ?,
-               homepage_featured = ?, homepage_group = ?, homepage_order = ?, homepage_description = ?
+               homepage_featured = ?, homepage_group = ?, homepage_order = ?, homepage_description = ?,
+               comments_mode = ?
            WHERE id = ?`,
         )
         .bind(input.slug, input.title, input.markdown, input.pageType, input.status, input.status, now, now, featuredImageUrl, ...homepageValues, id),
@@ -313,8 +319,8 @@ export async function saveContentWithCategories(
         .prepare(
           `INSERT INTO content
            (id, slug, title, markdown, page_type, status, author_id, published_at, created_at, updated_at, featured_image_url,
-            homepage_featured, homepage_group, homepage_order, homepage_description)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            homepage_featured, homepage_group, homepage_order, homepage_description, comments_mode)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
         .bind(id, input.slug, input.title, input.markdown, input.pageType, input.status, input.authorId, input.status === "published" ? now : null, now, now, featuredImageUrl, ...homepageValues),
     );

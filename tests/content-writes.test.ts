@@ -15,7 +15,7 @@ function makeDb(options: { failOn?: string } = {}) {
     CREATE TABLE content (id TEXT PRIMARY KEY, slug TEXT UNIQUE NOT NULL, title TEXT NOT NULL, markdown TEXT NOT NULL,
       page_type TEXT NOT NULL, status TEXT NOT NULL, author_id TEXT NOT NULL, published_at INTEGER, created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL, featured_image_url TEXT, homepage_featured INTEGER, homepage_group TEXT,
-      homepage_order INTEGER, homepage_description TEXT);
+      homepage_order INTEGER, homepage_description TEXT, comments_mode TEXT NOT NULL DEFAULT 'open');
     CREATE TABLE categories (id TEXT PRIMARY KEY, name TEXT, slug TEXT UNIQUE, created_at INTEGER);
     CREATE TABLE content_categories (content_id TEXT NOT NULL REFERENCES content(id) ON DELETE CASCADE,
       category_id TEXT NOT NULL REFERENCES categories(id) ON DELETE CASCADE, PRIMARY KEY (content_id, category_id));

@@ -1,0 +1,86 @@
+---
+// Admin list of comments with remove / restore / dismiss controls. Shared by
+// /admin/comments and the per-member page.
+import Pill from "./Pill.astro";
+import { renderCommentBody, type ModerationItem } from "../lib/comments";
+
+interface Props {
+  items: ModerationItem[];
+  /** Which page to return to after an action. */
+  view?: "reports" | "recent";
+  memberId?: string;
+  empty: string;
+}
+const { items, view = "reports", memberId, empty } = Astro.props;
+const reasonLabels: Record<string, string> = { spam: "Spam", harassment: "Harassment", "off-topic": "Off-topic", other: "Other" };
+const dateLabel = (ms: number) => new Date(ms).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }) + " UTC";
+---
+
+{items.length === 0 ? (
+  <p class="mod-empty">{empty}</p>
+) : (
+  <ol class="mod-list">
+    {items.map((item) => (
+      <li class="mod-item">
+        <div class="mod-item__meta">
+          {item.author
+            ? <a href={`/admin/members/${encodeURIComponent(item.author.id)}`}><strong>{item.author.username}</strong></a>
+            : <span>[deleted account]</span>}
+          {item.author?.status === "suspended" && <Pill variant="danger" size="sm">Suspended</Pill>}
+          <span>on <a href={`${item.path}#comment-${item.id}`} target="_blank" rel="noopener">{item.contentTitle}</a></span>
+          <span>{dateLabel(item.createdAt)}</span>
+          <span>Score {item.score}</span>
+          {item.status === "removed" && <Pill variant="warning" size="sm">Removed</Pill>}
+          {item.openReports > 0 && (
+            <Pill variant="danger" size="sm">{`${item.openReports} ${item.openReports === 1 ? "report" : "reports"}: ${item.reasons.map((r) => reasonLabels[r] ?? r).join(", ")}`}</Pill>
+          )}
+        </div>
+        <div class="mod-item__body" set:html={renderCommentBody(item.body)} />
+        <div class="mod-item__actions">
+          {item.status === "visible" && (
+            <form method="post" action="/api/moderation/comment">
+              <input type="hidden" name="id" value={item.id} />
+              <input type="hidden" name="action" value="remove" />
+              <input type="hidden" name="view" value={view} />
+              {memberId && <input type="hidden" name="memberId" value={memberId} />}
+              <button type="submit" class="ui-action mod-action--danger">Remove</button>
+            </form>
+          )}
+          {item.status === "removed" && (
+            <form method="post" action="/api/moderation/comment">
+              <input type="hidden" name="id" value={item.id} />
+              <input type="hidden" name="action" value="restore" />
+              <input type="hidden" name="view" value={view} />
+              {memberId && <input type="hidden" name="memberId" value={memberId} />}
+              <button type="submit" class="ui-action">Restore</button>
+            </form>
+          )}
+          {item.openReports > 0 && (
+            <form method="post" action="/api/moderation/comment">
+              <input type="hidden" name="id" value={item.id} />
+              <input type="hidden" name="action" value="dismiss" />
+              <input type="hidden" name="view" value={view} />
+              {memberId && <input type="hidden" name="memberId" value={memberId} />}
+              <button type="submit" class="ui-action">Dismiss reports</button>
+            </form>
+          )}
+        </div>
+      </li>
+    ))}
+  </ol>
+)}
+
+<style>
+  .mod-empty { margin: 0; color: var(--muted); }
+  .mod-list { display: flex; flex-direction: column; gap: 1rem; margin: 0; padding: 0; list-style: none; }
+  .mod-item { padding: 1rem 1.25rem; border: 1px solid var(--line); border-radius: var(--r-md, 10px); background: var(--surface); }
+  .mod-item a { color: var(--accent); }
+  .mod-item__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.75rem; color: var(--muted); font-size: 0.9rem; }
+  .mod-item__body { margin: 0.75rem 0; overflow-wrap: anywhere; }
+  .mod-item__body :global(p) { margin: 0 0 0.5rem; }
+  .mod-item__body :global(blockquote) { margin: 0 0 0.5rem; padding-left: 0.75rem; border: 1px solid var(--line); border-radius: var(--r-sm, 6px); }
+  .mod-item__actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .mod-item__actions form { margin: 0; }
+  .mod-action--danger { border-color: var(--danger); color: var(--danger); }
+  .mod-action--danger:hover:not(:disabled) { border-color: var(--danger); color: var(--text); background: rgb(from var(--danger) r g b / 18%); }
+</style>

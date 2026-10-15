@@ -1,0 +1,199 @@
+---
+// The discussion under a page or post: sort links, the new-comment form and
+// the thread. Server-rendered, so comments are indexable and readable without
+// JavaScript. The page's comments mode decides what shows: `open` (default),
+// `locked` (read-only) or `hidden` (nothing rendered; callers skip it).
+import CommentItem from "./CommentItem.astro";
+import FormMessage from "./FormMessage.astro";
+import { COMMENT_SORTS, MAX_COMMENT_LENGTH, listCommentTree, parseCommentSort, type CommentsMode } from "../lib/comments";
+import { ensureDB } from "../lib/db";
+import { memberMessage } from "../lib/member-messages";
+
+interface Props {
+  contentId: string;
+  path: string;
+  mode: CommentsMode;
+}
+
+const { contentId, path, mode } = Astro.props;
+const member = Astro.locals.member;
+const sort = parseCommentSort(Astro.url.searchParams.get("sort"));
+const { roots, count } = await listCommentTree(ensureDB(Astro.locals), contentId, member?.id ?? null, sort);
+const open = mode === "open";
+const canWrite = open && Boolean(member?.emailVerified);
+const error = memberMessage(Astro.url.searchParams.get("comment_error"));
+const reported = Astro.url.searchParams.get("reported") === "1";
+const now = Date.now();
+const loginHref = `/account/login?next=${encodeURIComponent(`${path}#comments`)}`;
+const sortLabels: Record<string, string> = { best: "Best", top: "Top", new: "New", old: "Old" };
+---
+
+<section id="comments" class="comments" aria-labelledby="comments-title" data-comments>
+  <header class="comments__head">
+    <h2 id="comments-title">{count === 0 ? "Comments" : `${count} ${count === 1 ? "comment" : "comments"}`}</h2>
+    {roots.length > 1 && (
+      <nav class="comments__sort" aria-label="Sort comments">
+        <span>Sort by</span>
+        {COMMENT_SORTS.map((option) => (
+          <a href={`${option === "best" ? path : `${path}?sort=${option}`}#comments`} aria-current={option === sort ? "true" : undefined} data-astro-history="replace">{sortLabels[option]}</a>
+        ))}
+      </nav>
+    )}
+  </header>
+
+  {error && <FormMessage error>{error}</FormMessage>}
+  {reported && !error && <FormMessage>Thanks. A moderator will review that comment.</FormMessage>}
+  <p class="comments__status" role="status" aria-live="polite" data-comments-status></p>
+
+  {mode === "locked" && <p class="ui-callout comments__note">Comments on this page are locked. You can read them, but new comments and votes are closed.</p>}
+  {open && !member && (
+    <p class="ui-callout comments__note"><a href={loginHref}>Sign in</a> or <a href="/account/register">create an account</a> to comment and vote.</p>
+  )}
+  {open && member && !member.emailVerified && (
+    <div class="ui-callout comments__note">
+      <p>Confirm your email address to comment and vote. Check your inbox for the link, or send a new one.</p>
+      <form method="post" action="/api/members/resend" data-astro-reload><button type="submit" class="ui-action">Send a new link</button></form>
+    </div>
+  )}
+  {canWrite && (
+    <form method="post" action="/api/comments/create" data-astro-reload class="comments__form">
+      <input type="hidden" name="contentId" value={contentId} />
+      <input type="hidden" name="parentId" value="" />
+      <label for="comment-body">Comment as <strong>{member!.displayName || member!.username}</strong></label>
+      <textarea id="comment-body" name="body" rows="5" maxlength={MAX_COMMENT_LENGTH} required class="ui-control" aria-describedby="comment-body-hint"></textarea>
+      <p id="comment-body-hint" class="comments__hint">Plain text. Leave a blank line between paragraphs, start a line with &gt; to quote, and links become clickable.</p>
+      <button type="submit" class="comments__submit">Post comment</button>
+    </form>
+  )}
+
+  {roots.length > 0 ? (
+    <ol class="comment-list">
+      {roots.map((node) => <CommentItem node={node} contentId={contentId} path={path} signedIn={Boolean(member)} canWrite={canWrite} open={open} now={now} />)}
+    </ol>
+  ) : (
+    <p class="comments__empty">{open ? "No comments yet. Start the discussion." : "No comments."}</p>
+  )}
+</section>
+
+<script>
+  // Voting in place and collapsible threads. Listeners sit on the document,
+  // so they are registered once and survive ClientRouter swaps. A vote form
+  // posted without this script redirects back to the comment instead.
+  function status(text: string) {
+    const el = document.querySelector<HTMLElement>("[data-comments-status]");
+    if (el && el.textContent !== text) el.textContent = text;
+  }
+
+  if (!(window as { orboroComments?: boolean }).orboroComments) {
+    (window as { orboroComments?: boolean }).orboroComments = true;
+
+    document.addEventListener("submit", async (event) => {
+      const form = event.target;
+      if (!(form instanceof HTMLFormElement) || !form.matches("[data-vote-form]")) return;
+      event.preventDefault();
+      if (form.dataset.busy) return;
+      const submitter = (event as SubmitEvent).submitter as HTMLButtonElement | null;
+      const data = new FormData(form, submitter);
+      form.dataset.busy = "1";
+      try {
+        const res = await fetch(form.action, {
+          method: "POST",
+          body: new URLSearchParams(data as unknown as Record<string, string>),
+          headers: { Accept: "application/json" },
+          credentials: "same-origin",
+        });
+        // Signed out or unverified: the guard redirected to a page that explains.
+        if (res.redirected) { window.location.href = res.url; return; }
+        const body = (await res.json().catch(() => ({}))) as { error?: string; vote?: number; score?: number };
+        if (!res.ok) {
+          status(body.error === "rate-limited" ? "You're voting too fast. Wait a moment and try again." : "That vote didn't go through. Try again.");
+          return;
+        }
+        form.querySelector('[value="up"]')?.setAttribute("aria-pressed", String(body.vote === 1));
+        form.querySelector('[value="down"]')?.setAttribute("aria-pressed", String(body.vote === -1));
+        const score = form.querySelector<HTMLElement>("[data-vote-score]");
+        if (score) {
+          score.textContent = String(body.score);
+          score.setAttribute("aria-label", `Score ${body.score}`);
+        }
+        status(body.vote === 1 ? "Upvoted." : body.vote === -1 ? "Downvoted." : "Vote removed.");
+      } catch {
+        status("That vote didn't go through. Check your connection and try again.");
+      } finally {
+        delete form.dataset.busy;
+      }
+    });
+
+    document.addEventListener("click", (event) => {
+      const button = (event.target as Element | null)?.closest<HTMLButtonElement>("[data-comment-collapse]");
+      if (!button) return;
+      const comment = button.closest<HTMLElement>("[data-comment]");
+      if (!comment) return;
+      const collapse = button.getAttribute("aria-expanded") === "true";
+      button.setAttribute("aria-expanded", String(!collapse));
+      button.setAttribute("aria-label", (button.getAttribute("aria-label") ?? "").replace(collapse ? /^Collapse/ : /^Expand/, collapse ? "Expand" : "Collapse"));
+      comment.toggleAttribute("data-collapsed", collapse);
+      const note = comment.querySelector<HTMLElement>(":scope > .comment__card .comment__collapsed-note");
+      if (note) note.hidden = !collapse;
+    });
+  }
+</script>
+
+<style>
+  .comments {
+    max-width: var(--measure);
+    margin-top: var(--space-16);
+    padding-top: var(--space-10);
+    border-top: 1px solid var(--line);
+  }
+  .comments__head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-3) var(--space-6);
+    margin-bottom: var(--space-6);
+  }
+  .comments__head h2 { margin: 0; font-family: var(--font-display); font-size: 1.35rem; font-weight: 600; }
+  .comments__sort { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem; color: var(--muted); font-size: 0.9rem; }
+  .comments__sort span { margin-right: 0.25rem; }
+  .comments__sort a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 0.7rem;
+    border-radius: var(--r-pill, 999px);
+    color: var(--muted);
+    font-weight: 600;
+    text-decoration: none;
+    transition: color var(--transition-fast), background-color var(--transition-fast);
+  }
+  .comments__sort a:hover { color: var(--text); background: var(--surface); }
+  .comments__sort a[aria-current="true"] { color: var(--accent-ink); background: var(--accent); }
+  .comments__status:empty { display: none; }
+  .comments__status { margin: 0 0 var(--space-4); color: var(--muted); }
+  .comments__note { margin: 0 0 var(--space-6); }
+  .comments__note p { margin: 0 0 0.75rem; }
+  .comments__note form { margin: 0; }
+  .comments__form { display: grid; gap: 0.6rem; margin-bottom: var(--space-8); }
+  .comments__form label { font-size: 0.95rem; color: var(--muted); }
+  .comments__form label strong { color: var(--text); }
+  .comments__form textarea { width: 100%; min-height: 8rem; resize: vertical; font-size: 1rem; line-height: 1.5; }
+  .comments__hint { margin: 0; color: var(--muted); font-size: 0.9rem; }
+  .comments__submit {
+    justify-self: start;
+    min-height: 44px;
+    padding: 0 1.25rem;
+    border: 0;
+    border-radius: var(--r-md, 10px);
+    background: var(--accent);
+    color: var(--accent-ink);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+  }
+  .comments__submit:hover { background: var(--accent-hover); }
+  .comment-list { display: flex; flex-direction: column; gap: var(--space-6); margin: 0; padding: 0; list-style: none; }
+  .comments__empty { color: var(--muted); }
+</style>

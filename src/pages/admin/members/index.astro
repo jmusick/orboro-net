@@ -1,0 +1,79 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import FormMessage from "../../../components/FormMessage.astro";
+import Pill from "../../../components/Pill.astro";
+import { ensureDB } from "../../../lib/db";
+import { requireAdmin } from "../../../lib/http";
+import { MEMBER_STATUS_FILTERS, listMembers, type MemberStatusFilter } from "../../../lib/members";
+
+const access = requireAdmin(Astro);
+if (access instanceof Response) return access;
+
+const params = Astro.url.searchParams;
+const query = (params.get("q") ?? "").slice(0, 100);
+const filter = ((MEMBER_STATUS_FILTERS as readonly string[]).includes(params.get("filter") ?? "") ? params.get("filter") : "all") as MemberStatusFilter;
+const members = await listMembers(ensureDB(Astro.locals), { query, filter });
+const done = params.get("done");
+const error = params.get("error");
+const filterLabels: Record<MemberStatusFilter, string> = { all: "All members", active: "Active", suspended: "Suspended", unverified: "Email not confirmed" };
+const date = (ms: number) => new Date(ms).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" });
+---
+
+<AdminLayout title="Members">
+  {done === "delete" && <FormMessage>Account deleted. Its comments now show as [deleted].</FormMessage>}
+  {error && <FormMessage error>{error === "missing" ? "That member no longer exists." : "That request couldn't be processed."}</FormMessage>}
+  <section>
+    <p class="members-note">Public accounts that can comment and vote. They are separate from admin accounts and can never sign in to this admin area.</p>
+    <form method="get" action="/admin/members" class="members-filter">
+      <div class="form-group">
+        <label for="q">Search</label>
+        <input id="q" name="q" type="search" value={query} maxlength="100" placeholder="Username, display name or email" />
+      </div>
+      <div class="form-group">
+        <label for="filter">Show</label>
+        <select id="filter" name="filter">
+          {MEMBER_STATUS_FILTERS.map((value) => <option value={value} selected={value === filter}>{filterLabels[value]}</option>)}
+        </select>
+      </div>
+      <button type="submit" class="ui-action">Apply</button>
+    </form>
+    <p class="members-count" role="status">{members.length === 200 ? "Showing the newest 200 matches." : `${members.length} ${members.length === 1 ? "member" : "members"}`}</p>
+
+    {members.length > 0 && (
+      <div class="members-table-wrap">
+        <table class="members-table">
+          <thead>
+            <tr><th scope="col">Member</th><th scope="col">Email</th><th scope="col">Status</th><th scope="col">Comments</th><th scope="col">Joined</th></tr>
+          </thead>
+          <tbody>
+            {members.map((m) => (
+              <tr>
+                <td>
+                  <a href={`/admin/members/${encodeURIComponent(m.id)}`}><strong>{m.username}</strong></a>
+                  {m.displayName && <span class="members-sub">{m.displayName}</span>}
+                </td>
+                <td>{m.email}{!m.emailVerified && <span class="members-sub">Not confirmed</span>}</td>
+                <td>{m.status === "suspended" ? <Pill variant="danger" size="sm">Suspended</Pill> : <Pill variant="success" size="sm">Active</Pill>}</td>
+                <td>{m.comments}</td>
+                <td>{date(m.createdAt)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </section>
+</AdminLayout>
+
+<style>
+  .members-table a { color: var(--accent); }
+  .members-note, .members-count { color: var(--muted); }
+  .members-filter { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem; margin-bottom: 1rem; }
+  .members-filter .form-group { flex: 1 1 14rem; }
+  .members-filter .ui-action { min-height: 44px; }
+  .members-table-wrap { overflow-x: auto; }
+  .members-table { width: 100%; border-collapse: collapse; }
+  .members-table th, .members-table td { padding: 0.75rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+  .members-table th { color: var(--muted); font-size: 0.9rem; font-weight: 600; }
+  .members-sub { display: block; color: var(--muted); font-size: 0.85rem; }
+</style>

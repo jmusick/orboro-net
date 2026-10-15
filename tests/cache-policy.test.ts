@@ -23,3 +23,10 @@ test('signed-in HTML is no-store, but public assets and API keep their policy', 
   assert.equal(privateCacheControl('/api/posts/by-category/wow', true, 'application/json', 'public, max-age=600'), null);
   assert.equal(privateCacheControl('/blog/x', false, 'text/html', null), null);
 });
+
+test('member account pages and member APIs are private', () => {
+  for (const p of ['/account', '/account/login', '/account/reset', '/api/members/login', '/api/comments/vote', '/api/moderation/member']) {
+    assert.equal(isPrivatePath(p), true, p);
+  }
+  for (const p of ['/accounts', '/u/reader', '/blog/x']) assert.equal(isPrivatePath(p), false, p);
+});

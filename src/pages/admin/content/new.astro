@@ -3,6 +3,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 import easyMdeUrl from "easymde/dist/easymde.min.js?url";
 import FormMessage from "../../../components/FormMessage.astro";
 import HomepageFeatureFields from "../../../components/HomepageFeatureFields.astro";
+import CommentsModeField from "../../../components/CommentsModeField.astro";
 import Button from "../../../components/Button.astro";
 import { requireAdmin } from "../../../lib/http";
 import { listCategories } from "../../../lib/content";
@@ -52,6 +53,8 @@ const categories = await listCategories(Astro.locals);
       </div>
 
       <HomepageFeatureFields />
+
+      <CommentsModeField />
 
       <div class="form-group full">
         <label id="markdown-label" for="markdown">Markdown Content</label>

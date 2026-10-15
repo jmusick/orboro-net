@@ -1,0 +1,276 @@
+---
+// One comment and its replies (renders itself recursively). Every control is a
+// plain form or <details>, so replying, editing, deleting, reporting and voting
+// all work without JavaScript; Comments.astro's script only upgrades voting
+// and collapsing.
+import Icon from "./Icon.astro";
+import { MAX_COMMENT_DEPTH, MAX_COMMENT_LENGTH, REPORT_REASONS, relativeTime, renderCommentBody, type CommentNode } from "../lib/comments";
+
+interface Props {
+  node: CommentNode;
+  contentId: string;
+  /** Page path, for sign-in links that come back here. */
+  path: string;
+  /** Signed in (any state). */
+  signedIn: boolean;
+  /** Signed in with a verified email and the page open for comments. */
+  canWrite: boolean;
+  /** The page's comments are open (not locked). */
+  open: boolean;
+  now: number;
+}
+
+const { node, contentId, path, signedIn, canWrite, open, now } = Astro.props;
+const live = node.status === "visible";
+const anchor = `comment-${node.id}`;
+const loginHref = `/account/login?next=${encodeURIComponent(`${path}#${anchor}`)}`;
+const authorName = node.author ? (node.author.displayName || node.author.username) : null;
+const created = new Date(node.createdAt);
+const canVote = live && open;
+const replyCount = (function count(n: CommentNode): number {
+  return n.children.reduce((sum, child) => sum + 1 + count(child), 0);
+})(node);
+const reasonLabels: Record<string, string> = { spam: "Spam", harassment: "Harassment or abuse", "off-topic": "Off-topic", other: "Something else" };
+---
+
+<li id={anchor} class="comment" data-comment>
+  <article class="comment__card" aria-labelledby={`${anchor}-meta`}>
+    <div class="comment__votes">
+      {canVote && signedIn ? (
+        <form method="post" action="/api/comments/vote" data-astro-reload class="vote" data-vote-form>
+          <input type="hidden" name="commentId" value={node.id} />
+          <button type="submit" name="direction" value="up" class="vote__btn vote__btn--up" aria-pressed={node.myVote === 1 ? "true" : "false"} aria-label="Upvote">
+            <Icon name="arrow-up" size={18} />
+          </button>
+          <span class="vote__score" data-vote-score aria-label={`Score ${node.score}`}>{node.score}</span>
+          <button type="submit" name="direction" value="down" class="vote__btn vote__btn--down" aria-pressed={node.myVote === -1 ? "true" : "false"} aria-label="Downvote">
+            <Icon name="arrow-down" size={18} />
+          </button>
+        </form>
+      ) : canVote ? (
+        <div class="vote">
+          <a class="vote__btn" href={loginHref} aria-label="Sign in to upvote"><Icon name="arrow-up" size={18} /></a>
+          <span class="vote__score" aria-label={`Score ${node.score}`}>{node.score}</span>
+          <a class="vote__btn" href={loginHref} aria-label="Sign in to downvote"><Icon name="arrow-down" size={18} /></a>
+        </div>
+      ) : live ? (
+        <div class="vote"><span class="vote__score" aria-label={`Score ${node.score}`}>{node.score}</span></div>
+      ) : null}
+    </div>
+
+    <div class="comment__main">
+      <header class="comment__meta" id={`${anchor}-meta`}>
+        <button type="button" class="comment__collapse" data-comment-collapse aria-expanded="true" aria-label={`Collapse thread${replyCount ? ` (${replyCount} ${replyCount === 1 ? "reply" : "replies"})` : ""}`}></button>
+        {node.author ? (
+          <a class="comment__author" href={`/u/${encodeURIComponent(node.author.username)}`}>{authorName}</a>
+        ) : (
+          <span class="comment__author comment__author--gone">{node.status === "removed" ? "[removed]" : "[deleted]"}</span>
+        )}
+        {node.author && authorName !== node.author.username && <span class="comment__handle">@{node.author.username}</span>}
+        {live && <a class="comment__time" href={`#${anchor}`}><time datetime={created.toISOString()} title={created.toUTCString()}>{relativeTime(node.createdAt, now)}</time></a>}
+        {node.editedAt && <span class="comment__edited" title={new Date(node.editedAt).toUTCString()}>edited</span>}
+        <span class="comment__collapsed-note" hidden>{replyCount > 0 ? `${replyCount} ${replyCount === 1 ? "reply" : "replies"} hidden` : "hidden"}</span>
+      </header>
+
+      <div class="comment__content" data-comment-content>
+        {live ? (
+          <div class="comment__body" set:html={renderCommentBody(node.body)} />
+        ) : (
+          <p class="comment__body comment__body--gone">{node.status === "removed" ? "This comment was removed by a moderator." : "This comment was deleted."}</p>
+        )}
+
+        {live && (
+          <div class="comment__actions">
+            {canWrite && node.depth < MAX_COMMENT_DEPTH && (
+              <details class="comment__action">
+                <summary><Icon name="message-square" size={15} />Reply</summary>
+                <form method="post" action="/api/comments/create" data-astro-reload class="comment-form">
+                  <input type="hidden" name="contentId" value={contentId} />
+                  <input type="hidden" name="parentId" value={node.id} />
+                  <label class="sr-only" for={`reply-${node.id}`}>Reply to {authorName}</label>
+                  <textarea id={`reply-${node.id}`} name="body" rows="4" maxlength={MAX_COMMENT_LENGTH} required class="ui-control"></textarea>
+                  <button type="submit" class="ui-action comment-form__submit">Post reply</button>
+                </form>
+              </details>
+            )}
+            {open && !signedIn && (
+              <a class="comment__action-link" href={loginHref}><Icon name="message-square" size={15} />Reply</a>
+            )}
+            {node.mine && canWrite && (
+              <details class="comment__action">
+                <summary><Icon name="edit" size={15} />Edit</summary>
+                <form method="post" action="/api/comments/edit" data-astro-reload class="comment-form">
+                  <input type="hidden" name="commentId" value={node.id} />
+                  <label class="sr-only" for={`edit-${node.id}`}>Edit your comment</label>
+                  <textarea id={`edit-${node.id}`} name="body" rows="5" maxlength={MAX_COMMENT_LENGTH} required class="ui-control">{node.body}</textarea>
+                  <button type="submit" class="ui-action comment-form__submit">Save edit</button>
+                </form>
+              </details>
+            )}
+            {node.mine && (
+              <details class="comment__action">
+                <summary><Icon name="trash-2" size={15} />Delete</summary>
+                <form method="post" action="/api/comments/delete" data-astro-reload class="comment-confirm">
+                  <input type="hidden" name="commentId" value={node.id} />
+                  <p>Delete this comment? This can't be undone.</p>
+                  <button type="submit" class="ui-action comment-confirm__danger">Delete comment</button>
+                </form>
+              </details>
+            )}
+            {signedIn && !node.mine && (
+              <details class="comment__action">
+                <summary><Icon name="flag" size={15} />Report</summary>
+                <form method="post" action="/api/comments/report" data-astro-reload class="comment-confirm">
+                  <input type="hidden" name="commentId" value={node.id} />
+                  <label for={`report-${node.id}`}>Why should a moderator look at this?</label>
+                  <select id={`report-${node.id}`} name="reason" class="ui-control" required>
+                    {REPORT_REASONS.map((reason) => <option value={reason}>{reasonLabels[reason]}</option>)}
+                  </select>
+                  <button type="submit" class="ui-action">Send report</button>
+                </form>
+              </details>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  </article>
+
+  {node.children.length > 0 && (
+    <ol class="comment-list comment-list--nested" data-comment-content>
+      {node.children.map((child) => <Astro.self node={child} contentId={contentId} path={path} signedIn={signedIn} canWrite={canWrite} open={open} now={now} />)}
+    </ol>
+  )}
+</li>
+
+<style>
+  .comment { margin: 0; padding: 0; list-style: none; }
+  .comment__card { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); gap: var(--space-3); }
+  .comment__votes { display: flex; justify-content: center; }
+  .vote { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .vote__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--r-sm, 6px);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-fast);
+  }
+  .vote__btn:hover { color: var(--text); border-color: var(--line-strong); }
+  .vote__btn--up[aria-pressed="true"] { color: var(--accent-ink); background: var(--accent); }
+  .vote__btn--down[aria-pressed="true"] { color: var(--text); background: var(--line-strong); }
+  .vote__score { min-width: 2ch; font-weight: 700; font-variant-numeric: tabular-nums; text-align: center; }
+  .comment__main { min-width: 0; }
+  .comment__meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.6rem;
+    min-height: 2.25rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+  .comment__collapse {
+    position: relative;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-sm, 6px);
+    background: transparent;
+    cursor: pointer;
+    transition: border-color var(--transition-fast);
+  }
+  .comment__collapse:hover { border-color: var(--accent); }
+  .comment__collapse::before,
+  .comment__collapse::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0.6rem;
+    height: 2px;
+    background: var(--text);
+    transform: translate(-50%, -50%);
+  }
+  .comment__collapse[aria-expanded="false"]::after { transform: translate(-50%, -50%) rotate(90deg); }
+  .comment__collapse[aria-expanded="true"]::after { display: none; }
+  .comment__author { color: var(--text); font-weight: 700; text-decoration: none; }
+  a.comment__author:hover { color: var(--accent); }
+  .comment__author--gone { color: var(--muted); font-weight: 600; }
+  .comment__time { color: var(--muted); text-decoration: none; }
+  .comment__time:hover { color: var(--text); text-decoration: underline; }
+  .comment__edited { font-style: italic; }
+  .comment__collapsed-note[hidden] { display: none; }
+  .comment__body { overflow-wrap: anywhere; line-height: 1.6; }
+  .comment__body :global(p) { margin: 0 0 0.6rem; }
+  .comment__body :global(p:last-child) { margin-bottom: 0; }
+  .comment__body :global(blockquote) {
+    margin: 0 0 0.6rem;
+    padding: 0.25rem 0 0.25rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm, 6px);
+    color: var(--text-soft);
+  }
+  .comment__body--gone { margin: 0; color: var(--muted); font-style: italic; }
+  .comment__actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.25rem 0.5rem; margin-top: 0.35rem; }
+  .comment__action { flex: 0 0 auto; }
+  .comment__action[open] { flex: 1 1 100%; order: 1; }
+  .comment__action summary,
+  .comment__action-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 44px;
+    padding: 0 0.6rem;
+    border-radius: var(--r-sm, 6px);
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    list-style: none;
+    cursor: pointer;
+    transition: color var(--transition-fast), background-color var(--transition-fast);
+  }
+  .comment__action summary::-webkit-details-marker { display: none; }
+  .comment__action summary:hover,
+  .comment__action-link:hover,
+  .comment__action[open] summary { color: var(--text); background: var(--surface); }
+  .comment-form, .comment-confirm { display: grid; gap: 0.6rem; margin: 0.4rem 0 0.75rem; }
+  .comment-form textarea { width: 100%; min-height: 6rem; resize: vertical; font-size: 1rem; line-height: 1.5; }
+  .comment-form__submit, .comment-confirm .ui-action { justify-self: start; min-height: 44px; }
+  .comment-confirm p { margin: 0; }
+  .comment-confirm label { font-weight: 600; font-size: 0.95rem; }
+  .comment-confirm select { justify-self: start; min-height: 44px; }
+  .comment-confirm__danger { border-color: var(--danger); color: var(--danger); }
+  .comment-confirm__danger:hover:not(:disabled) { border-color: var(--danger); color: var(--text); background: rgb(from var(--danger) r g b / 18%); }
+  .comment-list--nested {
+    margin: 0.25rem 0 0 1.2rem;
+    padding: 0 0 0 0.9rem;
+    border-left: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  .comment[data-collapsed] > .comment__card [data-comment-content],
+  .comment[data-collapsed] > [data-comment-content],
+  .comment[data-collapsed] > .comment__card .comment__votes { display: none; }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  @media (max-width: 600px) {
+    .comment-list--nested { margin-left: 0.4rem; padding-left: 0.6rem; }
+    .comment__card { grid-template-columns: 2.25rem minmax(0, 1fr); gap: var(--space-2); }
+  }
+</style>

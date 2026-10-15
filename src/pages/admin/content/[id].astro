@@ -3,6 +3,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 import easyMdeUrl from "easymde/dist/easymde.min.js?url";
 import FormMessage from "../../../components/FormMessage.astro";
 import HomepageFeatureFields from "../../../components/HomepageFeatureFields.astro";
+import CommentsModeField from "../../../components/CommentsModeField.astro";
 import Button from "../../../components/Button.astro";
 import { getContentById, listCategories, getContentCategoryIds } from "../../../lib/content";
 import { requireAdmin } from "../../../lib/http";
@@ -67,6 +68,8 @@ const selectedCategoryIds = await getContentCategoryIds(Astro.locals, id);
       </div>
 
       <HomepageFeatureFields featured={content.homepageFeatured} group={content.homepageGroup} order={content.homepageOrder} description={content.homepageDescription} />
+
+      <CommentsModeField mode={content.commentsMode} />
 
       <div class="form-group full">
         <label id="markdown-label" for="markdown">Markdown Content</label>

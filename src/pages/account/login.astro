@@ -1,0 +1,43 @@
+---
+import AccountShell from "../../components/AccountShell.astro";
+import Button from "../../components/Button.astro";
+import FormMessage from "../../components/FormMessage.astro";
+import { safeNext } from "../../lib/member-actions";
+import { MAX_EMAIL_LENGTH } from "../../lib/members";
+import { memberMessage } from "../../lib/member-messages";
+
+const params = Astro.url.searchParams;
+const next = safeNext(params.get("next"));
+if (Astro.locals.member) return Astro.redirect(next);
+
+const code = params.get("error");
+const error = code === "invalid" ? "Unable to sign in. Check your username or email and password and try again." : memberMessage(code);
+const notice = params.get("reset") === "1"
+  ? "Your password was changed. Sign in with the new one."
+  : params.get("signedout") === "all"
+    ? "You're signed out on every device."
+    : params.get("deleted") === "1"
+      ? "Your account was deleted."
+      : null;
+---
+
+<AccountShell title="Sign in" lede="Sign in to comment and vote on guides and posts." description="Sign in to your Orboro.net account.">
+  {notice && !error && <FormMessage>{notice}</FormMessage>}
+  {error && <FormMessage error fields={[{ id: "login", label: "Username or email" }, { id: "password", label: "Password" }]}>{error}</FormMessage>}
+  <form method="post" action="/api/members/login">
+    <input type="hidden" name="next" value={next} />
+    <div class="form-group">
+      <label for="login">Username or email</label>
+      <input id="login" name="login" type="text" required maxlength={MAX_EMAIL_LENGTH} autocomplete="username" autocapitalize="none" spellcheck="false" />
+    </div>
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input id="password" name="password" type="password" required maxlength="512" autocomplete="current-password" />
+    </div>
+    <Button type="submit" variant="primary">Sign in</Button>
+  </form>
+  <p class="account__links">
+    <a href="/account/register">Create an account</a>
+    <a href="/account/forgot">Forgot your password?</a>
+  </p>
+</AccountShell>

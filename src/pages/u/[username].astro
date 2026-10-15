@@ -1,0 +1,68 @@
+---
+// A member's public profile: name, bio, karma and recent comments. Profiles
+// are thin user-generated pages, so they are kept out of search indexes.
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import PageHeader from "../../components/PageHeader.astro";
+import { listMemberComments, relativeTime, renderCommentBody } from "../../lib/comments";
+import { ensureDB } from "../../lib/db";
+import { getPublicProfile, usernameProblem } from "../../lib/members";
+
+const { username = "" } = Astro.params;
+if (usernameProblem(username) === "username") return Astro.rewrite("/404");
+const db = ensureDB(Astro.locals);
+const profile = await getPublicProfile(db, username);
+if (!profile) return Astro.rewrite("/404");
+if (profile.username !== username) return Astro.redirect(`/u/${encodeURIComponent(profile.username)}`, 301);
+
+const comments = await listMemberComments(db, profile.id, 20);
+Astro.response.headers.set("X-Robots-Tag", "noindex");
+const name = profile.displayName || profile.username;
+const joined = new Date(profile.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+const now = Date.now();
+const isMe = Astro.locals.member?.id === profile.id;
+---
+
+<BaseLayout title={`${name} (@${profile.username}) | Orboro.net`} description={`${name}'s profile and comments on Orboro.net.`}>
+  <PageHeader slot="hero" title={name} lede={profile.displayName ? `@${profile.username}` : undefined}>
+    <span>Joined {joined}</span>
+    <span>{profile.karma} karma</span>
+    <span>{profile.commentCount} {profile.commentCount === 1 ? "comment" : "comments"}</span>
+    {isMe && <a href="/account#profile">Edit profile</a>}
+  </PageHeader>
+
+  <div class="profile">
+    {profile.bio && <p class="profile__bio">{profile.bio}</p>}
+    <h2>Recent comments</h2>
+    {comments.length === 0 ? (
+      <p class="profile__empty">No comments yet.</p>
+    ) : (
+      <ol class="profile__comments">
+        {comments.map((comment) => (
+          <li class="profile__comment">
+            <p class="profile__context">
+              <a href={`${comment.path}#comment-${comment.id}`}>{comment.contentTitle}</a>
+              <span>{comment.score} {Math.abs(comment.score) === 1 ? "point" : "points"}</span>
+              <time datetime={new Date(comment.createdAt).toISOString()}>{relativeTime(comment.createdAt, now)}</time>
+            </p>
+            <div class="profile__body" set:html={renderCommentBody(comment.body)} />
+          </li>
+        ))}
+      </ol>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .profile { max-width: var(--measure); }
+  .profile__bio { margin: 0 0 var(--space-10); white-space: pre-line; color: var(--text-soft); font-size: 1.05rem; }
+  .profile h2 { margin: 0 0 var(--space-6); font-family: var(--font-display); font-size: 1.2rem; font-weight: 600; }
+  .profile__empty { color: var(--muted); }
+  .profile__comments { display: flex; flex-direction: column; gap: var(--space-4); margin: 0; padding: 0; list-style: none; }
+  .profile__comment { padding: var(--space-4) var(--space-6); border: 1px solid var(--line); border-radius: var(--r-md, 10px); background: var(--surface); }
+  .profile__context { display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; margin: 0 0 0.5rem; color: var(--muted); font-size: 0.9rem; }
+  .profile__context a { font-weight: 700; }
+  .profile__body { overflow-wrap: anywhere; }
+  .profile__body :global(p) { margin: 0 0 0.5rem; }
+  .profile__body :global(p:last-child) { margin: 0; }
+  .profile__body :global(blockquote) { margin: 0 0 0.5rem; padding-left: 0.9rem; border: 1px solid var(--line); border-radius: var(--r-sm, 6px); color: var(--text-soft); }
+</style>

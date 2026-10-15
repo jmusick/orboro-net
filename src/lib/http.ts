@@ -41,3 +41,23 @@ export function sanitizeSlug(value: string): string {
     .replace(/\-+/g, "-")
     .replace(/^\-+|\-+$/g, "");
 }
+
+/**
+ * The guard for member actions (comments, votes, reports, account changes).
+ * Members and admins are separate accounts: `locals.member` comes only from
+ * the member cookie, so an admin session never satisfies this and a member
+ * session never satisfies requireAdmin. Actions that write to threads also
+ * need a verified email (`verified`, the default).
+ */
+export function requireMember(context: GuardContext, { verified = true }: { verified?: boolean } = {}): MemberRecord | Response {
+  const member = context.locals.member;
+  if (!member) {
+    logSecurityEvent("authz.denied", { reason: "member-signed-out" }, context.request);
+    return context.redirect("/account/login");
+  }
+  if (verified && !member.emailVerified) {
+    logSecurityEvent("authz.denied", { reason: "unverified", member: member.id }, context.request);
+    return context.redirect("/account?error=unverified");
+  }
+  return member;
+}

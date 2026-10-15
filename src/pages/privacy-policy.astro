@@ -28,9 +28,10 @@ const recentPosts = posts.map((p) => ({
     <h2>Overview</h2>
     <p>
       Orboro.net is a personal site operated by JD. You can read its public pages without
-      an account. The site uses Cloudflare for hosting and Google Analytics for usage
-      measurement. This policy describes the information involved in those services,
-      administrator login, and requests to external image providers.
+      an account. An optional member account lets you comment and vote. The site uses
+      Cloudflare for hosting, security checks and account email, and Google Analytics for
+      usage measurement. This policy describes the information involved in those services,
+      member accounts and comments, administrator login, and requests to external image providers.
     </p>
 
     <h2>Information collected</h2>
@@ -91,14 +92,59 @@ const recentPosts = posts.map((p) => ({
       </a>, or with any browser extension that blocks third-party analytics scripts.
     </p>
 
+    <h3>Member accounts</h3>
+    <p>
+      Creating an account stores, in Cloudflare D1, your username, email address, a password hash,
+      the account's creation date and whether the email is confirmed, plus an optional display name
+      and bio if you add them. Your email address is never shown publicly and is used only to confirm
+      the address, to confirm a change of address, to send password-reset links, and to tell you if
+      someone tries to register with it. Those emails are sent through Cloudflare's Email Service.
+      Links in them carry a single-use token that expires (48 hours to confirm a sign-up address,
+      24 hours for an address change, 1 hour for a password reset); the database keeps only a one-way
+      digest of each token.
+    </p>
+    <p>
+      When you choose a password, its strength is checked against the
+      <a href="https://haveibeenpwned.com/API/v3#PwnedPasswords" target="_blank" rel="noopener noreferrer">Pwned Passwords</a>
+      service, which receives only the first five characters of the password's SHA-1 hash and never
+      the password itself. The registration and password-reset forms use
+      <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">Cloudflare Turnstile</a>
+      to tell people from automated sign-ups; it runs a check in your browser and may process browser
+      and device signals to do so. To limit abuse, the site counts sign-in, registration, email and
+      commenting attempts per IP address, account or member in windows of up to an hour; the
+      counters store only one-way digests of those values and are deleted after their window ends.
+    </p>
+    <p>
+      Signing in sets an <code>__Host-orboro_member</code> cookie that keeps you signed in for up to
+      14 days. It is HttpOnly, Secure, and uses SameSite=Lax. Signing out revokes that session, and
+      <strong>Sign out everywhere</strong> on your account page revokes all of them.
+    </p>
+
+    <h3>Comments, votes and profiles</h3>
+    <p>
+      Comments are public. Each one shows your display name or username and when it was posted or
+      edited, and your profile page at <code>/u/your-username</code> shows your display name, bio,
+      join date, comment count, karma (the net votes other members gave your comments) and recent
+      comments. Votes are stored with your account so you can change them, but who voted on what is
+      not shown to other members. Reports you file are visible only to the administrator.
+    </p>
+    <p>
+      You can edit or delete your comments, and change your profile, email or password, on your
+      account page. Deleting a comment that has replies leaves an empty [deleted] placeholder so the
+      thread still reads; a comment without replies is removed. Deleting your account removes your
+      email address, password hash, profile, votes, reports and sessions, and erases the text of your
+      comments, which remain in their threads as [deleted] without your name. The administrator can
+      remove comments that break the site's rules, and suspend or delete accounts.
+    </p>
+
     <h3>Administrator account and session</h3>
     <p>
-      The only site account belongs to JD, the administrator; there is no public registration.
-      Cloudflare D1 stores the account email, a password hash, and session records that hold a
-      one-way digest of each session token. Successful login sets an
+      The administrator account belongs to JD and is separate from member accounts; members can't
+      sign in to the administration area. Cloudflare D1 stores the administrator's email, a password
+      hash, and session records that hold a one-way digest of each session token. Successful login sets an
       <code>__Host-orboro_session</code> cookie to keep the administrator signed in for up to
       14 days. It is HttpOnly, Secure, and uses SameSite=Lax. Logging out revokes that session
-      and removes the cookie. Reading public pages does not require this login cookie.
+      and removes the cookie. Reading public pages does not require either login cookie.
     </p>
 
     <h3>Third-party links</h3>
@@ -130,7 +176,8 @@ const recentPosts = posts.map((p) => ({
 
     <h2>Service providers and storage</h2>
     <p>
-      Cloudflare hosts the site, its D1 database and R2 images. Its
+      Cloudflare hosts the site, its D1 database and R2 images, sends member account email
+      and runs the Turnstile check. Its
       <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">
         Privacy Policy
       </a>
@@ -147,8 +194,9 @@ const recentPosts = posts.map((p) => ({
       to stop the running tag. If local storage is unavailable, your choice lasts only for the
       current page session, including in-site navigation, and is lost on a full reload.
       When local storage is available, changing the choice also updates other open tabs.
-      This choice controls analytics; necessary administrator session cookies and external
-      images described above are not controlled by the banner.
+      This choice controls analytics; necessary member and administrator session cookies, the
+      Turnstile check on account forms, and external images described above are not controlled
+      by the banner.
     </p>
     <p>
       You can also block analytics scripts using the tools linked above and manage

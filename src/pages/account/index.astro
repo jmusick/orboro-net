@@ -1,0 +1,130 @@
+---
+// The signed-in member's own settings. Everything here acts on the session's
+// member; no form names an account.
+import AccountShell from "../../components/AccountShell.astro";
+import Button from "../../components/Button.astro";
+import FormMessage from "../../components/FormMessage.astro";
+import { ensureDB } from "../../lib/db";
+import { requireMember } from "../../lib/http";
+import { MAX_BIO_LENGTH, MAX_DISPLAY_NAME_LENGTH, MAX_EMAIL_LENGTH, getMemberById } from "../../lib/members";
+import { PASSWORD_HINT, memberMessage } from "../../lib/member-messages";
+
+const signedIn = requireMember(Astro, { verified: false });
+if (signedIn instanceof Response) return signedIn;
+const member = await getMemberById(ensureDB(Astro.locals), signedIn.id);
+if (!member) return Astro.redirect("/account/login");
+
+const params = Astro.url.searchParams;
+const error = memberMessage(params.get("error"));
+const saved = params.get("saved");
+const sent = params.get("sent");
+const verified = params.get("verified");
+const notice =
+  verified === "verify" ? "Your email is confirmed. You can comment and vote now."
+  : verified === "email" ? "Your new email address is confirmed."
+  : saved === "profile" ? "Profile saved."
+  : saved === "password" ? "Password changed. Other devices were signed out."
+  : sent === "verify" ? `A new confirmation link is on its way to ${member.email}.`
+  : sent === "email" ? "Check the new address for a confirmation link. Your account keeps its current email until you open it."
+  : null;
+const joined = new Date(member.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+---
+
+<AccountShell title="Your account" lede={`Signed in as ${member.username}. Member since ${joined}.`} description="Manage your Orboro.net account." wide>
+  {notice && !error && <FormMessage>{notice}</FormMessage>}
+  {error && <FormMessage error>{error}</FormMessage>}
+
+  {!member.emailVerified && (
+    <section class="ui-callout account-section" aria-labelledby="verify-title">
+      <h2 id="verify-title">Confirm your email</h2>
+      <p>We sent a confirmation link to <strong>{member.email}</strong>. Until you open it, you can't comment or vote.</p>
+      <form method="post" action="/api/members/resend"><Button type="submit" variant="secondary">Send a new link</Button></form>
+    </section>
+  )}
+
+  <section id="profile" class="account-section" aria-labelledby="profile-title">
+    <h2 id="profile-title">Public profile</h2>
+    <p class="account__hint">Shown on <a href={`/u/${encodeURIComponent(member.username)}`}>your profile page</a> and beside your comments.</p>
+    <form method="post" action="/api/members/profile">
+      <div class="form-group">
+        <label for="displayName">Display name</label>
+        <input id="displayName" name="displayName" type="text" maxlength={MAX_DISPLAY_NAME_LENGTH} value={member.displayName} placeholder={member.username} aria-describedby="display-name-hint" />
+        <p id="display-name-hint" class="account__hint">Optional. Leave blank to show your username.</p>
+      </div>
+      <div class="form-group">
+        <label for="bio">Bio</label>
+        <textarea id="bio" name="bio" rows="4" maxlength={MAX_BIO_LENGTH} aria-describedby="bio-hint">{member.bio}</textarea>
+        <p id="bio-hint" class="account__hint">Optional plain text, up to {MAX_BIO_LENGTH} characters.</p>
+      </div>
+      <Button type="submit" variant="primary">Save profile</Button>
+    </form>
+  </section>
+
+  <section id="email" class="account-section" aria-labelledby="email-title">
+    <h2 id="email-title">Email</h2>
+    <p class="account__hint">Current address: <strong>{member.email}</strong>{member.emailVerified ? " (confirmed)" : " (not confirmed)"}. Never shown publicly.</p>
+    <form method="post" action="/api/members/email">
+      <div class="form-group">
+        <label for="new-email">New email</label>
+        <input id="new-email" name="email" type="email" required maxlength={MAX_EMAIL_LENGTH} autocomplete="email" />
+      </div>
+      <div class="form-group">
+        <label for="email-password">Current password</label>
+        <input id="email-password" name="password" type="password" required maxlength="512" autocomplete="current-password" />
+      </div>
+      <Button type="submit" variant="secondary">Send confirmation link</Button>
+    </form>
+  </section>
+
+  <section id="password" class="account-section" aria-labelledby="password-title">
+    <h2 id="password-title">Password</h2>
+    <form method="post" action="/api/members/password">
+      <input type="text" name="username" value={member.username} autocomplete="username" hidden />
+      <div class="form-group">
+        <label for="currentPassword">Current password</label>
+        <input id="currentPassword" name="currentPassword" type="password" required maxlength="512" autocomplete="current-password" />
+      </div>
+      <div class="form-group">
+        <label for="newPassword">New password</label>
+        <input id="newPassword" name="newPassword" type="password" required minlength="15" maxlength="512" autocomplete="new-password" aria-describedby="new-password-hint" />
+        <p id="new-password-hint" class="account__hint">{PASSWORD_HINT} Changing it signs out your other devices.</p>
+      </div>
+      <Button type="submit" variant="secondary">Change password</Button>
+    </form>
+  </section>
+
+  <section class="account-section" aria-labelledby="sessions-title">
+    <h2 id="sessions-title">Sessions</h2>
+    <p class="account__hint">You stay signed in for 14 days on each device.</p>
+    <div class="account-actions">
+      <form method="post" action="/api/members/logout"><Button type="submit" variant="secondary" icon="log-out">Sign out</Button></form>
+      <form method="post" action="/api/members/revoke-all"><Button type="submit" variant="tertiary">Sign out everywhere</Button></form>
+    </div>
+  </section>
+
+  <section id="delete" class="account-section" aria-labelledby="delete-title">
+    <h2 id="delete-title">Delete account</h2>
+    <details class="account-delete">
+      <summary>Delete my account</summary>
+      <p>Your account, email address, profile and votes are deleted. Your comments stay in their threads as [deleted], with their text erased. This can't be undone.</p>
+      <form method="post" action="/api/members/delete">
+        <div class="form-group">
+          <label for="delete-password">Current password</label>
+          <input id="delete-password" name="password" type="password" required maxlength="512" autocomplete="current-password" />
+        </div>
+        <Button type="submit" variant="danger" icon="trash-2">Delete account permanently</Button>
+      </form>
+    </details>
+  </section>
+</AccountShell>
+
+<style>
+  .account-section { margin: 0 0 var(--space-10); }
+  .account-section h2 { margin: 0 0 var(--space-3); font-family: var(--font-display); font-size: 1.15rem; font-weight: 600; }
+  .account-section > p { margin: 0 0 var(--space-4); }
+  .account-section.ui-callout { padding: var(--space-6); }
+  .account-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+  .account-delete summary { display: inline-flex; align-items: center; min-height: 44px; color: var(--danger); font-weight: 700; cursor: pointer; }
+  .account-delete p { color: var(--muted); }
+  input[hidden] { display: none; }
+</style>

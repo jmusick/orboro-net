@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { requireAdmin } from '../src/lib/http.ts';
 import {
-  SECURITY_EVENTS, adminActionEvent, buildSecurityRecord, logSecurityEvent,
+  SECURITY_EVENTS, adminActionEvent, buildSecurityRecord, logSecurityEvent, memberActionEvent,
   type SecurityEventFields, type SecurityLogRecord,
 } from '../src/lib/security-events.ts';
 
@@ -167,4 +167,26 @@ test('login and middleware emit their events', () => {
   const middleware = readFileSync('src/middleware.ts', 'utf8');
   assert.match(middleware, /adminActionEvent\(/);
   assert.match(middleware, /"auth\.session\.rejected"/);
+});
+
+const reader: MemberRecord = { id: 'm-reader', username: 'reader', displayName: '', email: CANARIES.email, emailVerified: true };
+
+test('member.action records member POSTs; admin.action skips them even for a signed-in admin', () => {
+  assert.deepEqual(memberActionEvent('POST', '/api/comments/create', reader, redirect('/blog/x#comment-c1'), 'c1'), {
+    action: 'comments.create', member: 'm-reader', target: 'c1', outcome: 'ok', reason: undefined, status: 302,
+  });
+  assert.equal(memberActionEvent('POST', '/api/comments/vote', reader, redirect('/blog/x?comment_error=closed#comment-c1'))?.reason, 'closed');
+  assert.equal(memberActionEvent('POST', '/api/members/password', reader, redirect('/account?error=current-password'))?.outcome, 'rejected');
+  assert.equal(memberActionEvent('POST', '/api/members/login', reader, redirect('/account')), null, 'sign-in logs its own events');
+  assert.equal(memberActionEvent('POST', '/api/members/register', reader, redirect('/account')), null);
+  assert.equal(memberActionEvent('POST', '/api/content/save', reader, redirect('/admin')), null);
+  assert.equal(memberActionEvent('POST', '/api/comments/create', null, redirect('/account/login')), null);
+  assert.equal(adminActionEvent('POST', '/api/comments/create', admin, redirect('/blog/x')), null);
+  assert.equal(adminActionEvent('POST', '/api/moderation/comment', admin, redirect('/admin/comments?done=remove'))?.action, 'moderation.comment');
+});
+
+test('member events carry the member ID, never the email', () => {
+  const record = buildSecurityRecord('member.login.failed', { member: 'm-reader', reason: 'credentials', account: 'known' });
+  assert.equal(record.member, 'm-reader');
+  assert.equal(buildSecurityRecord('member.registered', { member: CANARIES.email }).member, undefined);
 });

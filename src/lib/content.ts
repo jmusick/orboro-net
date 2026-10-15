@@ -1,3 +1,4 @@
+import type { CommentsMode } from "./comments";
 import {
   replaceNavItems,
   saveCategoryRecord,
@@ -31,6 +32,7 @@ export interface ContentRecord {
   homepageGroup: string;
   homepageOrder: number;
   homepageDescription: string;
+  commentsMode: CommentsMode;
 }
 
 export interface MediaRecord {
@@ -59,6 +61,7 @@ function mapContentRow(row: any): ContentRecord {
     homepageGroup: row.homepage_group ?? "other",
     homepageOrder: row.homepage_order ?? 0,
     homepageDescription: row.homepage_description ?? "",
+    commentsMode: row.comments_mode ?? "open",
   };
 }
 

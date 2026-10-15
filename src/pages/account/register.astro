@@ -1,0 +1,57 @@
+---
+import AccountShell from "../../components/AccountShell.astro";
+import Button from "../../components/Button.astro";
+import FormMessage from "../../components/FormMessage.astro";
+import Turnstile from "../../components/Turnstile.astro";
+import { MAX_EMAIL_LENGTH, MAX_USERNAME_LENGTH, MIN_USERNAME_LENGTH } from "../../lib/members";
+import { PASSWORD_HINT, USERNAME_HINT, memberMessage } from "../../lib/member-messages";
+
+if (Astro.locals.member) return Astro.redirect("/account");
+const params = Astro.url.searchParams;
+const sent = params.get("sent") === "1";
+const code = params.get("error");
+const error = memberMessage(code);
+const fieldFor: Record<string, { id: string; label: string }[]> = {
+  username: [{ id: "username", label: "Username" }],
+  "username-reserved": [{ id: "username", label: "Username" }],
+  "username-taken": [{ id: "username", label: "Username" }],
+  email: [{ id: "email", label: "Email" }],
+  password: [{ id: "password", label: "Password" }],
+  breached: [{ id: "password", label: "Password" }],
+};
+---
+
+<AccountShell title="Create an account" lede="An account lets you comment on guides and posts, reply to others and vote." description="Create an Orboro.net account to comment and vote.">
+  {sent ? (
+    <>
+      <FormMessage>Check your email. We sent a link to confirm the address; open it to finish setting up your account. It expires in 48 hours.</FormMessage>
+      <p>Didn't get it? Check your spam folder. If the address already has an account, we sent that account a notice instead.</p>
+      <p class="account__links"><a href="/account/login">Sign in</a></p>
+    </>
+  ) : (
+    <>
+      {error && <FormMessage error fields={code ? fieldFor[code] ?? [] : []}>{error}</FormMessage>}
+      <form method="post" action="/api/members/register">
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input id="username" name="username" type="text" required minlength={MIN_USERNAME_LENGTH} maxlength={MAX_USERNAME_LENGTH} pattern="[A-Za-z0-9_\-]+" autocomplete="username" autocapitalize="none" spellcheck="false" aria-describedby="username-hint" />
+          <p id="username-hint" class="account__hint">{USERNAME_HINT}</p>
+        </div>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required maxlength={MAX_EMAIL_LENGTH} autocomplete="email" aria-describedby="email-hint" />
+          <p id="email-hint" class="account__hint">Used to confirm your account and reset your password. Never shown publicly.</p>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" required minlength="15" maxlength="512" autocomplete="new-password" aria-describedby="password-hint" />
+          <p id="password-hint" class="account__hint">{PASSWORD_HINT}</p>
+        </div>
+        <Turnstile action="register" />
+        <p class="account__hint">By creating an account you agree that your username, profile and comments are public. See the <a href="/privacy-policy">privacy policy</a>.</p>
+        <Button type="submit" variant="primary">Create account</Button>
+      </form>
+      <p class="account__links"><a href="/account/login">Already have an account? Sign in</a></p>
+    </>
+  )}
+</AccountShell>

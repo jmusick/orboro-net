@@ -26,3 +26,15 @@ migrations_dir = "migrations"
 [[r2_buckets]]
 binding = "MEDIA"
 bucket_name = "orboro-net-media"
+
+# Public Turnstile site key for the registration and password-reset forms. The
+# secret is a Worker secret: `npx wrangler secret put TURNSTILE_SECRET_KEY`.
+# Local development overrides both with Cloudflare's test keys in .dev.vars.
+[vars]
+TURNSTILE_SITE_KEY = "0x4AAAAAAFXlvGQ2chtxn202"
+
+# Member account email (verification, email change, password reset) through
+# Cloudflare Email Service. The sender domain must be onboarded in the dashboard.
+[[send_email]]
+name = "EMAIL"
+allowed_sender_addresses = ["no-reply@orboro.net"]

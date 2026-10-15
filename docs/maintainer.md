@@ -4,7 +4,7 @@ This file covers how JD runs the live site at `https://orboro.net`: the local wo
 
 ## Users
 
-JD is the only user, with the `admin` role. The app is admin-only by design (decision on [#16](https://github.com/jmusick/orboro-net/issues/16)). Adding non-admin users needs an ownership and permissions design first.
+JD is the only admin user. The CMS is admin-only by design (decision on [#16](https://github.com/jmusick/orboro-net/issues/16)); public commenters are separate **member** accounts that can't reach the admin area. Adding non-admin CMS users still needs an ownership and permissions design first. Moderate comments at `/admin/comments` and manage members at `/admin/members`.
 
 ## Workspace boundaries
 

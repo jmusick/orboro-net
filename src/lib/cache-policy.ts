@@ -7,6 +7,8 @@ const PUBLIC_API_PREFIXES = ["/api/posts/"];
 
 export function isPrivatePath(pathname: string): boolean {
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return true;
+  // Member sign-in, registration, email links and account settings.
+  if (pathname === "/account" || pathname.startsWith("/account/")) return true;
   if (pathname === "/api" || pathname.startsWith("/api/")) {
     return !PUBLIC_API_PREFIXES.some((prefix) => pathname.startsWith(prefix));
   }

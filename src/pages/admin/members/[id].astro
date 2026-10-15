@@ -1,0 +1,116 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import FormMessage from "../../../components/FormMessage.astro";
+import ModerationList from "../../../components/ModerationList.astro";
+import Pill from "../../../components/Pill.astro";
+import { listRecentComments } from "../../../lib/comments";
+import { ensureDB } from "../../../lib/db";
+import { requireAdmin } from "../../../lib/http";
+import { getMemberAdminView } from "../../../lib/members";
+
+const access = requireAdmin(Astro);
+if (access instanceof Response) return access;
+
+const { id = "" } = Astro.params;
+const db = ensureDB(Astro.locals);
+const member = await getMemberAdminView(db, id);
+if (!member) return Astro.redirect("/admin/members?error=missing");
+const comments = await listRecentComments(db, 100, member.id);
+
+const params = Astro.url.searchParams;
+const doneMessages: Record<string, string> = {
+  suspend: "Member suspended and signed out.",
+  reinstate: "Member reinstated. They can sign in again.",
+  verify: "Email marked as confirmed.",
+  "sign-out": "Member signed out on every device.",
+  remove: "Comment removed.",
+  restore: "Comment restored.",
+  dismiss: "Reports dismissed.",
+};
+const done = doneMessages[params.get("done") ?? ""];
+const error = params.get("error");
+const date = (ms: number) => new Date(ms).toLocaleString("en-US", { dateStyle: "long", timeStyle: "short", timeZone: "UTC" }) + " UTC";
+---
+
+<AdminLayout title={member.username}>
+  {done && <FormMessage>{done}</FormMessage>}
+  {error && <FormMessage error>That request couldn't be processed.</FormMessage>}
+
+  <section aria-labelledby="member-details">
+    <h2 id="member-details">Account</h2>
+    <dl class="member-facts">
+      <dt>Username</dt><dd><a href={`/u/${encodeURIComponent(member.username)}`} target="_blank" rel="noopener">{member.username}</a></dd>
+      <dt>Display name</dt><dd>{member.displayName || "None"}</dd>
+      <dt>Email</dt><dd>{member.email} {member.emailVerified ? <Pill variant="success" size="sm">Confirmed</Pill> : <Pill variant="warning" size="sm">Not confirmed</Pill>}</dd>
+      <dt>Status</dt><dd>{member.status === "suspended" ? <Pill variant="danger" size="sm">Suspended</Pill> : <Pill variant="success" size="sm">Active</Pill>}</dd>
+      <dt>Joined</dt><dd>{date(member.createdAt)}</dd>
+      <dt>Active sessions</dt><dd>{member.sessions}</dd>
+      <dt>Comments</dt><dd>{member.comments}</dd>
+      {member.bio && <><dt>Bio</dt><dd class="member-bio">{member.bio}</dd></>}
+    </dl>
+  </section>
+
+  <section aria-labelledby="member-actions">
+    <h2 id="member-actions">Actions</h2>
+    <div class="member-actions">
+      {member.status === "active" ? (
+        <form method="post" action="/api/moderation/member">
+          <input type="hidden" name="id" value={member.id} />
+          <input type="hidden" name="action" value="suspend" />
+          <button type="submit" class="ui-action member-action--danger">Suspend</button>
+        </form>
+      ) : (
+        <form method="post" action="/api/moderation/member">
+          <input type="hidden" name="id" value={member.id} />
+          <input type="hidden" name="action" value="reinstate" />
+          <button type="submit" class="ui-action">Reinstate</button>
+        </form>
+      )}
+      {!member.emailVerified && (
+        <form method="post" action="/api/moderation/member">
+          <input type="hidden" name="id" value={member.id} />
+          <input type="hidden" name="action" value="verify" />
+          <button type="submit" class="ui-action">Mark email confirmed</button>
+        </form>
+      )}
+      {member.sessions > 0 && (
+        <form method="post" action="/api/moderation/member">
+          <input type="hidden" name="id" value={member.id} />
+          <input type="hidden" name="action" value="sign-out" />
+          <button type="submit" class="ui-action">Sign out everywhere</button>
+        </form>
+      )}
+    </div>
+    <p class="member-note">Suspending signs the member out and blocks sign-in; their comments stay up unless you remove them below. A member who can't get into their account can use “Forgot your password?” on the sign-in page.</p>
+    <details class="member-delete">
+      <summary>Delete account</summary>
+      <p>Deletes the account, its email, profile, votes and reports. Its comments stay in their threads as [deleted] with the text erased. This can't be undone.</p>
+      <form method="post" action="/api/moderation/member">
+        <input type="hidden" name="id" value={member.id} />
+        <input type="hidden" name="action" value="delete" />
+        <button type="submit" class="ui-action member-action--danger">Delete {member.username} permanently</button>
+      </form>
+    </details>
+  </section>
+
+  <section aria-labelledby="member-comments">
+    <h2 id="member-comments">Comments</h2>
+    <ModerationList items={comments} memberId={member.id} empty="This member hasn't commented." />
+  </section>
+</AdminLayout>
+
+<style>
+  .member-facts a { color: var(--accent); }
+  .member-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 0.5rem 1.5rem; margin: 0; }
+  .member-facts dt { color: var(--muted); font-weight: 600; }
+  .member-facts dd { margin: 0; overflow-wrap: anywhere; }
+  .member-bio { white-space: pre-line; }
+  .member-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .member-actions form { margin: 0; }
+  .member-actions .ui-action, .member-delete .ui-action { min-height: 44px; }
+  .member-note { margin: 1rem 0; color: var(--muted); }
+  .member-delete summary { cursor: pointer; color: var(--danger); font-weight: 700; min-height: 44px; display: inline-flex; align-items: center; }
+  .member-action--danger { border-color: var(--danger); color: var(--danger); }
+  .member-action--danger:hover:not(:disabled) { border-color: var(--danger); color: var(--text); background: rgb(from var(--danger) r g b / 18%); }
+  @media (max-width: 600px) { .member-facts { grid-template-columns: 1fr; } .member-facts dd { margin-bottom: 0.5rem; } }
+</style>

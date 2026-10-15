@@ -1,0 +1,30 @@
+---
+// Frame for the member account pages: title band plus a narrow column. Auth
+// pages never load the analytics tag (see AGENTS.md, Analytics and privacy).
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageHeader from "./PageHeader.astro";
+
+interface Props {
+  title: string;
+  lede?: string;
+  description: string;
+  wide?: boolean;
+}
+const { title, lede, description, wide = false } = Astro.props;
+---
+<BaseLayout title={`${title} | Orboro.net`} description={description} analytics={false}>
+  <PageHeader slot="hero" title={title} lede={lede} />
+  <div class:list={["account", { "account--wide": wide }]}>
+    <slot />
+  </div>
+</BaseLayout>
+
+<style>
+  .account { max-width: 30rem; }
+  .account--wide { max-width: var(--measure); }
+  .account :global(form) { display: grid; gap: var(--space-4); }
+  .account :global(.account__hint) { margin: -0.25rem 0 0; color: var(--muted); font-size: 0.9rem; }
+  .account :global(.account__links) { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-6); margin-top: var(--space-6); }
+  .account :global(.account__links a) { display: inline-flex; align-items: center; min-height: 44px; }
+  .account :global(form .btn) { justify-self: start; min-height: 44px; }
+</style>

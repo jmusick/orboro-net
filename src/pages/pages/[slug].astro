@@ -4,6 +4,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import SidebarLayout from "../../components/SidebarLayout.astro";
 import Sidebar from "../../components/Sidebar.astro";
 import PageHeader from "../../components/PageHeader.astro";
+import Comments from "../../components/Comments.astro";
 import { getPublishedBySlugAndType, listPostSummaries, listCategoriesWithPostCounts, listNavItems } from "../../lib/content";
 import { breadcrumbList, classifyPage, graphOf, pageNode, pageTrail, withHome } from "../../lib/structured-data";
 import { processShortcodes } from "../../lib/shortcodes";
@@ -85,6 +86,7 @@ const structuredData = graphOf(
   <SidebarLayout sidebar={!hasWidgets}>
     <article class="page-content">
       <div class="prose" set:html={html} />
+      {page.commentsMode !== "hidden" && <Comments contentId={page.id} path={pagePath} mode={page.commentsMode} />}
     </article>
     <Sidebar slot="sidebar" categories={categories} recentPosts={recentPosts} />
   </SidebarLayout>

@@ -40,6 +40,7 @@ const ogAlt = usingDefaultOg ? "Orboro.net logo on a dark indigo background" : o
 const navItems = await listNavItems(Astro.locals);
 const pathname = new URL(Astro.request.url).pathname;
 const nonce = Astro.locals.nonce;
+const member = Astro.locals.member;
 // A page's `hero` slot renders full-bleed artwork behind the site header.
 const hasHero = Astro.slots.has("hero");
 
@@ -886,6 +887,9 @@ function isActive(url: string): boolean {
               }
               return <a href={node.url} class={isActive(node.url) ? "active" : ""}>{node.label}</a>;
             })}
+            {member
+              ? <a href="/account" class:list={["nav-account", { active: isActive("/account") }]}><Icon name="user" size={14} />{member.displayName || member.username}</a>
+              : <a href={`/account/login${pathname.startsWith("/account") ? "" : `?next=${encodeURIComponent(pathname)}`}`} class:list={["nav-account", { active: isActive("/account") }]}>Sign in</a>}
             <a class="nav-support" href="https://www.patreon.com/cw/Orboro" target="_blank" rel="noopener noreferrer"><Icon name="patreon" size={14} filled />Support</a>
           </nav>
         </div>

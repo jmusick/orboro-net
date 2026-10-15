@@ -8,7 +8,7 @@ import { pingWebSub } from "../../../lib/websub";
 
 const TEXT_FIELDS = [
   "id", "title", "slug", "markdown", "pageType", "status", "featuredImageUrl",
-  "homepageFeatured", "homepageGroup", "homepageOrder", "homepageDescription",
+  "homepageFeatured", "homepageGroup", "homepageOrder", "homepageDescription", "commentsMode",
 ] as const;
 
 export const POST: APIRoute = async (context) => {
@@ -42,6 +42,7 @@ export const POST: APIRoute = async (context) => {
   const homepageGroup = text.homepageGroup || "other";
   const homepageOrder = text.homepageOrder.trim() === "" ? 0 : Number(text.homepageOrder);
   const homepageDescription = text.homepageDescription.trim();
+  const commentsMode = text.commentsMode || "open";
   const categoryValues = form.getAll("categoryId");
   if (categoryValues.some((v) => typeof v !== "string")) return context.redirect(editor("invalid"));
   const categoryIds = categoryValues.map((v) => String(v).trim()).filter(Boolean);
@@ -63,6 +64,7 @@ export const POST: APIRoute = async (context) => {
       homepageGroup,
       homepageOrder,
       homepageDescription,
+      commentsMode,
       categoryIds,
     });
   } catch (error) {

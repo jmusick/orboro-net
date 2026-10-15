@@ -1,0 +1,32 @@
+---
+import AccountShell from "../../components/AccountShell.astro";
+import Button from "../../components/Button.astro";
+import FormMessage from "../../components/FormMessage.astro";
+import Turnstile from "../../components/Turnstile.astro";
+import { MAX_EMAIL_LENGTH } from "../../lib/members";
+import { memberMessage } from "../../lib/member-messages";
+
+const params = Astro.url.searchParams;
+const sent = params.get("sent") === "1";
+const code = params.get("error");
+const error = memberMessage(code);
+---
+
+<AccountShell title="Reset your password" lede="Enter your account's email and we'll send a link to choose a new password." description="Reset the password for your Orboro.net account.">
+  {sent ? (
+    <FormMessage>If that address has an account, a reset link is on its way. It works once and expires in 1 hour.</FormMessage>
+  ) : (
+    <>
+      {error && <FormMessage error fields={code === "email" ? [{ id: "email", label: "Email" }] : []}>{error}</FormMessage>}
+      <form method="post" action="/api/members/forgot">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required maxlength={MAX_EMAIL_LENGTH} autocomplete="email" />
+        </div>
+        <Turnstile action="reset" />
+        <Button type="submit" variant="primary">Send reset link</Button>
+      </form>
+    </>
+  )}
+  <p class="account__links"><a href="/account/login">Back to sign in</a></p>
+</AccountShell>

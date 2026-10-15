@@ -19,6 +19,14 @@ export const SECURITY_EVENTS = [
   "auth.session.lookup-failed",
   "authz.denied",
   "admin.action",
+  "member.registered",
+  "member.login.succeeded",
+  "member.login.failed",
+  "member.limited",
+  "member.unavailable",
+  "member.turnstile.failed",
+  "member.email.failed",
+  "member.action",
 ] as const;
 
 export type SecurityEventName = (typeof SECURITY_EVENTS)[number];
@@ -26,6 +34,8 @@ export type SecurityEventName = (typeof SECURITY_EVENTS)[number];
 export interface SecurityEventFields {
   /** Internal user ID (never an email). */
   user?: string;
+  /** Internal member ID (never an email or username). */
+  member?: string;
   /** Admin action derived from the API path, e.g. `content.save`. */
   action?: string;
   /** Record ID the action touched. */
@@ -50,6 +60,7 @@ const CODE = pattern(/^[a-z][a-z0-9-]*$/, 32);
 
 const FIELD_RULES: Record<keyof SecurityEventFields, Rule> = {
   user: RECORD_ID,
+  member: RECORD_ID,
   action: pattern(/^[a-z][a-z-]*(\.[a-z][a-z-]*){1,2}$/, 48),
   target: RECORD_ID,
   outcome: oneOf("ok", "rejected", "error"),
@@ -66,6 +77,11 @@ const WARN_EVENTS = new Set<SecurityEventName>([
   "auth.session.rejected",
   "auth.session.lookup-failed",
   "authz.denied",
+  "member.login.failed",
+  "member.limited",
+  "member.unavailable",
+  "member.turnstile.failed",
+  "member.email.failed",
 ]);
 
 export type SecurityLogRecord = Record<string, string | number>;
@@ -146,23 +162,60 @@ export function adminActionEvent(
   target?: string,
 ): SecurityEventFields | null {
   if (method !== "POST" || !pathname.startsWith("/api/") || pathname.startsWith("/api/auth/login")) return null;
+  // Member routes log member.action instead, even when an admin is also signed in.
+  if (isMemberApiPath(pathname)) return null;
   if (!user) return null;
   const selfService = pathname === "/api/auth/logout" || pathname === "/api/auth/revoke-all";
   if (user.role !== "admin" && !selfService) return null;
 
-  const action = pathname.slice("/api/".length).replace(/\/+$/, "").split("/").join(".");
+  const action = apiAction(pathname);
   if (!response) return { action, user: user.id, target, outcome: "error", status: 500 };
 
+  return { action, user: user.id, target, ...responseOutcome(response) };
+}
+
+/** Member-facing mutation routes: accounts and comments. */
+export const MEMBER_API_PREFIXES = ["/api/members/", "/api/comments/"];
+
+export function isMemberApiPath(pathname: string): boolean {
+  return MEMBER_API_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
+function apiAction(pathname: string): string {
+  return pathname.slice("/api/".length).replace(/\/+$/, "").split("/").join(".");
+}
+
+function responseOutcome(response: Response): Pick<SecurityEventFields, "outcome" | "reason" | "status"> {
   const status = response.status;
   let outcome: SecurityEventFields["outcome"] = status >= 500 ? "error" : status >= 400 ? "rejected" : "ok";
   let reason: string | undefined;
   const location = response.headers.get("Location");
   if (status >= 300 && status < 400 && location) {
-    const error = new URL(location, "https://redirect.invalid").searchParams.get("error");
+    const params = new URL(location, "https://redirect.invalid").searchParams;
+    const error = params.get("error") ?? params.get("comment_error");
     if (error) {
       outcome = "rejected";
       reason = error;
     }
   }
-  return { action, user: user.id, target, outcome, reason, status };
+  return { outcome, reason, status };
+}
+
+/**
+ * The `member.action` event for a finished signed-in member POST under
+ * /api/members/ or /api/comments/. Registration and sign-in log their own
+ * events, and refused requests are logged as `authz.denied` by requireMember.
+ */
+export function memberActionEvent(
+  method: string,
+  pathname: string,
+  member: MemberRecord | null,
+  response: Response | null,
+  target?: string,
+): SecurityEventFields | null {
+  if (method !== "POST" || !isMemberApiPath(pathname) || !member) return null;
+  if (pathname.startsWith("/api/members/login") || pathname.startsWith("/api/members/register")) return null;
+  const action = apiAction(pathname);
+  if (!response) return { action, member: member.id, target, outcome: "error", status: 500 };
+  return { action, member: member.id, target, ...responseOutcome(response) };
 }
