@@ -77,6 +77,15 @@ Done for v1.52.0 (member accounts and comments) through the authenticated dashbo
 - **Email Sending:** onboarded `orboro.net` at the top level for the `EMAIL` binding (sender `no-reply@orboro.net`). Cloudflare added three MX records and an SPF TXT on `cf-bounce.orboro.net` and DKIM at `cf-bounce._domainkey.orboro.net`. Its review screen listed `_dmarc` as `v=DMARC1; p=reject;`, but the existing `v=DMARC1; p=none; rua=mailto:rua@dmarc.brevo.com` was kept, confirmed by public DNS afterwards. Keep `p=none` unless everything else that sends as @orboro.net (Brevo, other mailboxes) is DKIM-aligned. Inbound mail still goes through Email Routing (root MX unchanged).
 - **D1:** migration `0014_members_comments` applied to production before the release was pushed.
 
+## GitHub scanning configuration — October 23, 2026
+
+Enabled CodeQL and inspected secret protection through the authenticated GitHub CLI, then checked their repository API state.
+
+- CodeQL default setup is enabled for JavaScript/TypeScript and GitHub Actions, using the default query suite, remote threat model and standard runners. The API reports a weekly schedule. Both analyses in the [initial setup run](https://github.com/jmusick/orboro-net/actions/runs/40044437656) succeeded; JavaScript/TypeScript reported ten findings and Actions reported none. Review and dispositions are tracked in [issue #52](https://github.com/jmusick/orboro-net/issues/52). No code-scanning merge requirement was added.
+- The initial review dismissed alerts 1–3 and 6 as test-only, and 5 and 7–10 as false positives, with evidence on each alert. The modulo operations sample housekeeping rather than credential generation or expiry/budget enforcement; TOC labels cross escaped Astro output boundaries. Alert 4 exposed a feed omission bug: deleting a nested script/style fragment with a regex could join its surrounding text into a new tag. Its parser-based fix and malformed-markup regression coverage are tracked in #52; this does not establish same-origin XSS in the XML feed or make feed rendering a general-purpose HTML sanitizer.
+- Secret scanning and push protection were already enabled. GitHub's secret-alert API returned no alerts. Generic-pattern scanning and partner validity checks were disabled; GitHub documents these features for organization-owned repositories with GitHub Secret Protection. The scan-history endpoint returned `404` with "Advanced Security is disabled on this repository," so no claim about the completion time of GitHub's historical secret scan is made.
+- The local gitleaks positive-control self-test passed, and the full history scan (148 commits) and working-tree scan found no leaks. These checks complement GitHub secret scanning and remain in the required `Release gate`.
+
 ## Decision history
 
 These rationales were consolidated from earlier project notes; they are historical, not new deployment changes.
