@@ -24,6 +24,43 @@ test('CDATA terminators are split into adjacent safe sections', () => {
   assert.equal(escapeCdata('one]]>two]]>three'), 'one]]]]><![CDATA[>two]]]]><![CDATA[>three');
 });
 
+test('omitting script and style bodies does not reconstruct executable tags', () => {
+  const script = renderFeedHtml('<div><scrip<script>removed</script>t>alert(1)</script></div>', '', 'https://orboro.net/blog/post', 'https://orboro.net');
+  assert.equal(script, '<div>&lt;script&gt;alert(1)</div>');
+  const style = renderFeedHtml('<div><sty<style>removed</style>le>p{color:red}</style></div>', '', 'https://orboro.net/blog/post', 'https://orboro.net');
+  assert.equal(style, '<div>&lt;style&gt;p{color:red}</div>');
+});
+
+test('feeds omit unclosed code blocks and follow raw-text closing tags', () => {
+  const link = 'https://orboro.net/blog/post';
+  assert.equal(renderFeedHtml('<script src="/script.js">unclosed script', '', link, 'https://orboro.net'), '');
+  assert.equal(renderFeedHtml('<style>unclosed style', '', link, 'https://orboro.net'), '');
+  assert.equal(renderFeedHtml('<script>outer<script>inner</script>After</script>', '', link, 'https://orboro.net'), 'After');
+  assert.equal(renderFeedHtml('<style>outer<style>inner</style>After</style>', '', link, 'https://orboro.net'), 'After');
+});
+
+test('feed code omission is case-insensitive and preserves other portable markup', () => {
+  const link = 'https://orboro.net/blog/post';
+  assert.equal(renderFeedHtml('<div>Before<ScRiPt src="/script.js">code</ScRiPt>After</div>', '', link, 'https://orboro.net'), '<div>BeforeAfter</div>');
+  assert.equal(renderFeedHtml('<div>Before<StYlE>p{color:red}</StYlE>After</div>', '', link, 'https://orboro.net'), '<div>BeforeAfter</div>');
+  const markup = '<div><custom-card data-kind="example" aria-label="Example"><span role="note">Portable</span></custom-card></div>';
+  assert.equal(renderFeedHtml(markup, '', link, 'https://orboro.net'), markup);
+});
+
+test('raw code text cannot hide its closing tag or following article content', () => {
+  const link = 'https://orboro.net/blog/post';
+  const script = `<script>const example = '<div title="unfinished';</script><p>Article survives</p>`;
+  const style = '<style>/* <div title="unfinished */</style><p>Article survives</p>';
+  assert.equal(renderFeedHtml(script, '', link, 'https://orboro.net'), '<p>Article survives</p>');
+  assert.equal(renderFeedHtml(style, '', link, 'https://orboro.net'), '<p>Article survives</p>');
+});
+
+test('feed code tag names recognize slash delimiters', () => {
+  const link = 'https://orboro.net/blog/post';
+  assert.equal(renderFeedHtml('<div><script/src="/code.js">alert(1)</script></div>', '', link, 'https://orboro.net'), '<div></div>');
+  assert.equal(renderFeedHtml('<div><style/type="text/css">p{color:red}</style></div>', '', link, 'https://orboro.net'), '<div></div>');
+});
+
 test('URL rewriting respects quoted metadata, data attributes and article-relative links', () => {
   const html = renderFeedHtml('<img title="example > src=\'/sample\'" data-src="/lazy.png" src="art.png"><a href="#section">Section</a>', '', 'https://orboro.net/blog/post', 'https://orboro.net');
   assert.match(html, /title="example > src='\/sample'"/);
