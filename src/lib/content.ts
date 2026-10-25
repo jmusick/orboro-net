@@ -9,13 +9,11 @@ import {
   type WriteDB,
 } from "./content-writes";
 import { ensureDB, getDB } from "./db";
-import { queryBlogPage, type BlogFilters, type BlogPage } from "./blog-listing";
+import { EXCERPT_SOURCE_CHARS, queryBlogPage, type BlogFilters, type BlogPage } from "./blog-listing";
 import { queryRelatedPosts, RELATED_POSTS_LIMIT, type RelatedPost } from "./related-posts";
 import type { CoverCandidate } from "./topics";
 
-import { excerptFromMarkdown } from "./excerpt";
-
-export { excerptFromMarkdown };
+export { excerptFromMarkdown } from "./excerpt";
 
 export type ContentStatus = "draft" | "published";
 
@@ -100,9 +98,28 @@ export async function listHomepageFeatures(locals: App.Locals): Promise<ContentR
   return (result.results ?? []).map(mapContentRow);
 }
 
-/** Tile copy: the editor's homepage description, else the page's opening prose. */
-export function toolDescription(page: Pick<ContentRecord, "homepageDescription" | "markdown">, maxLen = 140): string {
-  return page.homepageDescription || excerptFromMarkdown(page.markdown.replace(/\{\{[\s\S]*?\}\}/g, "").replace(/<[^>]*>/g, ""), maxLen);
+export type FeaturedTool = Pick<ContentRecord, "id" | "slug" | "title" | "homepageGroup" | "homepageDescription" | "markdown">;
+
+// Featured tool pages in the given homepage groups, in homepage order. `markdown`
+// is only the opening prefix, enough for `toolDescription`.
+export async function listFeaturedTools(locals: App.Locals, groups: string[]): Promise<FeaturedTool[]> {
+  const db = getDB(locals);
+  if (!db || groups.length === 0) return [];
+  const result = await db.prepare(
+    `SELECT id, slug, title, homepage_group, homepage_description, substr(markdown, 1, ${EXCERPT_SOURCE_CHARS}) AS markdown_prefix
+     FROM content
+     WHERE page_type = 'page' AND status = 'published' AND homepage_featured = 1
+       AND homepage_group IN (${groups.map(() => "?").join(",")})
+     ORDER BY homepage_order ASC, title COLLATE NOCASE ASC, id ASC`,
+  ).bind(...groups).all<{ id: string; slug: string; title: string; homepage_group: string; homepage_description: string | null; markdown_prefix: string | null }>();
+  return (result.results ?? []).map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    homepageGroup: row.homepage_group,
+    homepageDescription: row.homepage_description ?? "",
+    markdown: row.markdown_prefix ?? "",
+  }));
 }
 
 // Paginated blog index: card fields only (no full Markdown bodies).

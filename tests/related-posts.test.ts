@@ -96,7 +96,18 @@ Opening **words** here. ${'x'.repeat(2000)}` });
 test('kicker choice: shared game category, then shared by name, then first by name', () => {
   const c = (name: string, slug: string, shared: boolean) => ({ name, slug, shared });
   assert.equal(pickKicker([c('Gaming', 'gaming', true), c('World of Warcraft', 'world-of-warcraft', true)])?.slug, 'world-of-warcraft');
-  assert.equal(pickKicker([c('Path of Exile II', 'path-of-exile-ii', false), c('Zed', 'zed', true)])?.slug, 'zed', 'an unshared game category does not win');
+  assert.equal(pickKicker([c('Path of Exile II', 'path-of-exile-ii', false), c('Zed', 'zed', true)])?.slug, 'zed', 'an unshared game category does not beat a shared one');
+  assert.equal(pickKicker([c('Gaming', 'gaming', false), c('World of Warcraft', 'world-of-warcraft', false)])?.slug, 'world-of-warcraft', 'top-up posts prefer a game category');
   assert.equal(pickKicker([c('Zed', 'zed', false), c('Alpha', 'alpha', false)])?.slug, 'alpha');
   assert.equal(pickKicker([]), null);
+});
+
+test('a WoW post topped up onto an unrelated post gets the WoW kicker, not Gaming', async () => {
+  const { db, add } = setup();
+  add('current', 500, ['dev']);
+  add('wow-gaming', 400, ['gaming', 'wow']);
+  const [card] = await queryRelatedPosts(db, 'current');
+  assert.equal(card.id, 'wow-gaming');
+  assert.equal(card.sharedCategories, 0);
+  assert.deepEqual(card.category, { name: 'World of Warcraft', slug: 'world-of-warcraft' });
 });

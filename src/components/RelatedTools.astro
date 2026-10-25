@@ -1,8 +1,8 @@
 ---
-import type { ContentRecord } from "../lib/content";
-import { toolDescription } from "../lib/content";
+import type { FeaturedTool } from "../lib/content";
+import { toolDescription } from "../lib/excerpt";
 import type { GameHub } from "../lib/topics";
-interface Props { groups: { hub: GameHub; tools: ContentRecord[] }[]; }
+interface Props { groups: { hub: GameHub; tools: FeaturedTool[] }[]; }
 const { groups } = Astro.props;
 // A compact take on the homepage toolkit tiles: title and one line, no artwork.
 const shown = groups.map(({ hub, tools }) => ({ hub, tools: tools.map((tool) => ({ ...tool, description: toolDescription(tool) })) }));

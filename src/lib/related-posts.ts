@@ -29,12 +29,14 @@ const byName = (a: KickerCandidate, b: KickerCandidate) => (a.name < b.name ? -1
 
 /**
  * A shared game category (so a WoW post tagged Gaming too gets the WoW kicker
- * and color), else any shared category by name, else the post's first by name.
+ * and color), else any shared category by name, else any game category (for
+ * top-up posts), else the post's first by name.
  */
 export function pickKicker(candidates: KickerCandidate[]): { name: string; slug: string } | null {
   const sorted = [...candidates].sort(byName);
   const shared = sorted.filter((c) => c.shared);
-  const pick = shared.find((c) => topicTone(c.slug) !== "default") ?? shared[0] ?? sorted[0];
+  const isGame = (c: KickerCandidate) => topicTone(c.slug) !== "default";
+  const pick = shared.find(isGame) ?? shared[0] ?? sorted.find(isGame) ?? sorted[0];
   return pick ? { name: pick.name, slug: pick.slug } : null;
 }
 

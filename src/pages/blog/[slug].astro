@@ -14,7 +14,7 @@ import {
   getContentCategories,
   excerptFromMarkdown,
   listCategoriesWithPostCounts,
-  listHomepageFeatures,
+  listFeaturedTools,
   listRelatedPosts,
 } from "../../lib/content";
 import { processShortcodes } from "../../lib/shortcodes";
@@ -42,21 +42,25 @@ if (!post) {
   return Astro.rewrite("/404");
 }
 
+// Tools follow the post's game categories: a post tagged with both games shows
+// both groups, WoW first, and a post with neither runs no tools query.
+const postCategoriesLoad = getContentCategories(Astro.locals, post.id);
+const toolGroupsLoad = postCategoriesLoad.then(async (cats) => {
+  const hubs = gameHubsForCategories(cats.map((cat) => cat.slug));
+  if (hubs.length === 0) return [];
+  const tools = await listFeaturedTools(Astro.locals, hubs.map((hub) => hub.group));
+  return hubs.map((hub) => ({ hub, tools: tools.filter((tool) => tool.homepageGroup === hub.group) }));
+});
+
 // The "Keep reading" row stands in for the sidebar's recent posts, so the page
 // doesn't list the same posts twice.
-const [categories, postCategories, allPosts, relatedPosts, featuredPages] = await Promise.all([
+const [categories, postCategories, allPosts, relatedPosts, toolGroups] = await Promise.all([
   listCategoriesWithPostCounts(Astro.locals),
-  getContentCategories(Astro.locals, post.id),
+  postCategoriesLoad,
   listPostSummaries(Astro.locals, 500),
   listRelatedPosts(Astro.locals, post.id),
-  listHomepageFeatures(Astro.locals),
+  toolGroupsLoad,
 ]);
-
-// A post tagged with both games shows both tool groups, WoW first.
-const toolGroups = gameHubsForCategories(postCategories.map((cat) => cat.slug)).map((hub) => ({
-  hub,
-  tools: featuredPages.filter((page) => page.homepageGroup === hub.group),
-}));
 
 const currentIndex = allPosts.findIndex((p) => p.slug === post.slug);
 const newerPost = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
