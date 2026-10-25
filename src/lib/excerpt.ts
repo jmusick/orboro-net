@@ -32,6 +32,8 @@ export function toolDescription(page: { homepageDescription: string; markdown: s
     .replace(/\{\{[\s\S]*?\}\}/g, "")
     .replace(/\{\{[\s\S]*$/, "")
     .replace(/<[^>]*>/g, "")
-    .replace(/<[^>]*$/, "");
+    .replace(/<[^>]*$/, "")
+    // Stray brackets could rejoin into a tag ("<<a>script"); drop them all.
+    .replace(/[<>]/g, "");
   return excerptFromMarkdown(prose, maxLen);
 }
