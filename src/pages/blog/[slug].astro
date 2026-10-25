@@ -6,17 +6,22 @@ import PageHeader from "../../components/PageHeader.astro";
 import TopicChip from "../../components/TopicChip.astro";
 import Icon from "../../components/Icon.astro";
 import Comments from "../../components/Comments.astro";
+import StoryCard from "../../components/StoryCard.astro";
+import RelatedTools from "../../components/RelatedTools.astro";
 import {
   getPublishedBySlugAndType,
   listPostSummaries,
   getContentCategories,
   excerptFromMarkdown,
   listCategoriesWithPostCounts,
+  listFeaturedTools,
+  listRelatedPosts,
 } from "../../lib/content";
 import { processShortcodes } from "../../lib/shortcodes";
 import { breadcrumbList, graphOf } from "../../lib/structured-data";
 import { addHeadingIds } from "../../lib/toc";
 import { PATREON_URL } from "../../lib/profiles";
+import { gameHubsForCategories } from "../../lib/topics";
 
 function estimateReadingMinutes(markdown: string): number {
   const words = markdown
@@ -37,20 +42,25 @@ if (!post) {
   return Astro.rewrite("/404");
 }
 
-const [categories, postCategories, allPosts] = await Promise.all([
-  listCategoriesWithPostCounts(Astro.locals),
-  getContentCategories(Astro.locals, post.id),
-  listPostSummaries(Astro.locals, 500),
-]);
+// Tools follow the post's game categories: a post tagged with both games shows
+// both groups, WoW first, and a post with neither runs no tools query.
+const postCategoriesLoad = getContentCategories(Astro.locals, post.id);
+const toolGroupsLoad = postCategoriesLoad.then(async (cats) => {
+  const hubs = gameHubsForCategories(cats.map((cat) => cat.slug));
+  if (hubs.length === 0) return [];
+  const tools = await listFeaturedTools(Astro.locals, hubs.map((hub) => hub.group));
+  return hubs.map((hub) => ({ hub, tools: tools.filter((tool) => tool.homepageGroup === hub.group) }));
+});
 
-const recentPosts = allPosts
-  .filter((p) => p.slug !== post.slug)
-  .slice(0, 3)
-  .map((p) => ({
-    slug: p.slug,
-    title: p.title,
-    dateLabel: new Date(p.publishedAt ?? p.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
-  }));
+// The "Keep reading" row stands in for the sidebar's recent posts, so the page
+// doesn't list the same posts twice.
+const [categories, postCategories, allPosts, relatedPosts, toolGroups] = await Promise.all([
+  listCategoriesWithPostCounts(Astro.locals),
+  postCategoriesLoad,
+  listPostSummaries(Astro.locals, 500),
+  listRelatedPosts(Astro.locals, post.id),
+  toolGroupsLoad,
+]);
 
 const currentIndex = allPosts.findIndex((p) => p.slug === post.slug);
 const newerPost = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
@@ -158,9 +168,28 @@ const structuredData = graphOf(blogPosting, breadcrumbList(trail, BASE));
           </ol>
         </nav>
       )}
-      <Sidebar categories={categories} recentPosts={recentPosts} />
+      <Sidebar categories={categories} recentPosts={[]} />
     </div>
   </div>
+
+  {(relatedPosts.length > 0 || toolGroups.length > 0) && (
+    <div class="keep-reading">
+      {relatedPosts.length > 0 && (
+        <section class="related" aria-labelledby="related-title">
+          <h2 id="related-title">Keep reading</h2>
+          <div class="related__grid">
+            {relatedPosts.map((other) => (
+              <StoryCard slug={other.slug} title={other.title} image={other.featuredImageUrl}
+                dateIso={new Date(other.date).toISOString()}
+                dateLabel={new Date(other.date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                excerpt={other.excerpt} category={other.category} headingLevel="h3" />
+            ))}
+          </div>
+        </section>
+      )}
+      <RelatedTools groups={toolGroups} />
+    </div>
+  )}
 
   {adjacent.length > 0 && (
     <nav class="post-nav" aria-label="More posts">
@@ -315,6 +344,53 @@ const structuredData = graphOf(blogPosting, breadcrumbList(trail, BASE));
     background: var(--accent-hover);
   }
 
+  .keep-reading {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+    max-width: 74rem;
+    margin: var(--space-16) auto 0;
+    padding-top: var(--space-10);
+    border-top: 1px solid var(--line);
+  }
+
+  .related h2 {
+    margin: 0 0 var(--space-6);
+    font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  }
+
+  /* Explicit columns: one on phones, then always three, so three cards never
+     split 2 + 1 and fewer than three keep a card's width instead of stretching. */
+  .related__grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2rem 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .related__grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* Three columns in the 46rem column leave cards ~14rem wide; Unbounded is wide,
+     so a step down keeps long titles to four lines. StoryCard's default stays. */
+  @media (min-width: 768px) and (max-width: 1080px) {
+    .related__grid {
+      column-gap: 1.25rem;
+    }
+
+    .related__grid :global(.story__title) {
+      font-size: 0.95rem;
+    }
+  }
+
+  /* One rule above the whole end-of-post block, not one per section. */
+  .keep-reading + .post-nav {
+    padding-top: 0;
+    border-top: 0;
+  }
+
   .post-nav {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
@@ -402,6 +478,7 @@ const structuredData = graphOf(blogPosting, breadcrumbList(trail, BASE));
       display: block;
     }
 
+    .keep-reading,
     .post-nav {
       max-width: 46rem;
     }

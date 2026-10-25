@@ -20,3 +20,22 @@ export function excerptFromMarkdown(markdown: string, maxLen = 155): string {
   const end = boundary >= maxLen * 0.6 ? boundary : maxLen;
   return plain.slice(0, end).replace(/[\s,;:.–—-]+$/, "") + "…";
 }
+
+/**
+ * Tool tile copy: the editor's homepage description, else the page's opening
+ * prose with shortcode tokens and HTML tags removed. A token or tag left open
+ * by a bounded Markdown prefix is dropped too.
+ */
+export function toolDescription(page: { homepageDescription: string; markdown: string }, maxLen = 140): string {
+  if (page.homepageDescription) return page.homepageDescription;
+  let prose = page.markdown
+    .replace(/\{\{[\s\S]*?\}\}/g, "")
+    .replace(/\{\{[\s\S]*$/, "");
+  // Repeat until stable so removing one tag can't leave another behind ("<<a>script>").
+  let previous;
+  do {
+    previous = prose;
+    prose = prose.replace(/<[^>]*(?:>|$)/g, "");
+  } while (prose !== previous);
+  return excerptFromMarkdown(prose, maxLen);
+}

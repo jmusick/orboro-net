@@ -16,6 +16,26 @@ export function topicTone(key: string | null | undefined): TopicTone {
   return (key && TONES[key]) || "default";
 }
 
+export interface GameHub {
+  tone: Exclude<TopicTone, "default">;
+  /** `homepage_group` of the game's featured tool pages. */
+  group: string;
+  title: string;
+  href: string;
+}
+
+// Same order as the homepage toolkit: WoW, then PoE 2.
+export const GAME_HUBS: readonly GameHub[] = [
+  { tone: "wow", group: "wow", title: "World of Warcraft", href: "/pages/world-of-warcraft" },
+  { tone: "poe", group: "poe2", title: "Path of Exile 2", href: "/pages/path-of-exile-ii" },
+];
+
+/** Hubs for every game tone among a post's category slugs. */
+export function gameHubsForCategories(slugs: string[]): GameHub[] {
+  const tones = new Set(slugs.map(topicTone));
+  return GAME_HUBS.filter((hub) => tones.has(hub.tone));
+}
+
 export interface CoverCandidate {
   categoryId: string;
   imageUrl: string;
