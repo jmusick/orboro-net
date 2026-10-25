@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { queryRelatedPosts } from '../src/lib/related-posts.ts';
+import { pickKicker, queryRelatedPosts } from '../src/lib/related-posts.ts';
 import { makeMigratedDb, seedContent } from './helpers/d1.ts';
 
 // seedContent adds 'post1' (published, at 0), a page and a draft post.
@@ -72,15 +72,31 @@ test('a post with no categories gets the newest posts', async () => {
   assert.deepEqual(related.map((p) => p.id), ['b', 'a', 'post1']);
 });
 
-test('cards carry a shared category as the kicker and an excerpt from the bounded prefix', async () => {
-  const { db, add } = setup();
-  add('current', 500, ['wow']);
-  add('other', 100, ['gaming', 'wow'], { markdown: `# Heading\n\nOpening **words** here. ${'x'.repeat(2000)}` });
-  add('untagged', 50, []);
-  const [other, untagged] = await queryRelatedPosts(db, 'current');
-  assert.deepEqual(other.category, { name: 'World of Warcraft', slug: 'world-of-warcraft' }, 'shared category beats the alphabetical first');
-  assert.ok(other.excerpt.startsWith('Opening words here.'));
-  assert.ok(other.excerpt.length <= 141);
-  assert.equal(untagged.id, 'untagged');
-  assert.equal(untagged.category, null);
+test('cards carry a shared category as the kicker, preferring a game one, and an excerpt from the bounded prefix', async () => {
+  const { db, sqlite, add } = setup();
+  sqlite.exec("INSERT INTO categories (id, name, slug, created_at) VALUES ('ai', 'AI', 'ai', 0)");
+  add('current', 500, ['wow', 'gaming', 'dev']);
+  add('wow-gaming', 400, ['gaming', 'wow'], { markdown: `# Heading
+
+Opening **words** here. ${'x'.repeat(2000)}` });
+  add('dev-ai', 300, ['ai', 'dev']);
+  add('untagged', 200, []);
+  add('ai-only', 100, ['ai']);
+  const related = await queryRelatedPosts(db, 'current', 10);
+  const kicker = (id: string) => related.find((p) => p.id === id)?.category;
+  assert.deepEqual(kicker('wow-gaming'), { name: 'World of Warcraft', slug: 'world-of-warcraft' }, 'a game category beats Gaming, which sorts first');
+  assert.deepEqual(kicker('dev-ai'), { name: 'Development', slug: 'development' }, 'a shared category beats the alphabetical first');
+  assert.deepEqual(kicker('ai-only'), { name: 'AI', slug: 'ai' }, 'top-up posts fall back to their first category');
+  assert.equal(kicker('untagged'), null);
+  const card = related.find((p) => p.id === 'wow-gaming')!;
+  assert.ok(card.excerpt.startsWith('Opening words here.'));
+  assert.ok(card.excerpt.length <= 141);
+});
+
+test('kicker choice: shared game category, then shared by name, then first by name', () => {
+  const c = (name: string, slug: string, shared: boolean) => ({ name, slug, shared });
+  assert.equal(pickKicker([c('Gaming', 'gaming', true), c('World of Warcraft', 'world-of-warcraft', true)])?.slug, 'world-of-warcraft');
+  assert.equal(pickKicker([c('Path of Exile II', 'path-of-exile-ii', false), c('Zed', 'zed', true)])?.slug, 'zed', 'an unshared game category does not win');
+  assert.equal(pickKicker([c('Zed', 'zed', false), c('Alpha', 'alpha', false)])?.slug, 'alpha');
+  assert.equal(pickKicker([]), null);
 });

@@ -355,10 +355,30 @@ const structuredData = graphOf(blogPosting, breadcrumbList(trail, BASE));
     font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
   }
 
+  /* Explicit columns: one on phones, then always three, so three cards never
+     split 2 + 1 and fewer than three keep a card's width instead of stretching. */
   .related__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 2rem 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .related__grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* Three columns in the 46rem column leave cards ~14rem wide; Unbounded is wide,
+     so a step down keeps long titles to four lines. StoryCard's default stays. */
+  @media (min-width: 768px) and (max-width: 1080px) {
+    .related__grid {
+      column-gap: 1.25rem;
+    }
+
+    .related__grid :global(.story__title) {
+      font-size: 0.95rem;
+    }
   }
 
   /* One rule above the whole end-of-post block, not one per section. */
