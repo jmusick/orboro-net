@@ -1,6 +1,6 @@
 ---
 import type { ContentRecord } from "../lib/content";
-import { excerptFromMarkdown } from "../lib/content";
+import { toolDescription } from "../lib/content";
 import { topicTone } from "../lib/topics";
 interface Props { pages: ContentRecord[]; }
 const { pages } = Astro.props;
@@ -14,7 +14,7 @@ const tiles = groups.flatMap(group => pages.filter(page => page.homepageGroup ==
   ...page,
   group,
   tone: topicTone(group.key),
-  description: page.homepageDescription || excerptFromMarkdown(page.markdown.replace(/\{\{[\s\S]*?\}\}/g, "").replace(/<[^>]*>/g, ""), 140),
+  description: toolDescription(page),
 })));
 ---
 {tiles.length > 0 && (

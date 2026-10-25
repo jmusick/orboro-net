@@ -6,17 +6,22 @@ import PageHeader from "../../components/PageHeader.astro";
 import TopicChip from "../../components/TopicChip.astro";
 import Icon from "../../components/Icon.astro";
 import Comments from "../../components/Comments.astro";
+import StoryCard from "../../components/StoryCard.astro";
+import RelatedTools from "../../components/RelatedTools.astro";
 import {
   getPublishedBySlugAndType,
   listPostSummaries,
   getContentCategories,
   excerptFromMarkdown,
   listCategoriesWithPostCounts,
+  listHomepageFeatures,
+  listRelatedPosts,
 } from "../../lib/content";
 import { processShortcodes } from "../../lib/shortcodes";
 import { breadcrumbList, graphOf } from "../../lib/structured-data";
 import { addHeadingIds } from "../../lib/toc";
 import { PATREON_URL } from "../../lib/profiles";
+import { gameHubsForCategories } from "../../lib/topics";
 
 function estimateReadingMinutes(markdown: string): number {
   const words = markdown
@@ -37,20 +42,21 @@ if (!post) {
   return Astro.rewrite("/404");
 }
 
-const [categories, postCategories, allPosts] = await Promise.all([
+// The "Keep reading" row stands in for the sidebar's recent posts, so the page
+// doesn't list the same posts twice.
+const [categories, postCategories, allPosts, relatedPosts, featuredPages] = await Promise.all([
   listCategoriesWithPostCounts(Astro.locals),
   getContentCategories(Astro.locals, post.id),
   listPostSummaries(Astro.locals, 500),
+  listRelatedPosts(Astro.locals, post.id),
+  listHomepageFeatures(Astro.locals),
 ]);
 
-const recentPosts = allPosts
-  .filter((p) => p.slug !== post.slug)
-  .slice(0, 3)
-  .map((p) => ({
-    slug: p.slug,
-    title: p.title,
-    dateLabel: new Date(p.publishedAt ?? p.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
-  }));
+// A post tagged with both games shows both tool groups, WoW first.
+const toolGroups = gameHubsForCategories(postCategories.map((cat) => cat.slug)).map((hub) => ({
+  hub,
+  tools: featuredPages.filter((page) => page.homepageGroup === hub.group),
+}));
 
 const currentIndex = allPosts.findIndex((p) => p.slug === post.slug);
 const newerPost = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
@@ -158,9 +164,28 @@ const structuredData = graphOf(blogPosting, breadcrumbList(trail, BASE));
           </ol>
         </nav>
       )}
-      <Sidebar categories={categories} recentPosts={recentPosts} />
+      <Sidebar categories={categories} recentPosts={[]} />
     </div>
   </div>
+
+  {(relatedPosts.length > 0 || toolGroups.length > 0) && (
+    <div class="keep-reading">
+      {relatedPosts.length > 0 && (
+        <section class="related" aria-labelledby="related-title">
+          <h2 id="related-title">Keep reading</h2>
+          <div class="related__grid">
+            {relatedPosts.map((other) => (
+              <StoryCard slug={other.slug} title={other.title} image={other.featuredImageUrl}
+                dateIso={new Date(other.date).toISOString()}
+                dateLabel={new Date(other.date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
+                excerpt={other.excerpt} category={other.category} headingLevel="h3" />
+            ))}
+          </div>
+        </section>
+      )}
+      <RelatedTools groups={toolGroups} />
+    </div>
+  )}
 
   {adjacent.length > 0 && (
     <nav class="post-nav" aria-label="More posts">
@@ -315,6 +340,33 @@ const structuredData = graphOf(blogPosting, breadcrumbList(trail, BASE));
     background: var(--accent-hover);
   }
 
+  .keep-reading {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-16);
+    max-width: 74rem;
+    margin: var(--space-16) auto 0;
+    padding-top: var(--space-10);
+    border-top: 1px solid var(--line);
+  }
+
+  .related h2 {
+    margin: 0 0 var(--space-6);
+    font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  }
+
+  .related__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
+    gap: 2rem 1.5rem;
+  }
+
+  /* One rule above the whole end-of-post block, not one per section. */
+  .keep-reading + .post-nav {
+    padding-top: 0;
+    border-top: 0;
+  }
+
   .post-nav {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
@@ -402,6 +454,7 @@ const structuredData = graphOf(blogPosting, breadcrumbList(trail, BASE));
       display: block;
     }
 
+    .keep-reading,
     .post-nav {
       max-width: 46rem;
     }

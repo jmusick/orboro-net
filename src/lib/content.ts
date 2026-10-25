@@ -10,9 +10,12 @@ import {
 } from "./content-writes";
 import { ensureDB, getDB } from "./db";
 import { queryBlogPage, type BlogFilters, type BlogPage } from "./blog-listing";
+import { queryRelatedPosts, RELATED_POSTS_LIMIT, type RelatedPost } from "./related-posts";
 import type { CoverCandidate } from "./topics";
 
-export { excerptFromMarkdown } from "./excerpt";
+import { excerptFromMarkdown } from "./excerpt";
+
+export { excerptFromMarkdown };
 
 export type ContentStatus = "draft" | "published";
 
@@ -97,11 +100,23 @@ export async function listHomepageFeatures(locals: App.Locals): Promise<ContentR
   return (result.results ?? []).map(mapContentRow);
 }
 
+/** Tile copy: the editor's homepage description, else the page's opening prose. */
+export function toolDescription(page: Pick<ContentRecord, "homepageDescription" | "markdown">, maxLen = 140): string {
+  return page.homepageDescription || excerptFromMarkdown(page.markdown.replace(/\{\{[\s\S]*?\}\}/g, "").replace(/<[^>]*>/g, ""), maxLen);
+}
+
 // Paginated blog index: card fields only (no full Markdown bodies).
 export async function getBlogPage(locals: App.Locals, page: number, filters: BlogFilters): Promise<BlogPage> {
   const db = getDB(locals);
   if (!db) return { posts: [], page, pageSize: 0, total: 0, totalPages: 1, filters };
   return queryBlogPage(db, { page, filters });
+}
+
+// Posts sharing the most categories with this one, topped up with the newest.
+export async function listRelatedPosts(locals: App.Locals, contentId: string, limit = RELATED_POSTS_LIMIT): Promise<RelatedPost[]> {
+  const db = getDB(locals);
+  if (!db) return [];
+  return queryRelatedPosts(db, contentId, limit);
 }
 
 export type PostSummary = Pick<ContentRecord, 'slug' | 'title' | 'publishedAt' | 'createdAt' | 'featuredImageUrl'>;

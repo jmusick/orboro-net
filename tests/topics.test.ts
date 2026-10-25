@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { assignCovers, topicTone } from '../src/lib/topics.ts';
+import { assignCovers, gameHubsForCategories, topicTone } from '../src/lib/topics.ts';
 
 test('topic tones map game categories and tool groups', () => {
   assert.equal(topicTone('world-of-warcraft'), 'wow');
@@ -29,4 +29,10 @@ test('a category whose only art is taken still gets it', () => {
     { categoryId: 'wow', imageUrl: '/a.png' },
   ]);
   assert.equal(covers.get('wow'), '/a.png');
+});
+
+test('game hubs follow the post\'s game categories in toolkit order', () => {
+  assert.deepEqual(gameHubsForCategories(['development']), []);
+  assert.deepEqual(gameHubsForCategories(['gaming', 'world-of-warcraft']).map((h) => h.group), ['wow']);
+  assert.deepEqual(gameHubsForCategories(['path-of-exile-ii', 'wow']).map((h) => h.href), ['/pages/world-of-warcraft', '/pages/path-of-exile-ii']);
 });
