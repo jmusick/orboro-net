@@ -28,12 +28,14 @@ export function excerptFromMarkdown(markdown: string, maxLen = 155): string {
  */
 export function toolDescription(page: { homepageDescription: string; markdown: string }, maxLen = 140): string {
   if (page.homepageDescription) return page.homepageDescription;
-  const prose = page.markdown
+  let prose = page.markdown
     .replace(/\{\{[\s\S]*?\}\}/g, "")
-    .replace(/\{\{[\s\S]*$/, "")
-    .replace(/<[^>]*>/g, "")
-    .replace(/<[^>]*$/, "")
-    // Stray brackets could rejoin into a tag ("<<a>script"); drop them all.
-    .replace(/[<>]/g, "");
+    .replace(/\{\{[\s\S]*$/, "");
+  // Repeat until stable so removing one tag can't leave another behind ("<<a>script>").
+  let previous;
+  do {
+    previous = prose;
+    prose = prose.replace(/<[^>]*(?:>|$)/g, "");
+  } while (prose !== previous);
   return excerptFromMarkdown(prose, maxLen);
 }

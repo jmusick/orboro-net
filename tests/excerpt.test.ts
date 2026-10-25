@@ -16,7 +16,7 @@ test('a token or tag cut open by a bounded prefix is dropped', () => {
   assert.equal(toolDescription({ homepageDescription: '', markdown: 'Intro line. <img src="/cut' }), 'Intro line.');
 });
 
-test('stripping tags never leaves a bracket that could rejoin into one', () => {
-  const out = toolDescription({ homepageDescription: '', markdown: 'Safe <<b>script>alert(1) text.' });
-  assert.ok(!/[<>]/.test(out), out);
+test('stripping tags never leaves an opening bracket that could start a new one', () => {
+  const out = toolDescription({ homepageDescription: '', markdown: 'Safe <<b>script>alert(1) <<i>text.' });
+  assert.ok(!out.includes('<'), out);
 });
