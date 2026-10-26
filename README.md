@@ -148,7 +148,7 @@ Generate a new IndexNow key rather than reusing the published one. The SQL files
 - `npm run check` type-checks `.astro` and TypeScript files
 - `npm test` runs every `tests/*.test.*` file; each `test:<name>` script runs one file
 - `npm run verify` runs the tests, `check:styles`, `check:lockfile`, `check`, `build` and `check:inline-scripts` in one go
-- `npm run audit:deps` runs the advisory audit; `npm run scan:secrets` runs the secret scan (see [Release gates](#release-gates))
+- `npm run audit:deps` runs the advisory audit; `npm run scan:secrets` runs the secret scan (see [CI](#ci))
 - `npm run admin:create -- --local|--remote` creates the first admin
 - `npm run admin:reset-password -- --local|--remote` sets a new password for an existing account and revokes its sessions; `npm run sessions:revoke -- --email <email>|--all [--remote]` revokes sessions only (see [Credential recovery](#credential-recovery))
 - `npm run d1:migrate:local` / `d1:migrate:remote` apply migrations
@@ -159,18 +159,17 @@ Generate a new IndexNow key rather than reusing the published one. The SQL files
 - `npm run data:assisted-combat` rebuilds the assisted-combat data from research inputs that aren't in this repository (set `ASSISTED_COMBAT_RESEARCH_ROOT` and `ASSISTED_COMBAT_NOTES_ROOT`)
 - `npm run astro` is the Astro CLI passthrough
 
-## Release gates
+## CI
 
-`.github/workflows/ci.yml` runs on every pull request and every push to `master`. It has read-only repository access and no deploy credentials, so it reports problems but can't deploy or block a deploy by itself.
+`.github/workflows/ci.yml` runs on every pull request and every push to `master`. It calls two shared workflows from [jmusick/ci](https://github.com/jmusick/ci), pinned by commit SHA with the release tag as a comment (Dependabot proposes newer releases). It has read-only repository access and no deploy credentials, so it reports problems but can't deploy or block a deploy by itself.
 
 | Job | What it checks |
 | --- | --- |
-| `Test, check and build` | `npm ci`, `npm test`, `npm run check:styles`, `npm run check`, `npm run build`, `npm run check:inline-scripts` (no processed script inlined without a nonce) |
-| `Dependency and lockfile checks` | `npm run check:lockfile` (registry-only sources, sha512 hashes, tarball names, install-script allow-list), `npm audit --audit-level=high`, `npm audit signatures` |
-| `Secret scan` | a synthetic-leak self-test, then gitleaks over all git history and the working tree |
-| `Release gate` | passes only if the three jobs above all succeeded |
+| `Baseline` | gitleaks over all git history (reads `.gitleaks.toml`), the npm version floor, the shared lockfile integrity check, `npm ci --ignore-scripts`, `npm audit --audit-level=high`, `npm audit signatures`, and dependency review on pull requests |
+| `Web app` | `npm ci`, `npm run check:styles`, `npm run check`, `npm test`, `npm run scan:secrets:self-test`, `npm run build`, `npm run check:inline-scripts` (no processed script inlined without a nonce) |
+| `CI gate` | passes only if the two jobs above succeeded |
 
-Third-party actions are pinned to full commit SHAs. To run the same checks locally, use `npm run verify`, `npm run audit:deps` and `npm run scan:secrets`.
+To run the same checks locally, use `npm run verify`, `npm run audit:deps` and `npm run scan:secrets`. The local secret scan also covers the working tree, which the shared baseline doesn't.
 
 New tests go in `tests/` as `<name>.test.ts` or `<name>.test.mjs`; `npm test` and CI pick them up automatically.
 

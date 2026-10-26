@@ -1,10 +1,12 @@
-# Release gates for orboro-net: tests, style/type checks, a production build, dependency and
-# lockfile checks, and a secret scan. This workflow holds no deploy credentials and cannot deploy;
-# deployment stays with Cloudflare Workers Builds (a push to master runs `npm run build` and
-# `npx wrangler deploy` there). See README.md ("Release gates") for how to run each check locally.
+# CI for orboro-net, built from the shared workflows in jmusick/ci: a baseline (secret scan, lockfile
+# and dependency checks) and the web-app checks (style, type check, tests, build). This workflow holds
+# no deploy credentials and cannot deploy; deployment stays with Cloudflare Workers Builds (a push to
+# master runs `npm run build` and `npx wrangler deploy` there). See README.md ("CI") for how to run
+# each check locally.
 #
-# The `Release gate` job is the single result to require in branch rules; it fails when any other job
-# fails, is cancelled or is skipped.
+# The `CI gate` job is the single result to require in branch rules; it fails when any other job
+# fails, is cancelled or is skipped. Dependabot proposes newer jmusick/ci releases through the
+# "# vX.Y.Z" comments on the pins below.
 
 name: CI
 
@@ -21,127 +23,45 @@ concurrency:
   group: ci-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
-env:
-  # Never let tooling phone home or prompt in CI.
-  CI: "true"
-  ASTRO_TELEMETRY_DISABLED: "1"
-  NPM_CONFIG_AUDIT: "false"
-  NPM_CONFIG_FUND: "false"
-  NPM_CONFIG_UPDATE_NOTIFIER: "false"
-
 jobs:
-  verify:
-    name: Test, check and build
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    steps:
-      - name: Check out
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
+  baseline:
+    name: Baseline
+    uses: jmusick/ci/.github/workflows/baseline.yml@09fd1dbd09257da5c226e23cfe1409d80e029067 # v0.2.1
+    with:
+      node-version-file: .nvmrc
 
-      - name: Set up Node (version from .nvmrc)
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .nvmrc
-          package-manager-cache: false
-
-      - name: Show toolchain
-        run: |
-          node --version
-          npm --version
-
-      - name: Install from the lockfile
-        run: npm ci
-
+  web-app:
+    name: Web app
+    uses: jmusick/ci/.github/workflows/web-app.yml@09fd1dbd09257da5c226e23cfe1409d80e029067 # v0.2.1
+    with:
+      node-version-file: .nvmrc
+      lint-command: npm run check:styles
+      typecheck-command: npm run check
       # `npm test` runs every tests/*.test.* file, so new tests join the gate without workflow edits.
-      - name: Tests
-        run: npm test
+      # The self-test proves the local secret scanner (scripts/scan-secrets.mjs) still flags a synthetic leak.
+      test-command: |
+        npm test
+        npm run scan:secrets:self-test
+      build-command: npm run build
+      after-build-command: npm run check:inline-scripts
 
-      - name: Style checks
-        run: npm run check:styles
-
-      - name: Astro type check
-        run: npm run check
-
-      - name: Production build
-        run: npm run build
-
-      - name: No inlined processed scripts
-        run: npm run check:inline-scripts
-
-  dependencies:
-    name: Dependency and lockfile checks
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      - name: Check out
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Set up Node (version from .nvmrc)
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .nvmrc
-          package-manager-cache: false
-
-      - name: Lockfile integrity
-        run: npm run check:lockfile
-
-      # Fails on high or critical advisories, including in dev dependencies that run during the build.
-      - name: Advisory audit
-        run: npm audit --audit-level=high
-
-      # Install scripts are not needed to verify what was downloaded.
-      - name: Install from the lockfile without scripts
-        run: npm ci --ignore-scripts
-
-      - name: Registry signatures
-        run: npm audit signatures
-
-  secrets:
-    name: Secret scan
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      - name: Check out full history
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-
-      - name: Set up Node (version from .nvmrc)
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .nvmrc
-          package-manager-cache: false
-
-      # Positive control: proves the pinned scanner and .gitleaks.toml still flag a synthetic leak
-      # (built at run time, never stored) before trusting a clean result below.
-      - name: Scanner self-test
-        run: npm run scan:secrets:self-test
-
-      # Downloads gitleaks at the version pinned in scripts/scan-secrets.mjs, verifies its SHA-256
-      # against the checksum recorded there, then scans all git history and the working tree.
-      - name: Scan history and working tree
-        run: npm run scan:secrets
-
+  # The one check to require in branch protection. It passes only when every job above passed, so
+  # adding a job never means updating the protection rule.
   gate:
-    name: Release gate
-    if: ${{ always() }}
-    needs: [verify, dependencies, secrets]
+    name: CI gate
+    if: always()
+    needs: [baseline, web-app]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Require every check to have passed
+      - name: Require every job to have passed
         env:
           RESULTS: ${{ join(needs.*.result, ' ') }}
         run: |
           echo "Job results: $RESULTS"
           for result in $RESULTS; do
             if [ "$result" != "success" ]; then
-              echo "A required check did not succeed." >&2
+              echo "::error::A required job did not succeed."
               exit 1
             fi
           done
