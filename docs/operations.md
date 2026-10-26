@@ -86,6 +86,10 @@ Enabled CodeQL and inspected secret protection through the authenticated GitHub 
 - Secret scanning and push protection were already enabled. GitHub's secret-alert API returned no alerts. Generic-pattern scanning and partner validity checks were disabled; GitHub documents these features for organization-owned repositories with GitHub Secret Protection. The scan-history endpoint returned `404` with "Advanced Security is disabled on this repository," so no claim about the completion time of GitHub's historical secret scan is made.
 - The local gitleaks positive-control self-test passed, and the full history scan (148 commits) and working-tree scan found no leaks. These checks complement GitHub secret scanning and remain in the required `Release gate`.
 
+## CI moved to shared workflows — October 26, 2026
+
+For [issue #73](https://github.com/jmusick/orboro-net/issues/73). `ci.yml` now calls the `baseline` and `web-app` workflows from [jmusick/ci](https://github.com/jmusick/ci) (pinned by commit SHA), and its aggregate job is `CI gate`, replacing `Release gate`. The ruleset (ID `25040552`) was renamed `master: require CI gate` and now requires `CI gate` from the GitHub Actions app (integration `15368`); the October 13 entry above records the original setup under the old name. The one check that moved out of CI is the gitleaks working-tree scan, which is now local-only (`npm run scan:secrets`); the shared baseline scans history.
+
 ## Decision history
 
 These rationales were consolidated from earlier project notes; they are historical, not new deployment changes.
