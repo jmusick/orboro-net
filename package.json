@@ -75,7 +75,8 @@
     "sharp@0.35.5": true,
     "workerd@1.20260926.1": true,
     "workerd@1.20260930.2": true,
-    "workerd@1.20261006.1": true
+    "workerd@1.20261006.1": true,
+    "workerd@1.20261012.1": true
   },
   "overrides": {
     "sharp": "0.35.5",
