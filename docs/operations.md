@@ -90,6 +90,14 @@ Enabled CodeQL and inspected secret protection through the authenticated GitHub 
 
 For [issue #73](https://github.com/jmusick/orboro-net/issues/73). `ci.yml` now calls the `baseline` and `web-app` workflows from [jmusick/ci](https://github.com/jmusick/ci) (pinned by commit SHA), and its aggregate job is `CI gate`, replacing `Release gate`. The ruleset (ID `25040552`) was renamed to identify the default branch and `CI gate` and now requires `CI gate` from the GitHub Actions app (integration `15368`); the October 13 entry above records the original setup under the old name. The one check that moved out of CI is the gitleaks working-tree scan, which is now local-only (`npm run scan:secrets`); the shared baseline scans history.
 
+## Default branch migration — October 28, 2026
+
+For [issue #67](https://github.com/jmusick/orboro-net/issues/67). Renamed the GitHub default branch to `main`; the former remote branch no longer exists. The original local checkout now tracks `origin/main`, and `origin/HEAD` points to it. Other clones need the steps in [maintainer.md](maintainer.md#local-clones-after-the-default-branch-rename).
+
+Ruleset `25040552` is now named `main: require CI gate`. It still targets `~DEFAULT_BRANCH`, requires `CI gate` from GitHub Actions (integration `15368`), and retains its enforcement, bypass actors, force-push and deletion protections.
+
+Cloudflare's authenticated Worker dashboard confirmed `main` as the saved production branch for `orboro-net`. Builds remain enabled with `npm run build`, `npx wrangler deploy`, root `/` and include watch path `*`. The CI push trigger now targets `main`; pull-request checks are unchanged. The release must be checked against both its GitHub CI run and its production Workers Build.
+
 ## Decision history
 
 These rationales were consolidated from earlier project notes; they are historical, not new deployment changes.
