@@ -6,9 +6,9 @@ Use [README.md](../README.md) for setup and deployment, [maintainer.md](maintain
 
 Checked GitHub with its API and Cloudflare through the authenticated Worker dashboard. These are dated observations, not a claim that account settings cannot change.
 
-- GitHub repository: [jmusick/orboro-net](https://github.com/jmusick/orboro-net), repository ID `1231197478`, public, default branch `master`, homepage `https://orboro.net`.
-- Local `origin`: `https://github.com/jmusick/orboro-net.git`. `git ls-remote` resolves `master` to `13beff8d2b70940841d5644132dd5ef057089b46`, matching the checkout and the latest deployed build.
-- Cloudflare Worker: `orboro-net`. Its production Builds settings link to `jmusick/orboro-net`, use branch `master` and root `/`, and have builds enabled. Build command: `npm run build`; deploy command: `npx wrangler deploy`; include watch path: `*`.
+- GitHub repository: [jmusick/orboro-net](https://github.com/jmusick/orboro-net), repository ID `1231197478`, public, homepage `https://orboro.net`.
+- Local `origin`: `https://github.com/jmusick/orboro-net.git`. `git ls-remote` resolved the then-default branch to `13beff8d2b70940841d5644132dd5ef057089b46`, matching the checkout and the latest deployed build.
+- Cloudflare Worker: `orboro-net`. Its production Builds settings link to `jmusick/orboro-net`, use the then-default branch and root `/`, and have builds enabled. Build command: `npm run build`; deploy command: `npx wrangler deploy`; include watch path: `*`.
 - The build token is selected as `orboro-net build token`. No build variables or secrets are configured. An older external note claimed `NODE_VERSION=22`; the dashboard did not support that claim. The repository's Node requirement remains in `package.json`.
 - GitHub's `Workers Builds: orboro-net` check succeeded for the current commit. Cloudflare shows production version `d822d5e2` ready and serving 100% of traffic. No post-rename push or new deployment was performed during this check.
 - Production bindings match `wrangler.toml`: D1 `DB` → `orboro-db` (`7fe68e1c-ce42-40a6-ae78-3bb674d6ad0f`), R2 `MEDIA` → `orboro-net-media`, and static `ASSETS`. Compatibility date: `2026-04-05`; flag: `nodejs_compat`. No runtime variables or secrets are configured.
@@ -23,7 +23,7 @@ Reference: [Cloudflare GitHub integration](https://developers.cloudflare.com/wor
 
 The authenticated zone dashboard showed an active per-IP rule for exactly `/api/auth/login`: more than two requests in ten seconds is blocked for ten seconds. The `workers.dev` login is also reachable; account limits and alternate-host coverage remain in [issue #4](https://github.com/jmusick/orboro-net/issues/4). Minimum TLS was shown as TLS 1.0 default, with TLS 1.3 enabled; review effective hostname settings and raise the floor under [issue #15](https://github.com/jmusick/orboro-net/issues/15). No settings were changed during this inspection.
 
-GitHub secret scanning and push protection are enabled. The API showed no Actions workflows, master branch protection or rulesets, and Dependabot security updates disabled. Reproducible release checks are tracked in [issue #14](https://github.com/jmusick/orboro-net/issues/14). The [dated audit issues](https://github.com/jmusick/orboro-net/issues?q=is%3Aissue%20label%3Aaudit%3A2026-10-10) are the current backlog.
+GitHub secret scanning and push protection are enabled. The API showed no Actions workflows, default-branch protection or rulesets, and Dependabot security updates disabled. Reproducible release checks are tracked in [issue #14](https://github.com/jmusick/orboro-net/issues/14). The [dated audit issues](https://github.com/jmusick/orboro-net/issues?q=is%3Aissue%20label%3Aaudit%3A2026-10-10) are the current backlog.
 
 ## PBKDF2 iteration limit — October 13, 2026
 
@@ -61,11 +61,11 @@ For [issue #14](https://github.com/jmusick/orboro-net/issues/14). This supersede
 
 **Repository settings** (confirmed with the GitHub API): Dependabot alerts and Dependabot security updates enabled; secret scanning and push protection still enabled. No Dependabot alerts were open.
 
-**Ruleset** `master: require Release gate` (ID `25040552`, active, targets the default branch): requires the `Release gate` check from the GitHub Actions app (integration `15368`, so a same-named check from another app doesn't count), blocks force pushes and blocks deletion. The Repository admin role may bypass it at any time, so direct release pushes (`/patch`, `/minor`) still land; GitHub records them as bypasses. Pull requests, Dependabot's included, can't merge until the gate passes. "Require branches to be up to date" is off.
+**Ruleset** (then named for the default branch and `Release gate`; ID `25040552`, active, targets the default branch): requires the `Release gate` check from the GitHub Actions app (integration `15368`, so a same-named check from another app doesn't count), blocks force pushes and blocks deletion. The Repository admin role may bypass it at any time, so direct release pushes (`/patch`, `/minor`) still land; GitHub records them as bypasses. Pull requests, Dependabot's included, can't merge until the gate passes. "Require branches to be up to date" is off.
 
 **Proof.** Draft PR [#42](https://github.com/jmusick/orboro-net/pull/42) added a deliberately failing test. [CI run 38492351512](https://github.com/jmusick/orboro-net/actions/runs/38492351512) failed `Test, check and build` (159 passed, 1 failed) and therefore `Release gate`; GitHub reported the PR `BLOCKED` both as a draft and when ready, and `gh pr merge` without `--admin` was refused ("the base branch policy prohibits the merge"). The PR was closed unmerged and its branch deleted.
 
-**Limit: the ruleset doesn't gate deploys.** Workers Builds deploys every commit that reaches `master`, independently of GitHub checks, and starts before CI finishes. An admin push that bypasses the rule, or a merged commit whose CI later fails, still goes live. Example: after Dependabot PR [#41](https://github.com/jmusick/orboro-net/pull/41) merged, the first CI run on `2df10fa` failed `npm audit signatures` with an "invalid attestation" for `@astrojs/check@0.9.10` (a dev dependency the PR didn't touch; tarball integrity still matched the lockfile and the registry, and the check passed locally) while Workers Builds had already deployed. A rerun passed. Check CI on every release commit.
+**Limit: the ruleset doesn't gate deploys.** Workers Builds deploys every commit that reaches the default branch, independently of GitHub checks, and starts before CI finishes. An admin push that bypasses the rule, or a merged commit whose CI later fails, still goes live. Example: after Dependabot PR [#41](https://github.com/jmusick/orboro-net/pull/41) merged, the first CI run on `2df10fa` failed `npm audit signatures` with an "invalid attestation" for `@astrojs/check@0.9.10` (a dev dependency the PR didn't touch; tarball integrity still matched the lockfile and the registry, and the check passed locally) while Workers Builds had already deployed. A rerun passed. Check CI on every release commit.
 
 **Workers Builds token.** The build uses `orboro-net build token`, a user API token (not an account token) covering 1 account and all zones, with no expiry or IP restriction. Its 25 permissions include Workers Scripts, D1, R2, KV, Secrets Store, Containers, Queues, AI and other account products, User Memberships and Details, and zone-level Workers Routes, SSL and Certificates and Email Routing Rules; the token list doesn't show read or edit levels. That is far wider than a deploy binding only D1 and R2 needs. Narrowing it is tracked in [issue #43](https://github.com/jmusick/orboro-net/issues/43). No Cloudflare settings were changed during this review.
 
@@ -88,7 +88,15 @@ Enabled CodeQL and inspected secret protection through the authenticated GitHub 
 
 ## CI moved to shared workflows — October 26, 2026
 
-For [issue #73](https://github.com/jmusick/orboro-net/issues/73). `ci.yml` now calls the `baseline` and `web-app` workflows from [jmusick/ci](https://github.com/jmusick/ci) (pinned by commit SHA), and its aggregate job is `CI gate`, replacing `Release gate`. The ruleset (ID `25040552`) was renamed `master: require CI gate` and now requires `CI gate` from the GitHub Actions app (integration `15368`); the October 13 entry above records the original setup under the old name. The one check that moved out of CI is the gitleaks working-tree scan, which is now local-only (`npm run scan:secrets`); the shared baseline scans history.
+For [issue #73](https://github.com/jmusick/orboro-net/issues/73). `ci.yml` now calls the `baseline` and `web-app` workflows from [jmusick/ci](https://github.com/jmusick/ci) (pinned by commit SHA), and its aggregate job is `CI gate`, replacing `Release gate`. The ruleset (ID `25040552`) was renamed to identify the default branch and `CI gate` and now requires `CI gate` from the GitHub Actions app (integration `15368`); the October 13 entry above records the original setup under the old name. The one check that moved out of CI is the gitleaks working-tree scan, which is now local-only (`npm run scan:secrets`); the shared baseline scans history.
+
+## Default branch migration — October 28, 2026
+
+For [issue #67](https://github.com/jmusick/orboro-net/issues/67). Renamed the GitHub default branch to `main`; the former remote branch no longer exists. The original local checkout now tracks `origin/main`, and `origin/HEAD` points to it. Other clones need the steps in [maintainer.md](maintainer.md#local-clones-after-the-default-branch-rename).
+
+Ruleset `25040552` is now named `main: require CI gate`. It still targets `~DEFAULT_BRANCH`, requires `CI gate` from GitHub Actions (integration `15368`), and retains its enforcement, bypass actors, force-push and deletion protections.
+
+Cloudflare's authenticated Worker dashboard confirmed `main` as the saved production branch for `orboro-net`. Builds remain enabled with `npm run build`, `npx wrangler deploy`, root `/` and include watch path `*`. The CI push trigger now targets `main`; pull-request checks are unchanged. The release must be checked against both its GitHub CI run and its production Workers Build.
 
 ## Decision history
 

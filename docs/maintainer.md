@@ -24,12 +24,25 @@ The [October 10 audit issues](https://github.com/jmusick/orboro-net/issues?q=is%
 
 ## Production deployment
 
-- The Worker `orboro-net` builds through Cloudflare Workers Builds, which is connected to GitHub [jmusick/orboro-net](https://github.com/jmusick/orboro-net). A push to `master` runs `npm run build`, then `npx wrangler deploy`. Workers Builds reads `.nvmrc` for its Node version.
-- GitHub Actions CI runs on the same commit independently. It has no deploy role or credentials, so Workers Builds deploys whatever the CI result is, and usually before CI finishes. The `master` ruleset (see Branch rules below) stops failing pull requests from merging, but no GitHub rule stops a commit that reaches `master` from deploying. Check the CI result on a release commit before relying on the deploy.
+- The Worker `orboro-net` builds through Cloudflare Workers Builds, which is connected to GitHub [jmusick/orboro-net](https://github.com/jmusick/orboro-net). A push to `main` runs `npm run build`, then `npx wrangler deploy`. Workers Builds reads `.nvmrc` for its Node version.
+- GitHub Actions CI runs on the same commit independently. It has no deploy role or credentials, so Workers Builds deploys whatever the CI result is, and usually before CI finishes. The `main` ruleset (see Branch rules below) stops failing pull requests from merging, but no GitHub rule stops a commit that reaches `main` from deploying. Check the CI result on a release commit before relying on the deploy.
 - Workers Builds deploys with the `orboro-net build token` selected in the Worker's Builds settings. Its scope was reviewed on October 13, 2026 ([operations.md](operations.md)); narrowing it is [issue #43](https://github.com/jmusick/orboro-net/issues/43).
 - `wrangler.toml` points at the production D1 database `orboro-db` and the R2 bucket `orboro-net-media`. Uploaded media is served from the custom domain `https://media.orboro.net`, and the bucket's `r2.dev` development URL stays disabled.
 - Custom domains, production secrets and edge security rules are configured in the Cloudflare dashboard. Workers logs and sampled traces are on; check retention and dashboard rules in the Cloudflare account. [operations.md](operations.md) records the last dated check of these settings.
 - Apply new schema migrations locally, verify them, then apply them remotely **before** deploying code that needs them. SQL content seeds are a separate step: pushing code doesn't copy local content into production.
+
+### Local clones after the default-branch rename
+
+On each other machine, first make sure the checkout is clean and switch to its former default branch. Then rename that local branch and refresh its upstream:
+
+```sh
+git branch -m main
+git fetch origin --prune
+git branch --set-upstream-to=origin/main main
+git remote set-head origin -a
+```
+
+If a local `main` branch already exists, inspect it before renaming anything. Existing feature branches can stay as they are; target new pull requests at `main`.
 
 ### Production content steps
 
@@ -49,7 +62,7 @@ The [October 10 audit issues](https://github.com/jmusick/orboro-net/issues?q=is%
 - **`sharp` override.** The override in `package.json` pins the patched 0.35.5 release while Miniflare still declares 0.35.4. Dependabot doesn't manage overrides, so remove it by hand once upstream uses a patched release, after checking `npm audit` and rebuilding.
 - **Miniflare's `undici` override.** The scoped `miniflare` override pins Undici 7.30.1 while Miniflare declares the vulnerable 7.29.1. It leaves Unifont's separate Undici 8 dependency on its own major version. Remove the scoped override once Miniflare declares a patched Undici release (7.30.1 or later in the 7.x line, or a patched newer major), then check `npm audit` and rebuild. Dependabot doesn't manage overrides.
 - **Dependabot.** `.github/dependabot.yml` opens one grouped weekly pull request for npm (Astro, the Cloudflare adapter and Wrangler together; everything else minor and patch), separate major-version PRs, and one for GitHub Actions. Dependabot security updates are a repository setting, not a file, and must be enabled in the GitHub settings; [operations.md](operations.md) records their dated state.
-- **Branch rules.** The `CI gate` job passes only if every other CI job succeeded, so it is the one check to require. The ruleset `master: require CI gate` requires it (from the GitHub Actions app) on `master` and blocks force pushes and deletion. The Repository admin role can bypass it, which is how `/patch` and `/minor` push release commits directly; everything else, Dependabot included, merges through a pull request once the gate passes. [operations.md](operations.md) records its setup and the failing-PR test.
+- **Branch rules.** The `CI gate` job passes only if every other CI job succeeded, so it is the one check to require. The ruleset `main: require CI gate` requires it (from the GitHub Actions app) on `main` and blocks force pushes and deletion. The Repository admin role can bypass it, which is how `/patch` and `/minor` push release commits directly; everything else, Dependabot included, merges through a pull request once the gate passes. [operations.md](operations.md) records its setup and the failing-PR test.
 - **SBOM.** No SBOM tooling is wired into CI. `package-lock.json` already records every dependency with version, source and integrity hash, and `npm audit` and GitHub's dependency graph both read it. If an SBOM is ever requested, `npm sbom --sbom-format cyclonedx` produces CycloneDX from the same lockfile. Nothing here claims statutory compliance.
 
 ## Repository security scanning

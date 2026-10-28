@@ -1,7 +1,7 @@
 # CI for orboro-net, built from the shared workflows in jmusick/ci: a baseline (secret scan, lockfile
 # and dependency checks) and the web-app checks (style, type check, tests, build). This workflow holds
 # no deploy credentials and cannot deploy; deployment stays with Cloudflare Workers Builds (a push to
-# master runs `npm run build` and `npx wrangler deploy` there). See README.md ("CI") for how to run
+# main runs `npm run build` and `npx wrangler deploy` there). See README.md ("CI") for how to run
 # each check locally.
 #
 # The `CI gate` job is the single result to require in branch rules; it fails when any other job
@@ -13,7 +13,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [master]
+    branches: [main]
 
 # Least privilege: every job can read the repository and nothing else.
 permissions:

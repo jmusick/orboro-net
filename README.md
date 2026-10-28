@@ -161,7 +161,7 @@ Generate a new IndexNow key rather than reusing the published one. The SQL files
 
 ## CI
 
-`.github/workflows/ci.yml` runs on every pull request and every push to `master`. It calls two shared workflows from [jmusick/ci](https://github.com/jmusick/ci), pinned by commit SHA with the release tag as a comment (Dependabot proposes newer releases). It has read-only repository access and no deploy credentials, so it reports problems but can't deploy or block a deploy by itself.
+`.github/workflows/ci.yml` runs on every pull request and every push to `main`. It calls two shared workflows from [jmusick/ci](https://github.com/jmusick/ci), pinned by commit SHA with the release tag as a comment (Dependabot proposes newer releases). It has read-only repository access and no deploy credentials, so it reports problems but can't deploy or block a deploy by itself.
 
 | Job | What it checks |
 | --- | --- |
