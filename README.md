@@ -260,6 +260,8 @@ Each line also has the method, path (never the query string), Cloudflare ray ID,
 
 ## Media
 
+Artwork in heroes, cards, tool tiles, topic banners and adjacent-post links uses Cloudflare Image Transformations through `src/lib/images.ts`, serving width variants with `srcset` and slot-specific `sizes` (quality 80, automatic format). Enable Transformations for your production zone with source access restricted to that zone and its subdomains. The helper targets `https://orboro.net`; forks must update that origin and `MEDIA_ORIGIN`. Foreign images and all local/preview requests retain their original URLs, so Wrangler needs no transformation service. Original R2 objects and social-preview image URLs stay unchanged.
+
 - The media library accepts direct uploads (PNG, JPEG, GIF, WebP or AVIF, up to 10 MiB, checked by file signature) into R2 through the `MEDIA` binding. Bytes are stored as supplied, without decoding, resizing or metadata stripping. New uploads are recorded in D1 with URLs under `MEDIA_ORIGIN`.
 - `wrangler dev` uses a separate local R2 store. Local uploads get `/media/...` URLs and are read back through `/media/[...key]`; they never write to production.
 - Existing image URLs can be added to the media library. Deleting a media record removes its D1 metadata only: it doesn't delete the R2 object or update pages that reference the URL. The library lists D1 `media` records, not every object in R2.

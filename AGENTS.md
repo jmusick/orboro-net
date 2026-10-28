@@ -37,6 +37,8 @@ The "Launcher" redesign (October 2026) made the site feel like a game launcher: 
 
 **Removed on purpose, don't reintroduce:** neon glow `box-shadow`s, `translateY` hover lift, fade-and-slide `@keyframes` on every `section`, the uppercase "Featured · Latest post" eyebrow, middle-dot (` · `) meta strings (use flex `gap`), and monospace profile handles. Hover feedback is a color or border-color change only.
 
+**Images.** Artwork in heroes, story cards, tool tiles, topic banners and adjacent-post links goes through `responsiveImage` in `src/lib/images.ts`. Supply slot-appropriate widths and `sizes`; lazy images use `auto` with a fallback for older browsers. Only `MEDIA_ORIGIN` and canonical `/images/` URLs are transformed. Pass `Astro.url` so local and preview hosts retain originals: `/cdn-cgi/image` exists only on the enabled production zone. Keep hero priority high and other artwork lazy; keep the existing frames that reserve image space.
+
 ## The shortcode system
 
 Page/post markdown embeds widgets via `{{token}}` or `{{token attr="value"}}`, expanded by `src/lib/shortcodes.ts` **after** `renderMarkdown()`. Each shortcode is a hardcoded TS module in `src/lib/*.ts` returning a self-contained HTML string with its own inline `<style>` (and `<script>` if interactive), registered in the `SHORTCODES` map.
