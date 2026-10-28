@@ -1,15 +1,17 @@
 ---
 // Full-bleed artwork behind the masthead. Render it inside BaseLayout's `hero`
 // slot: it fills the masthead (header included) and sits behind its content.
+import { responsiveImage, HERO_WIDTHS } from "../lib/images";
 interface Props {
   image?: string | null;
   /** "side" darkens from the left for text beside the art; "bottom" from below. */
   scrim?: "side" | "bottom";
 }
 const { image, scrim = "side" } = Astro.props;
+const artwork = image ? responsiveImage(image, HERO_WIDTHS, scrim === "side" ? "(max-width: 760px) 100vw, 74vw" : "100vw", Astro.url) : null;
 ---
 <div class:list={["hero-art", `hero-art--${scrim}`, !image && "hero-art--plain"]} aria-hidden="true">
-  {image && <img src={image} alt="" fetchpriority="high" decoding="async" />}
+  {image && <img {...artwork} alt="" fetchpriority="high" decoding="async" />}
 </div>
 <style>
   .hero-art {

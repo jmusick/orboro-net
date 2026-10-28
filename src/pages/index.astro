@@ -13,6 +13,7 @@ import {
 	listHomepageFeatures,
 	getContentCategories,
 } from "../lib/content";
+import { responsiveImage, ART_WIDTHS } from "../lib/images";
 import { assignCovers, topicTone } from "../lib/topics";
 
 const [rawPosts, featuredPages, categories, coverCandidates] = await Promise.all([
@@ -82,7 +83,7 @@ const noun = (n: number) => (n === 1 ? "post" : "posts");
 			) : (
 				<div class="story-grid">
 					{latest.map((post) => (
-						<StoryCard slug={post.slug} title={post.title} image={post.featuredImageUrl}
+						<StoryCard imageSizes="auto, (max-width: 559px) 92vw, (max-width: 1279px) calc((92vw - 24px) / 2), (max-width: 1439px) calc((100vw - 184px) / 4), 314px" slug={post.slug} title={post.title} image={post.featuredImageUrl}
 							dateIso={post.dateIso} dateLabel={post.dateLabel} excerpt={post.excerpt}
 							category={post.categories[0] ?? null} />
 					))}
@@ -101,7 +102,7 @@ const noun = (n: number) => (n === 1 ? "post" : "posts");
 						return (
 							<li>
 								<a class="topic" href={`/blog/category/${topic.slug}`} data-tone={topicTone(topic.slug)}>
-									{cover ? <img src={cover} alt="" loading="lazy" /> : <span class="topic__plain" aria-hidden="true" />}
+									{cover ? <img {...responsiveImage(cover, ART_WIDTHS, "auto, (max-width: 508px) 92vw, (max-width: 773px) 44vw, (max-width: 1039px) 29vw, (max-width: 1304px) 22vw, 250px", Astro.url)} alt="" loading="lazy" /> : <span class="topic__plain" aria-hidden="true" />}
 									<span class="topic__label">
 										<span class="topic__name">{topic.name}</span>
 										<span class="topic__count">{topic.postCount} {noun(topic.postCount)}</span>

@@ -2,6 +2,7 @@
 import type { ContentRecord } from "../lib/content";
 import { toolDescription } from "../lib/excerpt";
 import { topicTone } from "../lib/topics";
+import { responsiveImage, ART_WIDTHS } from "../lib/images";
 interface Props { pages: ContentRecord[]; }
 const { pages } = Astro.props;
 // Groups keep their order (WoW, PoE 2, other); each tile carries its game as a chip.
@@ -29,7 +30,7 @@ const tiles = groups.flatMap(group => pages.filter(page => page.homepageGroup ==
           <a class="tile" href={`/pages/${tile.slug}`} data-tone={tile.tone}>
             <div class:list={["tile__art", !tile.featuredImageUrl && "tile__art--plain"]}>
               {tile.featuredImageUrl ? (
-                <img src={tile.featuredImageUrl} alt="" loading="lazy" />
+                <img {...responsiveImage(tile.featuredImageUrl, ART_WIDTHS, "auto, (max-width: 595px) 92vw, (max-width: 904px) 44vw, (max-width: 1213px) 29vw, 320px", Astro.url)} alt="" loading="lazy" />
               ) : (
                 <span class="tile__mark" aria-hidden="true">{tile.group.mark}</span>
               )}
