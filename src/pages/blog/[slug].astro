@@ -1,4 +1,5 @@
 ---
+import { responsiveImage, ART_WIDTHS } from "../../lib/images";
 import { renderMarkdown } from "../../lib/markdown";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import Sidebar from "../../components/Sidebar.astro";
@@ -179,7 +180,7 @@ const structuredData = graphOf(blogPosting, breadcrumbList(trail, BASE));
           <h2 id="related-title">Keep reading</h2>
           <div class="related__grid">
             {relatedPosts.map((other) => (
-              <StoryCard slug={other.slug} title={other.title} image={other.featuredImageUrl}
+              <StoryCard imageSizes="auto, (max-width: 767px) 92vw, (max-width: 1080px) 230px, (max-width: 1296px) calc((92vw - 48px) / 3), 379px" slug={other.slug} title={other.title} image={other.featuredImageUrl}
                 dateIso={new Date(other.date).toISOString()}
                 dateLabel={new Date(other.date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
                 excerpt={other.excerpt} category={other.category} headingLevel="h3" />
@@ -196,7 +197,7 @@ const structuredData = graphOf(blogPosting, breadcrumbList(trail, BASE));
       {adjacent.map(({ post: other, label, rel }) => (
         <a class="post-nav__link" href={`/blog/${other.slug}`} rel={rel}>
           <span class="post-nav__art">
-            {other.featuredImageUrl ? <img src={other.featuredImageUrl} alt="" loading="lazy" /> : <span class="post-nav__plain" />}
+            {other.featuredImageUrl ? <img {...responsiveImage(other.featuredImageUrl, ART_WIDTHS, "auto, (max-width: 767px) 33vw, (max-width: 1080px) 130px, 210px", Astro.url)} alt="" loading="lazy" /> : <span class="post-nav__plain" />}
           </span>
           <span class="post-nav__text">
             <span class="post-nav__label">{label}</span>

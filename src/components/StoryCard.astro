@@ -1,6 +1,8 @@
 ---
 import { topicTone } from "../lib/topics";
+import { responsiveImage, ART_WIDTHS, LISTING_IMAGE_SIZES } from "../lib/images";
 interface Props {
+  imageSizes?: string;
   slug: string;
   title: string;
   image?: string | null;
@@ -13,10 +15,11 @@ interface Props {
 }
 const { slug, title, image, dateIso, dateLabel, excerpt, category, headingLevel = "h3" } = Astro.props;
 const Heading = headingLevel;
+const artwork = image ? responsiveImage(image, ART_WIDTHS, Astro.props.imageSizes ?? LISTING_IMAGE_SIZES, Astro.url) : null;
 ---
 <article class="story" data-tone={topicTone(category?.slug ?? category?.name.toLowerCase().replace(/[^a-z0-9]+/g, "-"))}>
   <a class="story__art" href={`/blog/${slug}`} tabindex="-1" aria-hidden="true">
-    {image ? <img src={image} alt="" loading="lazy" /> : <span class="story__plain" />}
+    {image ? <img {...artwork} alt="" loading="lazy" /> : <span class="story__plain" />}
   </a>
   <div class="story__body">
     <p class="story__meta">

@@ -110,3 +110,9 @@ These rationales were consolidated from earlier project notes; they are historic
 ## Research data
 
 The assisted-combat generator reads external inputs through `ASSISTED_COMBAT_RESEARCH_ROOT` and `ASSISTED_COMBAT_NOTES_ROOT`. The input filenames and error handling are documented in [the generator](../scripts/generate-assisted-combat-data.mjs). Set the variables when using another workspace; do not copy personal research locations into runtime code.
+
+## Image Transformations — October 28, 2026
+
+For [issue #55](https://github.com/jmusick/orboro-net/issues/55), checked the authenticated Cloudflare dashboard under Images & Stream → Transformations → orboro.net. Transformations was disabled. With JD's authorization, enabled it and verified the settings page now offers **Disable for zone**. Sources remains **This zone only**, allowing `orboro.net` and `*.orboro.net`, including the R2 custom domain `media.orboro.net`. Any-origin access was not enabled.
+
+A request to `/cdn-cgi/image/width=480,quality=80,format=auto/https://media.orboro.net/images/enshrouded-beginner-guide-header.webp` returned HTTP 200 and 26,471 bytes. This is a dated functional check, not a guarantee of future dashboard configuration.
