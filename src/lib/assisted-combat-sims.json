@@ -1,0 +1,1611 @@
+{
+  "simcCommit": "710c2408bfd3ae4df71b8cd55cdf01f63fd6c926",
+  "build": "12.1.5.70575",
+  "binarySha256": "e048da6ce2bc93d56e512729ad45b5f46e1e6014f2bb8385f67509ad71d20007",
+  "settings": {
+    "iterations": 10000,
+    "max_time": 300,
+    "fixed_time": 1,
+    "vary_combat_length": 0,
+    "fight_style": "Patchwerk",
+    "target_error": 0,
+    "threads": 4,
+    "seed": 20261029,
+    "statistics_level": 1,
+    "optimal_raid": 1
+  },
+  "targets": [
+    1,
+    2,
+    3,
+    5
+  ],
+  "cooldownSupport": true,
+  "oneButtonPenalty": false,
+  "formula": "100 * (blizzardDps / simcDps - 1)",
+  "hotfix": {
+    "build_level": 70575,
+    "wow_version": "12.1.5.70575",
+    "hotfix_date": "2026-10-28",
+    "hotfix_build": 70575,
+    "hotfix_hash": "8e03ee11110b63f2b1a2ccbf60066d6c789af69870cbe8bdadb1f3dabd57b758"
+  },
+  "completedAt": "2026-10-29T16:19:28.000Z",
+  "runCount": 232,
+  "warnings": [
+    "implementation_not_yet_verified: Band of the Swarmcaller: Damage is assumed to not be split amongst targets hit.",
+    "implementation_not_yet_verified: Hexing Grips of the Ophidian Oracle: Damage is assumed to not be split amongst targets hit.",
+    "implementation_not_yet_verified: Primal Leywarden's Tailored Legwraps: Damage is assumed to not be split amongst targets hit.",
+    "implementation_not_yet_verified: Rune of Unleashed Fire: Procs are assumed to target the same unit that triggered them. Procs triggered by damage are assumed to proc damage. Procs triggered by healing/aura are assumed to proc heal.",
+    "implementation_not_yet_verified: Skulking Viper's Hidepiercers: Damage is assumed to not be split amongst targets hit.",
+    "trivial: Buff 'fury_mid2_4pc_crit' (0) initialized with max_stack < 1 (0). Setting max_stack to 1."
+  ],
+  "rows": [
+    {
+      "specId": 250,
+      "gameClass": "Death Knight",
+      "spec": "Blood",
+      "role": "Tank",
+      "profile": "MID2_Death_Knight_Blood.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 127167.1123679118,
+          "blizzardDps": 105202.29094909981,
+          "changePct": -17.272407157649983,
+          "uncertaintyPp": 0.08891877359931108,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 43.72123516552019,
+          "blizzardStandardError": 44.94666412656114
+        },
+        {
+          "targets": 2,
+          "simcDps": 185345.02751415208,
+          "blizzardDps": 146779.8746905309,
+          "changePct": -20.807222800016323,
+          "uncertaintyPp": 0.0839601740593574,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 61.9968637407021,
+          "blizzardStandardError": 62.397315534751804
+        },
+        {
+          "targets": 3,
+          "simcDps": 235993.14961744263,
+          "blizzardDps": 183313.6513109081,
+          "changePct": -22.32246927164232,
+          "uncertaintyPp": 0.0832955467165515,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 78.63124034930813,
+          "blizzardStandardError": 79.54985578062603
+        },
+        {
+          "targets": 5,
+          "simcDps": 344228.2894392174,
+          "blizzardDps": 264005.82806726644,
+          "changePct": -23.305016999805982,
+          "uncertaintyPp": 0.08594576861467619,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 106.68988614353309,
+          "blizzardStandardError": 126.84391014217393
+        }
+      ]
+    },
+    {
+      "specId": 251,
+      "gameClass": "Death Knight",
+      "spec": "Frost",
+      "role": "DPS",
+      "profile": "MID2_Death_Knight_Frost.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 262809.0962638626,
+          "blizzardDps": 258528.57974706133,
+          "changePct": -1.6287550840719867,
+          "uncertaintyPp": 0.08060947509724532,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 75.15658461887152,
+          "blizzardStandardError": 78.84830432531092
+        },
+        {
+          "targets": 2,
+          "simcDps": 388998.90708627825,
+          "blizzardDps": 383631.5256548652,
+          "changePct": -1.3797934476516671,
+          "uncertaintyPp": 0.08704857270086708,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 119.28412703519716,
+          "blizzardStandardError": 126.52998166790654
+        },
+        {
+          "targets": 3,
+          "simcDps": 494427.3670424507,
+          "blizzardDps": 481934.91084905475,
+          "changePct": -2.526651440862371,
+          "uncertaintyPp": 0.07921501989590339,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 142.18060087787015,
+          "blizzardStandardError": 143.96379051914536
+        },
+        {
+          "targets": 5,
+          "simcDps": 728973.5344877435,
+          "blizzardDps": 719917.7486477998,
+          "changePct": -1.2422653788531912,
+          "uncertaintyPp": 0.07777121932449303,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 203.47305345003613,
+          "blizzardStandardError": 208.06265015194904
+        }
+      ]
+    },
+    {
+      "specId": 252,
+      "gameClass": "Death Knight",
+      "spec": "Unholy",
+      "role": "DPS",
+      "profile": "MID2_Death_Knight_Unholy.simc",
+      "unmodeledRuleFields": 2,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 245335.47357359188,
+          "blizzardDps": 216042.35389623948,
+          "changePct": -11.940026140804093,
+          "uncertaintyPp": 0.10286221691679079,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 73.25644747680956,
+          "blizzardStandardError": 111.43010550243856
+        },
+        {
+          "targets": 2,
+          "simcDps": 348730.91558898083,
+          "blizzardDps": 307898.99646049464,
+          "changePct": -11.708717897730425,
+          "uncertaintyPp": 0.10581338308839706,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 108.67830464009182,
+          "blizzardStandardError": 161.9840254530294
+        },
+        {
+          "targets": 3,
+          "simcDps": 397056.1770453341,
+          "blizzardDps": 363063.3037990558,
+          "changePct": -8.56122513928227,
+          "uncertaintyPp": 0.10508832910472943,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 114.59521596085503,
+          "blizzardStandardError": 185.31868160781949
+        },
+        {
+          "targets": 5,
+          "simcDps": 558265.1233326142,
+          "blizzardDps": 496923.3204938534,
+          "changePct": -10.987933917951986,
+          "uncertaintyPp": 0.09897208768671414,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 143.03858034804264,
+          "blizzardStandardError": 251.51640765449267
+        }
+      ]
+    },
+    {
+      "specId": 1480,
+      "gameClass": "Demon Hunter",
+      "spec": "Devourer",
+      "role": "DPS",
+      "profile": "MID2_Demon_Hunter_Devourer.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 252905.40321486874,
+          "blizzardDps": 132027.61839195096,
+          "changePct": -47.79565137254891,
+          "uncertaintyPp": 0.05780516722003624,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 101.9892056545055,
+          "blizzardStandardError": 52.23764583069493
+        },
+        {
+          "targets": 2,
+          "simcDps": 329884.39315005817,
+          "blizzardDps": 161737.46763540118,
+          "changePct": -50.971470310864376,
+          "uncertaintyPp": 0.04945491590812338,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 121.73873929681677,
+          "blizzardStandardError": 58.018178047752485
+        },
+        {
+          "targets": 3,
+          "simcDps": 403877.4031193496,
+          "blizzardDps": 191557.20072899855,
+          "changePct": -52.57045844865167,
+          "uncertaintyPp": 0.04661367759662557,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 147.4912312251379,
+          "blizzardStandardError": 65.82343271320232
+        },
+        {
+          "targets": 5,
+          "simcDps": 475541.1554245648,
+          "blizzardDps": 194865.07361000523,
+          "changePct": -59.022458647973586,
+          "uncertaintyPp": 0.04480203176716214,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 187.3968138891284,
+          "blizzardStandardError": 76.93723392423699
+        }
+      ]
+    },
+    {
+      "specId": 577,
+      "gameClass": "Demon Hunter",
+      "spec": "Havoc",
+      "role": "DPS",
+      "profile": "MID2_Demon_Hunter_Havoc.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 259923.9273355077,
+          "blizzardDps": 150652.24547160845,
+          "changePct": -42.03987027437157,
+          "uncertaintyPp": 0.04378157709292665,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 59.852415263925835,
+          "blizzardStandardError": 46.558832345807716
+        },
+        {
+          "targets": 2,
+          "simcDps": 333103.26494593546,
+          "blizzardDps": 199205.7284882116,
+          "changePct": -40.197005117754145,
+          "uncertaintyPp": 0.046331013613853125,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 77.13482606324558,
+          "blizzardStandardError": 63.814685874178146
+        },
+        {
+          "targets": 3,
+          "simcDps": 394316.50243535964,
+          "blizzardDps": 234178.98215209242,
+          "changePct": -40.611417299106975,
+          "uncertaintyPp": 0.04174267197083542,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 84.7390233842661,
+          "blizzardStandardError": 67.23127426369881
+        },
+        {
+          "targets": 5,
+          "simcDps": 507078.99007604894,
+          "blizzardDps": 297132.79875569785,
+          "changePct": -41.40305463826544,
+          "uncertaintyPp": 0.036325881704694744,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 97.22289730587156,
+          "blizzardStandardError": 74.74647239963043
+        }
+      ]
+    },
+    {
+      "specId": 581,
+      "gameClass": "Demon Hunter",
+      "spec": "Vengeance",
+      "role": "Tank",
+      "profile": "MID2_Demon_Hunter_Vengeance.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 143412.5055224077,
+          "blizzardDps": 98403.9841973236,
+          "changePct": -31.383958575391937,
+          "uncertaintyPp": 0.09331904718227553,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 69.877229923321,
+          "blizzardStandardError": 48.616685076193264
+        },
+        {
+          "targets": 2,
+          "simcDps": 232815.86179872626,
+          "blizzardDps": 168843.91789588687,
+          "changePct": -27.477485171583517,
+          "uncertaintyPp": 0.10398036287101915,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 122.77287182438029,
+          "blizzardStandardError": 85.60327334584443
+        },
+        {
+          "targets": 3,
+          "simcDps": 313678.86816659215,
+          "blizzardDps": 219852.87942507054,
+          "changePct": -29.911478988023966,
+          "uncertaintyPp": 0.10637383209353497,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 172.32605893264952,
+          "blizzardStandardError": 119.97934310083278
+        },
+        {
+          "targets": 5,
+          "simcDps": 458031.6540425834,
+          "blizzardDps": 312422.2456122926,
+          "changePct": -31.79025011593488,
+          "uncertaintyPp": 0.1057234921104695,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 253.62412489955116,
+          "blizzardStandardError": 176.39592905237495
+        }
+      ]
+    },
+    {
+      "specId": 103,
+      "gameClass": "Druid",
+      "spec": "Feral",
+      "role": "DPS",
+      "profile": "MID2_Druid_Feral.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 263348.7091519402,
+          "blizzardDps": 241016.43554677552,
+          "changePct": -8.480115082804506,
+          "uncertaintyPp": 0.07050431774100682,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 68.70715139691889,
+          "blizzardStandardError": 70.8537640758943
+        },
+        {
+          "targets": 2,
+          "simcDps": 309685.6339920876,
+          "blizzardDps": 252482.7496493622,
+          "changePct": -18.471274758643453,
+          "uncertaintyPp": 0.05883158955645318,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 73.73127126478614,
+          "blizzardStandardError": 70.90549456169386
+        },
+        {
+          "targets": 3,
+          "simcDps": 359033.03306251526,
+          "blizzardDps": 265150.26634810865,
+          "changePct": -26.1487824431073,
+          "uncertaintyPp": 0.05203386441831805,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 80.27149313017725,
+          "blizzardStandardError": 74.63995082820261
+        },
+        {
+          "targets": 5,
+          "simcDps": 437417.50429037196,
+          "blizzardDps": 320635.6638478681,
+          "changePct": -26.698026324291835,
+          "uncertaintyPp": 0.052648642050945,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 102.56140798047922,
+          "blizzardStandardError": 90.30016834040185
+        }
+      ]
+    },
+    {
+      "specId": 253,
+      "gameClass": "Hunter",
+      "spec": "Beast Mastery",
+      "role": "DPS",
+      "profile": "MID2_Hunter_Beast_Mastery.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 262133.10596038832,
+          "blizzardDps": 254146.03536097147,
+          "changePct": -3.0469522612011524,
+          "uncertaintyPp": 0.05432666927434322,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 50.23294683709099,
+          "blizzardStandardError": 53.91982051130512
+        },
+        {
+          "targets": 2,
+          "simcDps": 301246.0139446171,
+          "blizzardDps": 292174.03400088625,
+          "changePct": -3.0114854716048467,
+          "uncertaintyPp": 0.05156565706435847,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 53.87580223352005,
+          "blizzardStandardError": 59.59151736360019
+        },
+        {
+          "targets": 3,
+          "simcDps": 334816.19594269164,
+          "blizzardDps": 330223.8182951172,
+          "changePct": -1.3716115597826484,
+          "uncertaintyPp": 0.05237136828438144,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 63.729062087203275,
+          "blizzardStandardError": 63.66482132843787
+        },
+        {
+          "targets": 5,
+          "simcDps": 410796.7386956859,
+          "blizzardDps": 405084.8686996382,
+          "changePct": -1.3904370356452755,
+          "uncertaintyPp": 0.05045602700074341,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 76.01415935659253,
+          "blizzardStandardError": 74.59941019799425
+        }
+      ]
+    },
+    {
+      "specId": 254,
+      "gameClass": "Hunter",
+      "spec": "Marksmanship",
+      "role": "DPS",
+      "profile": "MID2_Hunter_Marksmanship.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 246503.11165442478,
+          "blizzardDps": 217196.00400573976,
+          "changePct": -11.889143083017528,
+          "uncertaintyPp": 0.076087141568069,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 73.9044449702994,
+          "blizzardStandardError": 70.12164775230548
+        },
+        {
+          "targets": 2,
+          "simcDps": 309946.51775319723,
+          "blizzardDps": 274847.97121960873,
+          "changePct": -11.324065451039079,
+          "uncertaintyPp": 0.06835382659107106,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 81.70954423355765,
+          "blizzardStandardError": 80.21430401874309
+        },
+        {
+          "targets": 3,
+          "simcDps": 361313.5926077923,
+          "blizzardDps": 322659.5140695613,
+          "changePct": -10.698207686913719,
+          "uncertaintyPp": 0.06831404768868296,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 94.085256700718,
+          "blizzardStandardError": 93.80979680939132
+        },
+        {
+          "targets": 5,
+          "simcDps": 464480.49880347284,
+          "blizzardDps": 425668.2712081328,
+          "changePct": -8.356051049575274,
+          "uncertaintyPp": 0.0670906297534385,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 125.14354211231861,
+          "blizzardStandardError": 110.11886195780082
+        }
+      ]
+    },
+    {
+      "specId": 255,
+      "gameClass": "Hunter",
+      "spec": "Survival",
+      "role": "DPS",
+      "profile": "MID2_Hunter_Survival.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 259362.59231563972,
+          "blizzardDps": 245269.37378139587,
+          "changePct": -5.4337899727238455,
+          "uncertaintyPp": 0.07666315053578325,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 75.11047695389868,
+          "blizzardStandardError": 72.43392795145365
+        },
+        {
+          "targets": 2,
+          "simcDps": 343318.70697386836,
+          "blizzardDps": 330328.3957590888,
+          "changePct": -3.783746982295466,
+          "uncertaintyPp": 0.08010967914361199,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 103.46169379277319,
+          "blizzardStandardError": 98.9011908917301
+        },
+        {
+          "targets": 3,
+          "simcDps": 416052.8913725618,
+          "blizzardDps": 405894.74384082755,
+          "changePct": -2.4415519618725456,
+          "uncertaintyPp": 0.08191147918236867,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 125.65920136231784,
+          "blizzardStandardError": 123.30874378959435
+        },
+        {
+          "targets": 5,
+          "simcDps": 567444.7476324826,
+          "blizzardDps": 556541.1512836671,
+          "changePct": -1.9215256453263385,
+          "uncertaintyPp": 0.08424886900726529,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 174.90225872074953,
+          "blizzardStandardError": 173.40225692196853
+        }
+      ]
+    },
+    {
+      "specId": 62,
+      "gameClass": "Mage",
+      "spec": "Arcane",
+      "role": "DPS",
+      "profile": "MID2_Mage_Arcane.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 205948.94102639178,
+          "blizzardDps": 170096.83989580968,
+          "changePct": -17.408247380105614,
+          "uncertaintyPp": 0.10291410503325035,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 94.48652879890314,
+          "blizzardStandardError": 74.86199371477585
+        },
+        {
+          "targets": 2,
+          "simcDps": 293694.6436218153,
+          "blizzardDps": 243780.9453812995,
+          "changePct": -16.995099953129778,
+          "uncertaintyPp": 0.1114898075475494,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 139.7484808896298,
+          "blizzardStandardError": 120.22833636465258
+        },
+        {
+          "targets": 3,
+          "simcDps": 371934.54538142914,
+          "blizzardDps": 308148.2440801474,
+          "changePct": -17.14987276480788,
+          "uncertaintyPp": 0.11832008458843525,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 186.97567334268885,
+          "blizzardStandardError": 162.53408049497526
+        },
+        {
+          "targets": 5,
+          "simcDps": 526005.2816533465,
+          "blizzardDps": 424122.8687505019,
+          "changePct": -19.369085531347995,
+          "uncertaintyPp": 0.11626660234318101,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 267.77907269498405,
+          "blizzardStandardError": 225.2658631180469
+        }
+      ]
+    },
+    {
+      "specId": 63,
+      "gameClass": "Mage",
+      "spec": "Fire",
+      "role": "DPS",
+      "profile": "MID2_Mage_Fire.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 246414.67144592272,
+          "blizzardDps": 223175.9649381795,
+          "changePct": -9.430731689546779,
+          "uncertaintyPp": 0.07866857421757424,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 74.51510813713142,
+          "blizzardStandardError": 72.30259440779976
+        },
+        {
+          "targets": 2,
+          "simcDps": 332195.5547179903,
+          "blizzardDps": 299169.7590296117,
+          "changePct": -9.941672975249494,
+          "uncertaintyPp": 0.0805542046245402,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 102.65320099003083,
+          "blizzardStandardError": 100.47066993591694
+        },
+        {
+          "targets": 3,
+          "simcDps": 459581.2565665625,
+          "blizzardDps": 370151.7568402855,
+          "changePct": -19.45890926762037,
+          "uncertaintyPp": 0.07931512250569984,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 163.12137085278312,
+          "blizzardStandardError": 131.6379863596801
+        },
+        {
+          "targets": 5,
+          "simcDps": 713643.7135296299,
+          "blizzardDps": 672430.5180135305,
+          "changePct": -5.775037982505571,
+          "uncertaintyPp": 0.10501587933764939,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 281.1422632427637,
+          "blizzardStandardError": 275.7436623075321
+        }
+      ]
+    },
+    {
+      "specId": 64,
+      "gameClass": "Mage",
+      "spec": "Frost",
+      "role": "DPS",
+      "profile": "MID2_Mage_Frost.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 226087.59118718503,
+          "blizzardDps": 217749.95746178098,
+          "changePct": -3.6877891801240237,
+          "uncertaintyPp": 0.0703295193303626,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 58.05104491439784,
+          "blizzardStandardError": 58.78487030810621
+        },
+        {
+          "targets": 2,
+          "simcDps": 283222.9716577142,
+          "blizzardDps": 272790.1349214044,
+          "changePct": -3.6836124821535643,
+          "uncertaintyPp": 0.06653822305993855,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 67.53029596364672,
+          "blizzardStandardError": 70.81215953787445
+        },
+        {
+          "targets": 3,
+          "simcDps": 339446.35395306785,
+          "blizzardDps": 327774.35292734014,
+          "changePct": -3.438540697167569,
+          "uncertaintyPp": 0.06589889801497881,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 80.60839730403156,
+          "blizzardStandardError": 83.46973781118318
+        },
+        {
+          "targets": 5,
+          "simcDps": 453153.3937082343,
+          "blizzardDps": 448144.1294515914,
+          "changePct": -1.105423533442218,
+          "uncertaintyPp": 0.06244516180363074,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 105.65604449934794,
+          "blizzardStandardError": 99.6331100339733
+        }
+      ]
+    },
+    {
+      "specId": 268,
+      "gameClass": "Monk",
+      "spec": "Brewmaster",
+      "role": "Tank",
+      "profile": "MID2_Monk_Brewmaster.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 141798.78113058204,
+          "blizzardDps": 97788.5182543563,
+          "changePct": -31.03712353895117,
+          "uncertaintyPp": 0.056210470590123046,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 41.02442804294892,
+          "blizzardStandardError": 29.212753026282332
+        },
+        {
+          "targets": 2,
+          "simcDps": 214092.06329990053,
+          "blizzardDps": 134168.39147439037,
+          "changePct": -37.331450121788464,
+          "uncertaintyPp": 0.04615395718562211,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 58.20304831074759,
+          "blizzardStandardError": 34.803238686975746
+        },
+        {
+          "targets": 3,
+          "simcDps": 272463.57550646487,
+          "blizzardDps": 171846.85605378213,
+          "changePct": -36.92850292581416,
+          "uncertaintyPp": 0.04378844912012622,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 70.51073883355829,
+          "blizzardStandardError": 41.56520021077791
+        },
+        {
+          "targets": 5,
+          "simcDps": 367579.23044343764,
+          "blizzardDps": 140940.95703934212,
+          "changePct": -61.65698566012156,
+          "uncertaintyPp": 0.03645061541934541,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 95.39924666698826,
+          "blizzardStandardError": 57.751126179240096
+        }
+      ]
+    },
+    {
+      "specId": 269,
+      "gameClass": "Monk",
+      "spec": "Windwalker",
+      "role": "DPS",
+      "profile": "MID2_Monk_Windwalker.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 256055.28311280534,
+          "blizzardDps": 240657.9846640659,
+          "changePct": -6.013271142683719,
+          "uncertaintyPp": 0.07189489119502804,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 68.74563246167787,
+          "blizzardStandardError": 68.17129361088311
+        },
+        {
+          "targets": 2,
+          "simcDps": 341272.6077916926,
+          "blizzardDps": 314302.83812302083,
+          "changePct": -7.902705653169118,
+          "uncertaintyPp": 0.07110265144112116,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 91.21171185377473,
+          "blizzardStandardError": 90.94588511162561
+        },
+        {
+          "targets": 3,
+          "simcDps": 450091.00891731726,
+          "blizzardDps": 344939.08464065555,
+          "changePct": -23.362369430485195,
+          "uncertaintyPp": 0.07874135767006568,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 117.62341334157645,
+          "blizzardStandardError": 156.75227350795893
+        },
+        {
+          "targets": 5,
+          "simcDps": 671455.9440625682,
+          "blizzardDps": 597102.5542680174,
+          "changePct": -11.073457678352517,
+          "uncertaintyPp": 0.06822467630189491,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 175.3060929462629,
+          "blizzardStandardError": 174.14359657467085
+        }
+      ]
+    },
+    {
+      "specId": 66,
+      "gameClass": "Paladin",
+      "spec": "Protection",
+      "role": "Tank",
+      "profile": "MID2_Paladin_Protection.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 165421.60686078176,
+          "blizzardDps": 136259.82501810344,
+          "changePct": -17.62876228570357,
+          "uncertaintyPp": 0.089997077333651,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 60.721528956337785,
+          "blizzardStandardError": 57.165410604413516
+        },
+        {
+          "targets": 2,
+          "simcDps": 208333.2618131403,
+          "blizzardDps": 173018.2675423234,
+          "changePct": -16.951203069288034,
+          "uncertaintyPp": 0.09065536160984608,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 76.23567574905712,
+          "blizzardStandardError": 72.64328231965261
+        },
+        {
+          "targets": 3,
+          "simcDps": 272190.142777941,
+          "blizzardDps": 227068.2213394098,
+          "changePct": -16.57735323477262,
+          "uncertaintyPp": 0.09075005126412827,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 98.9013537205061,
+          "blizzardStandardError": 95.26855931979861
+        },
+        {
+          "targets": 5,
+          "simcDps": 376465.6662869125,
+          "blizzardDps": 314928.581825245,
+          "changePct": -16.34600176653793,
+          "uncertaintyPp": 0.09071211623706116,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 136.78797486678855,
+          "blizzardStandardError": 131.39609040484498
+        }
+      ]
+    },
+    {
+      "specId": 70,
+      "gameClass": "Paladin",
+      "spec": "Retribution",
+      "role": "DPS",
+      "profile": "MID2_Paladin_Retribution.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 223101.03943163672,
+          "blizzardDps": 174227.04677575472,
+          "changePct": -21.906662909501197,
+          "uncertaintyPp": 0.06170036729791667,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 60.40061360033178,
+          "blizzardStandardError": 52.03627732187602
+        },
+        {
+          "targets": 2,
+          "simcDps": 314448.20544996613,
+          "blizzardDps": 216413.53677131038,
+          "changePct": -31.176730214876258,
+          "uncertaintyPp": 0.05664699034758608,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 87.50876208298024,
+          "blizzardStandardError": 68.06114519263903
+        },
+        {
+          "targets": 3,
+          "simcDps": 403192.48379113636,
+          "blizzardDps": 332376.01167321653,
+          "changePct": -17.563936572439797,
+          "uncertaintyPp": 0.06837985156422027,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 102.53094736050163,
+          "blizzardStandardError": 112.44189574802525
+        },
+        {
+          "targets": 5,
+          "simcDps": 554023.9387290896,
+          "blizzardDps": 495945.90565794305,
+          "changePct": -10.482946495845535,
+          "uncertaintyPp": 0.06895363181300891,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 137.38738085835362,
+          "blizzardStandardError": 151.2123359107518
+        }
+      ]
+    },
+    {
+      "specId": 258,
+      "gameClass": "Priest",
+      "spec": "Shadow",
+      "role": "DPS",
+      "profile": "MID2_Priest_Shadow.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 219496.81114086712,
+          "blizzardDps": 158917.71040147566,
+          "changePct": -27.599080107142616,
+          "uncertaintyPp": 0.034162148481063595,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 36.009058924161735,
+          "blizzardStandardError": 28.00006669801111
+        },
+        {
+          "targets": 2,
+          "simcDps": 317952.22589328175,
+          "blizzardDps": 209727.8428914735,
+          "changePct": -34.03793846630687,
+          "uncertaintyPp": 0.029988024922186912,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 49.25398009242182,
+          "blizzardStandardError": 36.20856447782482
+        },
+        {
+          "targets": 3,
+          "simcDps": 415688.95607208513,
+          "blizzardDps": 261875.90469405233,
+          "changePct": -37.001957625104644,
+          "uncertaintyPp": 0.02794767557896298,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 61.60739497544035,
+          "blizzardStandardError": 44.80076097352764
+        },
+        {
+          "targets": 5,
+          "simcDps": 616773.5710092398,
+          "blizzardDps": 385595.2605780472,
+          "changePct": -37.481876866563944,
+          "uncertaintyPp": 0.028297902357381857,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 101.41473026778408,
+          "blizzardStandardError": 62.529520955386005
+        }
+      ]
+    },
+    {
+      "specId": 259,
+      "gameClass": "Rogue",
+      "spec": "Assassination",
+      "role": "DPS",
+      "profile": "MID2_Rogue_Assassination.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 246517.4831443352,
+          "blizzardDps": 229440.40871885914,
+          "changePct": -6.927327915106729,
+          "uncertaintyPp": 0.05544221216975123,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 51.371524797046376,
+          "blizzardStandardError": 50.76084785716101
+        },
+        {
+          "targets": 2,
+          "simcDps": 283702.49372745614,
+          "blizzardDps": 232302.68057972656,
+          "changePct": -18.11750488069651,
+          "uncertaintyPp": 0.05021894687844041,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 62.81205948705091,
+          "blizzardStandardError": 51.36897521583661
+        },
+        {
+          "targets": 3,
+          "simcDps": 342429.7868440096,
+          "blizzardDps": 278607.74355333386,
+          "changePct": -18.63799404803217,
+          "uncertaintyPp": 0.045849927988636435,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 72.27778915052455,
+          "blizzardStandardError": 54.393575717079436
+        },
+        {
+          "targets": 5,
+          "simcDps": 426484.929919207,
+          "blizzardDps": 334956.4469550705,
+          "changePct": -21.46112946628046,
+          "uncertaintyPp": 0.0544201102979512,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 135.6149262000306,
+          "blizzardStandardError": 51.75109681001348
+        }
+      ]
+    },
+    {
+      "specId": 260,
+      "gameClass": "Rogue",
+      "spec": "Outlaw",
+      "role": "DPS",
+      "profile": "MID2_Rogue_Outlaw.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 257596.7270904008,
+          "blizzardDps": 217730.7275913956,
+          "changePct": -15.476128112844634,
+          "uncertaintyPp": 0.15254778207072256,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 147.02088016557144,
+          "blizzardStandardError": 157.33649997004915
+        },
+        {
+          "targets": 2,
+          "simcDps": 345480.157061277,
+          "blizzardDps": 294679.0022895797,
+          "changePct": -14.704507258483968,
+          "uncertaintyPp": 0.1511960290358177,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 192.9412119351314,
+          "blizzardStandardError": 209.63029976873818
+        },
+        {
+          "targets": 3,
+          "simcDps": 430590.44409622025,
+          "blizzardDps": 362398.63889377477,
+          "changePct": -15.836813412238026,
+          "uncertaintyPp": 0.15234929072459602,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 244.24498065251692,
+          "blizzardStandardError": 264.13615977983187
+        },
+        {
+          "targets": 5,
+          "simcDps": 616357.8865434424,
+          "blizzardDps": 520201.2861680165,
+          "changePct": -15.600773913136024,
+          "uncertaintyPp": 0.16843942103507048,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 393.3277121647966,
+          "blizzardStandardError": 412.7701548874599
+        }
+      ]
+    },
+    {
+      "specId": 261,
+      "gameClass": "Rogue",
+      "spec": "Subtlety",
+      "role": "DPS",
+      "profile": "MID2_Rogue_Subtlety.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 257822.27867123633,
+          "blizzardDps": 239019.28446290368,
+          "changePct": -7.293005982741086,
+          "uncertaintyPp": 0.057269361154286054,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 52.92936797959239,
+          "blizzardStandardError": 57.162210634952146
+        },
+        {
+          "targets": 2,
+          "simcDps": 320173.18493335403,
+          "blizzardDps": 258936.61866579502,
+          "changePct": -19.12607587056542,
+          "uncertaintyPp": 0.04899387286664765,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 60.84213164312621,
+          "blizzardStandardError": 63.12201822440219
+        },
+        {
+          "targets": 3,
+          "simcDps": 429444.3022495919,
+          "blizzardDps": 287869.1449261594,
+          "changePct": -32.96705919296361,
+          "uncertaintyPp": 0.04303996506298247,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 78.96432945753796,
+          "blizzardStandardError": 78.04779578467232
+        },
+        {
+          "targets": 5,
+          "simcDps": 629668.4430642925,
+          "blizzardDps": 460521.70084126457,
+          "changePct": -26.86282663299313,
+          "uncertaintyPp": 0.04663067904408975,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 114.87399919451764,
+          "blizzardStandardError": 124.03175202095413
+        }
+      ]
+    },
+    {
+      "specId": 262,
+      "gameClass": "Shaman",
+      "spec": "Elemental",
+      "role": "DPS",
+      "profile": "MID2_Shaman_Elemental.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 249792.6512909698,
+          "blizzardDps": 237575.84658579316,
+          "changePct": -4.8907782683110135,
+          "uncertaintyPp": 0.07838657008137379,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 73.34753265032401,
+          "blizzardStandardError": 71.51133344144195
+        },
+        {
+          "targets": 2,
+          "simcDps": 284490.17287052475,
+          "blizzardDps": 252536.83207318417,
+          "changePct": -11.231790706487066,
+          "uncertaintyPp": 0.06959155888558773,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 79.59714176934419,
+          "blizzardStandardError": 72.18828721849917
+        },
+        {
+          "targets": 3,
+          "simcDps": 383120.3300790457,
+          "blizzardDps": 252326.31209763174,
+          "changePct": -34.13914838568562,
+          "uncertaintyPp": 0.04927719628882311,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 98.66275289780654,
+          "blizzardStandardError": 71.10439815828572
+        },
+        {
+          "targets": 5,
+          "simcDps": 616821.1637024,
+          "blizzardDps": 609982.5893010431,
+          "changePct": -1.1086802470118284,
+          "uncertaintyPp": 0.06382063153093921,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 142.44867596051674,
+          "blizzardStandardError": 143.1664157336731
+        }
+      ]
+    },
+    {
+      "specId": 263,
+      "gameClass": "Shaman",
+      "spec": "Enhancement",
+      "role": "DPS",
+      "profile": "MID2_Shaman_Enhancement.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 246765.01122631837,
+          "blizzardDps": 201200.79211112828,
+          "changePct": -18.46461898660393,
+          "uncertaintyPp": 0.07381172810653384,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 71.57055250255893,
+          "blizzardStandardError": 72.32452647740377
+        },
+        {
+          "targets": 2,
+          "simcDps": 370056.55575588776,
+          "blizzardDps": 296537.4049835163,
+          "changePct": -19.86700401029221,
+          "uncertaintyPp": 0.07056109922966287,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 107.1803394164121,
+          "blizzardStandardError": 101.84460820169147
+        },
+        {
+          "targets": 3,
+          "simcDps": 501527.07916451246,
+          "blizzardDps": 386388.09395380365,
+          "changePct": -22.957680650567735,
+          "uncertaintyPp": 0.06892847527852163,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 148.89650361574473,
+          "blizzardStandardError": 133.97810457306846
+        },
+        {
+          "targets": 5,
+          "simcDps": 791564.8721658543,
+          "blizzardDps": 637402.4171338764,
+          "changePct": -19.475656443692813,
+          "uncertaintyPp": 0.07806172639043805,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 262.27121325955255,
+          "blizzardStandardError": 234.07319192071625
+        }
+      ]
+    },
+    {
+      "specId": 265,
+      "gameClass": "Warlock",
+      "spec": "Affliction",
+      "role": "DPS",
+      "profile": "MID2_Warlock_Affliction.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 252971.88269488694,
+          "blizzardDps": 220386.30619389305,
+          "changePct": -12.881106055685976,
+          "uncertaintyPp": 0.06460904832586,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 65.12253469079573,
+          "blizzardStandardError": 61.1167311566137
+        },
+        {
+          "targets": 2,
+          "simcDps": 325551.21610006527,
+          "blizzardDps": 270945.5567598782,
+          "changePct": -16.773292999588385,
+          "uncertaintyPp": 0.05971252611127537,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 80.06208212662317,
+          "blizzardStandardError": 73.46618671559766
+        },
+        {
+          "targets": 3,
+          "simcDps": 390854.29776069324,
+          "blizzardDps": 283078.15019987896,
+          "changePct": -27.574507477157628,
+          "uncertaintyPp": 0.055777313218500296,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 97.03692234668289,
+          "blizzardStandardError": 86.21513183409236
+        },
+        {
+          "targets": 5,
+          "simcDps": 515600.7150653044,
+          "blizzardDps": 403583.1669241003,
+          "changePct": -21.72563863240886,
+          "uncertaintyPp": 0.060051068850223266,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 130.11808745044783,
+          "blizzardStandardError": 120.75846940611933
+        }
+      ]
+    },
+    {
+      "specId": 266,
+      "gameClass": "Warlock",
+      "spec": "Demonology",
+      "role": "DPS",
+      "profile": "MID2_Warlock_Demonology.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 237497.90166047722,
+          "blizzardDps": 210469.048022339,
+          "changePct": -11.380670502419088,
+          "uncertaintyPp": 0.05454340149374028,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 53.287778712073255,
+          "blizzardStandardError": 46.24084565958523
+        },
+        {
+          "targets": 2,
+          "simcDps": 403950.85388903494,
+          "blizzardDps": 300265.80188576115,
+          "changePct": -25.667739281906808,
+          "uncertaintyPp": 0.044744569204658705,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 83.6290512916042,
+          "blizzardStandardError": 68.11809050601384
+        },
+        {
+          "targets": 3,
+          "simcDps": 503588.23528737744,
+          "blizzardDps": 389804.9749946151,
+          "changePct": -22.594503270679233,
+          "uncertaintyPp": 0.048104569024838395,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 107.89624625028759,
+          "blizzardStandardError": 91.11223045830444
+        },
+        {
+          "targets": 5,
+          "simcDps": 703322.4419050799,
+          "blizzardDps": 569157.6416078064,
+          "changePct": -19.07585942144304,
+          "uncertaintyPp": 0.05261628224062216,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 159.37607050084716,
+          "blizzardStandardError": 137.89579894372363
+        }
+      ]
+    },
+    {
+      "specId": 267,
+      "gameClass": "Warlock",
+      "spec": "Destruction",
+      "role": "DPS",
+      "profile": "MID2_Warlock_Destruction.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 231636.5289647331,
+          "blizzardDps": 227738.06347769607,
+          "changePct": -1.683009801804869,
+          "uncertaintyPp": 0.06408730503524813,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 53.932172431360044,
+          "blizzardStandardError": 54.08420174056619
+        },
+        {
+          "targets": 2,
+          "simcDps": 272697.9856250592,
+          "blizzardDps": 266057.5298362366,
+          "changePct": -2.435095284478106,
+          "uncertaintyPp": 0.059797796079648066,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 59.893015901170266,
+          "blizzardStandardError": 59.22418725675138
+        },
+        {
+          "targets": 3,
+          "simcDps": 313148.23458119394,
+          "blizzardDps": 178548.4164968492,
+          "changePct": -42.98278042804847,
+          "uncertaintyPp": 0.03258782556174814,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 66.316958404701,
+          "blizzardStandardError": 35.79319128709533
+        },
+        {
+          "targets": 5,
+          "simcDps": 473249.0919801043,
+          "blizzardDps": 467948.2166579622,
+          "changePct": -1.120102586982874,
+          "uncertaintyPp": 0.049239203728039534,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 84.57263292311784,
+          "blizzardStandardError": 84.51104677495864
+        }
+      ]
+    },
+    {
+      "specId": 71,
+      "gameClass": "Warrior",
+      "spec": "Arms",
+      "role": "DPS",
+      "profile": "MID2_Warrior_Arms.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 238866.78120650825,
+          "blizzardDps": 232798.39735177107,
+          "changePct": -2.5404888130890257,
+          "uncertaintyPp": 0.08469966079144936,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 74.30828426544626,
+          "blizzardStandardError": 73.55876096105408
+        },
+        {
+          "targets": 2,
+          "simcDps": 345308.14206480095,
+          "blizzardDps": 277168.3356585844,
+          "changePct": -19.733043651611716,
+          "uncertaintyPp": 0.07123822591064065,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 102.7987588309891,
+          "blizzardStandardError": 94.57177779497954
+        },
+        {
+          "targets": 3,
+          "simcDps": 410803.7355078531,
+          "blizzardDps": 361503.4486961878,
+          "changePct": -12.00093440015052,
+          "uncertaintyPp": 0.07324666433825323,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 113.86395706800035,
+          "blizzardStandardError": 116.31639499018279
+        },
+        {
+          "targets": 5,
+          "simcDps": 541731.904792188,
+          "blizzardDps": 462892.91001818137,
+          "changePct": -14.553138568467695,
+          "uncertaintyPp": 0.06962224135252765,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 145.10590797769584,
+          "blizzardStandardError": 147.16704479811892
+        }
+      ]
+    },
+    {
+      "specId": 72,
+      "gameClass": "Warrior",
+      "spec": "Fury",
+      "role": "DPS",
+      "profile": "MID2_Warrior_Fury.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 256891.98038332548,
+          "blizzardDps": 193023.72305651737,
+          "changePct": -24.861911699814865,
+          "uncertaintyPp": 0.062164484783324765,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 59.11618542510692,
+          "blizzardStandardError": 68.30646216452371
+        },
+        {
+          "targets": 2,
+          "simcDps": 303574.8286034004,
+          "blizzardDps": 246584.76746492003,
+          "changePct": -18.772986350898655,
+          "uncertaintyPp": 0.07291689180713586,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 82.31620481801599,
+          "blizzardStandardError": 91.02015104384425
+        },
+        {
+          "targets": 3,
+          "simcDps": 340980.0472789012,
+          "blizzardDps": 288431.3516558357,
+          "changePct": -15.41107640825794,
+          "uncertaintyPp": 0.07751156632371993,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 97.64562964079519,
+          "blizzardStandardError": 106.59219406861729
+        },
+        {
+          "targets": 5,
+          "simcDps": 415737.40501361195,
+          "blizzardDps": 371833.2144774316,
+          "changePct": -10.560558180888924,
+          "uncertaintyPp": 0.08757222390772705,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 133.43267334265406,
+          "blizzardStandardError": 142.34480928311166
+        }
+      ]
+    },
+    {
+      "specId": 73,
+      "gameClass": "Warrior",
+      "spec": "Protection",
+      "role": "Tank",
+      "profile": "MID2_Warrior_Protection.simc",
+      "unmodeledRuleFields": 0,
+      "results": [
+        {
+          "targets": 1,
+          "simcDps": 168349.48942706364,
+          "blizzardDps": 159015.56009632017,
+          "changePct": -5.5443763818406655,
+          "uncertaintyPp": 0.08102752685270728,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 45.08810976689304,
+          "blizzardStandardError": 55.04645102272339
+        },
+        {
+          "targets": 2,
+          "simcDps": 224481.91586633958,
+          "blizzardDps": 214108.70913344584,
+          "changePct": -4.620954295075652,
+          "uncertaintyPp": 0.0708136918984193,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 54.52448893012005,
+          "blizzardStandardError": 62.23820930661042
+        },
+        {
+          "targets": 3,
+          "simcDps": 268942.277720754,
+          "blizzardDps": 265352.7140450831,
+          "changePct": -1.3346966888552858,
+          "uncertaintyPp": 0.06280225190398167,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 56.02457352291217,
+          "blizzardStandardError": 66.11181654921717
+        },
+        {
+          "targets": 5,
+          "simcDps": 390742.48028532334,
+          "blizzardDps": 369062.92061916966,
+          "changePct": -5.5482986263288065,
+          "uncertaintyPp": 0.05453174304826728,
+          "simcSamples": 9999,
+          "blizzardSamples": 9999,
+          "simcStandardError": 76.77690080543107,
+          "blizzardStandardError": 80.99602591123046
+        }
+      ]
+    }
+  ]
+}

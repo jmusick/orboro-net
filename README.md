@@ -156,7 +156,9 @@ Generate a new IndexNow key rather than reusing the published one. The SQL files
 - `npm run media:migrate` previews moving content images from `public/images` to R2 (see [Media](#media))
 - `npm run data:midnight-s2-interrupts` rebuilds the interrupt reference data from its public Google Sheets source
 - `npm run data:spec-icons` downloads vendored WoW spec icons; `-- --resolve` refreshes the ID map and `-- --force` refreshes images
-- `npm run data:assisted-combat` rebuilds the assisted-combat data from research inputs that aren't in this repository (set `ASSISTED_COMBAT_RESEARCH_ROOT` and `ASSISTED_COMBAT_NOTES_ROOT`)
+- `npm run data:assisted-combat` rebuilds the Blizzard/SimulationCraft comparison from pinned research inputs outside this repository (set `ASSISTED_COMBAT_RESEARCH_ROOT`; see the generator for required DB2 exports, baseline files and SimC snapshot)
+- `npm run sim:assisted-combat -- --smoke` checks all paired APL inputs before a full `npm run sim:assisted-combat`; reports, logs and generated APLs stay in the external research snapshot. `SIMC_EXE` selects the pinned local executable.
+- `npm run data:assisted-combat-sims` validates the complete 1/2/3/5-target benchmark reports and generates the tool’s DPS tables; smoke or incomplete results are refused.
 - `npm run astro` is the Astro CLI passthrough
 
 ## CI

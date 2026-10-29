@@ -1,7 +1,7 @@
 {
   "name": "orboro",
   "type": "module",
-  "version": "1.53.5",
+  "version": "1.54.0",
   "engines": {
     "node": ">=22.12.0",
     "npm": ">=10.9.0"
@@ -34,6 +34,8 @@
     "test:consent": "node --test tests/consent.test.mjs",
     "test:csp": "node --test tests/csp-navigation.test.mjs",
     "data:assisted-combat": "node scripts/generate-assisted-combat-data.mjs",
+    "sim:assisted-combat": "node scripts/run-assisted-combat-sims.mjs",
+    "data:assisted-combat-sims": "node scripts/generate-assisted-combat-sims.mjs",
     "data:midnight-s2-interrupts": "node scripts/generate-midnight-s2-interrupt-data.mjs",
     "data:spec-icons": "node scripts/fetch-spec-icons.mjs",
     "media:migrate": "node scripts/migrate-content-images.mjs",

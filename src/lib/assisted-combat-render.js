@@ -33,7 +33,7 @@ export var FALLBACK_CLASS_COLOR = "#70d0ff";
 export var DETAIL_TABS = [
   ["missing", "Versus SimC"],
   ["apl", "Blizzard APL"],
-  ["icy", "Icy Veins"],
+  ["sims", "Simulation results"],
 ];
 
 /** Never emit `undefined` into a custom property: it silently kills color-mix(). */
@@ -133,17 +133,13 @@ export function profilesInfo(spec) {
   );
 }
 
-// Both lists are curated from the research writeup, not the raw set difference:
-// only 3 of 31 specs match the computed diff exactly, 12 are hand-trimmed
-// subsets, and 16 mix in logic items. Say so rather than implying it is derived.
 export var MISSING_ACTIONS_INFO =
-  "Actions SimulationCraft's optimized profile uses that Blizzard's priority list does not. "
-  + "Hand-curated from the full set difference: entries judged immaterial, such as pet summons and utility, are omitted, "
-  + "so this list is narrower than the computed diff behind the Comparison context numbers.";
+  "Distinct actions in the pinned SimC profiles that are absent from Blizzard's list, after the same name normalization used by the scores. "
+  + "Includes setup, pet and fallback names. Consumables, racials, interrupts and list-control commands are excluded. This is not a list of mandatory extra buttons.";
 
 export var MISSING_LOGIC_INFO =
-  "Decision logic SimulationCraft applies that Blizzard's priority list does not: talent branches, cooldown timing, "
-  + "resource thresholds, and target selection. Curated from the research writeup rather than computed from the action lists.";
+  "Features detected in executable lines of the pinned SimC profiles. Blizzard also checks resources, auras, cooldowns and target counts; "
+  + "these labels describe SimC's structure and do not establish that every listed feature is absent from Blizzard.";
 
 export function bulletList(items, empty) {
   if (!items || !items.length) return '<p class="ac-muted ac-muted--flush">' + escapeHtml(empty) + "</p>";
@@ -164,7 +160,7 @@ export function defaultState(payload) {
     gameClass: "all",
     role: "all",
     selected: payload.specs.length ? specKey(payload.specs[0]) : "",
-    tab: "missing",
+    tab: payload.simulations ? "sims" : "missing",
   };
 }
 
@@ -178,8 +174,6 @@ export function searchHaystack(spec) {
     spec.missingActions.join(" "),
     spec.missingLogic.join(" "),
     spec.comparisonLimitation.join(" "),
-    spec.icySummary,
-    spec.icyRating,
     spec.steps
       .map(function (step) {
         return step.action;
@@ -275,7 +269,7 @@ export function renderSteps(spec) {
     .join("");
 }
 
-function renderMissingPanel(spec) {
+function renderMissingPanel(spec, payload) {
   if (!spec.simcComparable) {
     return (
       '<section class="ui-panel ac-block"><h4 class="ac-block-title">Not directly comparable</h4>' +
@@ -291,9 +285,9 @@ function renderMissingPanel(spec) {
     '<section class="ui-panel ac-block"><h4 class="ac-block-title">In SimC, not in Blizzard\'s list' +
     infoIcon(MISSING_ACTIONS_INFO) +
     "</h4>" +
-    bulletList(spec.missingActions, "No material missing actions identified in the curated comparison.") +
+    bulletList(spec.missingActions.map(titleAction), "No distinct SimC actions are absent from Blizzard's list.") +
     "</section>" +
-    '<section class="ui-panel ac-block"><h4 class="ac-block-title">Logic SimC applies that Blizzard doesn\'t' +
+    '<section class="ui-panel ac-block"><h4 class="ac-block-title">Decision features in SimC' +
     infoIcon(MISSING_LOGIC_INFO) +
     "</h4>" +
     bulletList(spec.missingLogic, "No additional missing logic was called out.") +
@@ -319,12 +313,12 @@ function renderMissingPanel(spec) {
     "</span></div>" +
     '<div class="ac-mini-metric"><span class="ac-mini-value">' +
     spec.steps.length +
-    '</span><span class="ac-mini-label">Blizzard 12.1 priority steps</span></div>' +
+    '</span><span class="ac-mini-label">Blizzard 12.1.5 priority steps</span></div>' +
     '<div class="ac-mini-metric"><span class="ac-mini-value">' +
     escapeHtml(spec.simcActionLines.join(" / ")) +
     infoIcon(profilesInfo(spec)) +
     '</span><span class="ac-mini-label">SimC lines by profile · ' +
-    (spec.usesSeason2SimcProfile ? "12.1/MID2" : "latest Midnight snapshot") +
+    "MID2 snapshot" +
     "</span></div>" +
     "</div>" +
     (spec.blizzardOnlyActions.length
@@ -332,6 +326,9 @@ function renderMissingPanel(spec) {
         escapeHtml(spec.blizzardOnlyActions.map(titleAction).join(", ")) +
         ".</p>"
       : "") +
+    '<p class="ac-muted">Pinned SimC profiles: ' + spec.simcProfiles.map(function (file) {
+      return '<a href="https://github.com/simulationcraft/simc/blob/' + escapeHtml(payload.simcCommit) + '/profiles/MID2/' + encodeURIComponent(file) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(file) + '</a>';
+    }).join(', ') + '.</p>' +
     "</section>" +
     "</div>"
   );
@@ -339,39 +336,75 @@ function renderMissingPanel(spec) {
 
 function renderAplPanel(spec, payload) {
   return (
-    '<p class="ac-apl-note"><strong>Live 12.1 build ' +
+    '<p class="ac-apl-note"><strong>Live build ' +
     escapeHtml(payload.currentBuild) +
     " · " +
     spec.steps.length +
-    ' steps.</strong> Priority 1 is evaluated first. Every condition shown on a step must pass; “automation only” entries are internal cooldown actions and are not part of Assisted Highlight.</p><div class="ac-apl">' +
+    ' steps.</strong> Priority 1 is evaluated first. Every condition shown on a step must pass; “automation only” entries are internal cooldown actions and are not part of Assisted Highlight. List ' + spec.assistedCombatId + ', specialization ' + spec.specId + '.</p><div class="ac-apl">' +
     renderSteps(spec) +
     "</div>"
   );
 }
 
-function renderIcyPanel(spec) {
-  return (
-    '<section class="ui-panel ac-block"><h4 class="ac-block-title">Guide alignment</h4><span class="ac-rating" data-rating="' +
-    escapeHtml(spec.icyRating) +
-    '">' +
-    escapeHtml(spec.icyRating) +
-    '</span><p class="ac-copy">' +
-    escapeHtml(spec.icySummary || "No guide comparison summary is available.") +
-    "</p>" +
-    (spec.icyUrl
-      ? '<a class="ac-cta" href="' +
-        escapeHtml(spec.icyUrl) +
-        '" target="_blank" rel="noopener noreferrer">Open Icy Veins guide <span aria-hidden="true">↗</span></a>'
-      : "") +
-    "</section>"
-  );
+export function simulationChange(result) {
+  var change = result.changePct;
+  return (change > 0 ? '+' : '') + change.toFixed(2) + '%';
+}
+
+export function simulationDps(value) {
+  return value.toLocaleString('en-US', { maximumFractionDigits: 0 });
+}
+
+export function simulationUncertainty(result) {
+  return 'Approximate 95% uncertainty: ±' + result.uncertaintyPp.toFixed(2) + ' percentage points, using independent-run standard-error propagation. '
+    + result.simcSamples.toLocaleString('en-US') + ' measured iterations per run after warm-up. This interval excludes model uncertainty.';
+}
+
+export function renderSimulationPanel(spec, simulations) {
+  var row = simulations && simulations.rows.find(function (row) { return row.specId === spec.specId; });
+  if (!row) return '<section class="ui-panel ac-block"><h4 class="ac-block-title">No paired simulation</h4><p class="ac-copy">No current MID2 reference profile is available for this specialization in the pinned snapshot. No DPS result is inferred from its action overlap score.</p></section>';
+  return '<p class="ac-apl-note">Same primary MID2 build, gear and talents in both runs. Blizzard priorities use SimC’s manual cooldown support, with no Single-Button Assistant penalty. Five-minute Patchwerk fights; 10,000 requested iterations per run. Tank rows compare damage, not survival.</p>'
+    + (row.unmodeledRuleFields ? '<p class="ac-apl-note">This specialization has ' + row.unmodeledRuleFields + ' undocumented DB2 field values that SimC does not explicitly represent. Interpret this row with that model limitation.</p>' : '')
+    + '<div class="ac-table-scroll" role="region" aria-label="Paired simulation DPS" tabindex="0"><table class="ac-sim-table"><caption>' + escapeHtml(row.spec + ' ' + row.gameClass) + ' APL comparison</caption><thead><tr><th scope="col">Targets</th><th scope="col">SimC DPS</th><th scope="col">Blizzard DPS</th><th scope="col">Change</th></tr></thead><tbody>'
+    + row.results.map(function (result) {
+      return '<tr><th scope="row">' + result.targets + '</th><td>' + simulationDps(result.simcDps) + '</td><td>' + simulationDps(result.blizzardDps) + '</td><td data-result="' + (result.changePct < 0 ? 'loss' : 'gain') + '"><strong>' + simulationChange(result) + '</strong>' + infoIcon(simulationUncertainty(result)) + '</td></tr>';
+    }).join('') + '</tbody></table></div><p class="ac-muted">Change = (Blizzard DPS ÷ SimC DPS − 1) × 100. Negative values are losses. '
+    + 'Primary profile: <a target="_blank" rel="noopener noreferrer" href="https://github.com/simulationcraft/simc/blob/' + escapeHtml(simulations.simcCommit) + '/profiles/MID2/' + encodeURIComponent(row.profile) + '">' + escapeHtml(row.profile) + '</a>.</p>';
+}
+
+export function renderSimulationOverview(simulations) {
+  return '<details class="ui-panel ac-block ac-benchmark"><summary>Compare simulation results across all ' + simulations.rows.length + ' specs</summary><div class="ac-benchmark-body">'
+    + '<p class="ac-copy">Each cell shows Blizzard’s DPS change against the same SimC build, then both mean DPS values. Manual cooldown support is enabled; the Single-Button Assistant penalty is disabled. These results describe the pinned builds and simulation model.</p>'
+    + '<div class="ac-table-scroll" role="region" aria-label="Simulation results for all specializations" tabindex="0"><table class="ac-sim-table"><caption>Five-minute Patchwerk APL comparison</caption><thead><tr><th scope="col">Specialization</th>'
+    + [1,2,3,5].map(function (targets) { return '<th scope="col">' + targets + (targets === 1 ? ' target' : ' targets') + '</th>'; }).join('')
+    + '</tr></thead><tbody>' + simulations.rows.map(function (row) {
+      return '<tr><th scope="row">' + escapeHtml(row.spec) + '<small>' + escapeHtml(row.gameClass) + '</small>' + (row.unmodeledRuleFields ? '<small>' + row.unmodeledRuleFields + ' unmodeled DB2 fields</small>' : '') + '</th>' + row.results.map(function (result) {
+        return '<td data-result="' + (result.changePct < 0 ? 'loss' : 'gain') + '"><strong>' + simulationChange(result) + '</strong>' + infoIcon(simulationUncertainty(result)) + '<small>SimC ' + simulationDps(result.simcDps) + '<br>Blizzard ' + simulationDps(result.blizzardDps) + '</small></td>';
+      }).join('') + '</tr>';
+    }).join('') + '</tbody></table></div><p class="ac-muted">Formula: (Blizzard DPS ÷ SimC DPS − 1) × 100. Same gear, talents, race, consumables and fight settings within each pair. One primary MID2 profile per spec; the build is not re-optimized for each target count. These are not class rankings or in-game performance guarantees.</p>'
+    + renderSimulationMethod(simulations) + '</div></details>';
+}
+
+export function renderSimulationMethod(simulations) {
+  return '<details class="ac-method-details"><summary>Simulation method and model limits</summary><div class="ac-method-body">'
+    + '<section><h4 class="ac-block-title">Run setup</h4><dl class="ac-settings"><dt>Fight</dt><dd>Fixed five-minute Patchwerk</dd><dt>Iterations</dt><dd>10,000 requested; 9,999 measured after warm-up</dd><dt>Character</dt><dd>Same gear, talents, race and consumables within each pair</dd><dt>Raid buffs</dt><dd>Full raid buffs enabled</dd><dt>Cooldowns</dt><dd>Manual cooldown support enabled</dd><dt>Single-button penalty</dt><dd>Disabled</dd></dl></section>'
+    + '<section><h4 class="ac-block-title">Reading the comparison</h4><p>Percent uncertainty uses approximate 95% independent-run error propagation. It does not include simulator model uncertainty.</p><p>SimC’s class-specific importer may correct or omit unsupported rules. These results model Blizzard priorities with manual cooldown support. Tank rows measure damage only; healers, Augmentation and specs without current MID2 profiles are omitted.</p></section>'
+    + '<section><h4 class="ac-block-title">Data snapshot</h4><dl class="ac-settings"><dt>Live build</dt><dd>' + escapeHtml(simulations.hotfix.wow_version) + '</dd><dt>Hotfix snapshot</dt><dd>' + escapeHtml(simulations.hotfix.hotfix_date) + '</dd><dt>Engine commit</dt><dd><code>' + escapeHtml(simulations.simcCommit.slice(0,12)) + '</code></dd></dl></section>'
+    + '<details class="ac-engine-details"><summary>Engine settings and model messages</summary><div class="ac-engine-body"><ul class="ac-engine-options"><li><code>use_blizzard_action_list=1</code></li><li><code>use_cds_with_blizzard_action_list=1</code></li><li><code>one_button_mode=0</code></li><li>Seed 20261029; four threads</li></ul><ul class="ac-engine-messages">'
+    + simulations.warnings.map(function (warning) {
+      var split = warning.indexOf(': ');
+      var level = split < 0 ? '' : warning.slice(0,split);
+      var message = split < 0 ? warning : warning.slice(split+2);
+      var label = level === 'implementation_not_yet_verified' ? 'Unverified model' : level === 'trivial' ? 'Engine note' : titleAction(level || 'Engine message');
+      return '<li><span class="ac-engine-level">' + escapeHtml(label) + '</span><p>' + escapeHtml(message) + '</p></li>';
+    }).join('') + '</ul></div></details></div></details>';
 }
 
 export function renderDetail(spec, payload, state) {
   var panels = {
-    missing: renderMissingPanel(spec),
+    missing: renderMissingPanel(spec, payload),
     apl: renderAplPanel(spec, payload),
-    icy: renderIcyPanel(spec),
+    sims: renderSimulationPanel(spec, payload.simulations),
   };
   var tabs = DETAIL_TABS.map(function (tab) {
     var isSelected = state.tab === tab[0];
@@ -408,19 +441,13 @@ export function renderDetail(spec, payload, state) {
   }).join("");
 
   return (
-    '<div class="ac-detail-head"><div><p class="ac-detail-kicker">' +
+    '<div class="ac-detail-head"><div><p class="ac-detail-kicker"><span>' +
     escapeHtml(spec.gameClass) +
-    " · " +
+    '</span><span>' +
     escapeHtml(spec.role) +
-    '</p><h3 class="ac-detail-title">' +
+    '</span></p><h3 class="ac-detail-title">' +
     escapeHtml(spec.spec) +
     '</h3></div><div class="ac-badges">' +
-    '<span class="ac-badge">Spec ' +
-    spec.specId +
-    '</span><span class="ac-badge">APL ' +
-    spec.assistedCombatId +
-    "</span>" +
-    (spec.alignment ? '<span class="ac-badge">' + escapeHtml(spec.alignment) + "</span>" : "") +
     (spec.simcComparable
       ? '<span class="ac-badge ac-badge--overlap">' +
         spec.overlap +

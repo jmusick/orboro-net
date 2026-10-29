@@ -1,7 +1,7 @@
 -- Run after migration 0012. Features existing tool pages; does not create content.
 -- Re-running restores the initial selection, descriptions and ordering.
 UPDATE content SET homepage_featured = 1, homepage_group = 'wow', homepage_order = 10,
-  homepage_description = 'Compare Blizzard''s assisted combat priorities across specializations with SimulationCraft and Icy Veins.'
+  homepage_description = 'Compare Blizzard''s Assisted Combat priorities across specializations with SimulationCraft.'
 WHERE slug = 'assisted-combat-analysis' AND page_type = 'page';
 
 UPDATE content SET homepage_featured = 1, homepage_group = 'wow', homepage_order = 20,

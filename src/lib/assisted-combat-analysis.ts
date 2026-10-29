@@ -1,4 +1,5 @@
 import researchData from "./assisted-combat-data.json";
+import simulationData from "./assisted-combat-sims.json";
 import { nonceAttr } from "./csp";
 import { jsonForHtml } from "./json";
 import specIcons from "./assisted-combat-spec-icons.json";
@@ -37,14 +38,11 @@ type SpecResearch = {
   missingActions: string[];
   missingLogic: string[];
   comparisonLimitation: string[];
-  icyRating: string;
-  icySummary: string;
-  icyUrl: string;
   /** Vendored spec icon name, or null to fall back to initials. */
   icon: string | null;
 };
 
-type ResearchData = typeof researchData & { specs: SpecResearch[] };
+type ResearchData = typeof researchData & { specs: SpecResearch[]; simulations: typeof simulationData };
 
 // Icons are resolved separately (scripts/fetch-spec-icons.mjs) so the research
 // generator stays offline and deterministic; joined on specId here so both the
@@ -52,6 +50,7 @@ type ResearchData = typeof researchData & { specs: SpecResearch[] };
 const iconBySpecId = specIcons as Record<string, string>;
 const data = {
   ...researchData,
+  simulations: simulationData,
   specs: researchData.specs.map((spec) => ({
     ...spec,
     icon: iconBySpecId[String(spec.specId)] ?? null,
@@ -201,14 +200,64 @@ ${Object.entries(render.CLASS_COLORS).map(([name, color]) => `#ac-root [data-gam
 #ac-root .ac-step__condition{color:var(--muted,#a3aec9);font-size:.72rem;line-height:1.5;}
 #ac-root .ac-auto{display:inline-block;margin-top:.28rem;padding:.12rem .35rem;border:1px solid rgb(255 63 184 / 30%);border-radius:var(--r-pill,999px);color:var(--accent-2,#ff3fb8);font-size:.7rem;font-weight:700;}
 
-#ac-root .ac-rating{display:inline-flex;padding:.3rem .6rem;border:1px solid var(--line,#1d2442);border-radius:var(--r-pill,999px);font-size:.7rem;font-weight:800;}
-#ac-root .ac-rating[data-rating="Close"]{border-color:rgb(168 255 96 / 35%);color:var(--accent-3,#a8ff60);}
-#ac-root .ac-rating[data-rating="Moderate"]{border-color:rgb(255 200 76 / 35%);color:#ffcf66;}
-#ac-root .ac-rating[data-rating="Large"]{border-color:rgb(255 63 184 / 35%);color:var(--accent-2,#ff3fb8);}
-#ac-root .ac-rating[data-rating="Not comparable"]{color:var(--muted,#a3aec9);}
 #ac-root p.ac-copy{margin:.7rem 0 0;color:var(--text,#e9eef9);font-size:.82rem;line-height:1.65;}
-#ac-root a.ac-cta{display:inline-flex;align-items:center;gap:.35rem;margin-top:.8rem;padding:.55rem .8rem;border:1px solid rgb(from var(--accent) r g b / 35%);border-radius:var(--r-md,10px);background:rgb(from var(--accent) r g b / 6%);color:var(--accent,#70d0ff);font-size:.76rem;font-weight:700;text-decoration:none;}
-#ac-root a.ac-cta:hover{background:rgb(from var(--accent) r g b / 11%);text-decoration:none;}
+#ac-root .ac-table-scroll{max-width:100%;overflow-x:auto;}
+#ac-root table.ac-sim-table{width:100%;margin:.8rem 0;border-collapse:collapse;font-size:.82rem;line-height:1.5;font-variant-numeric:tabular-nums;}
+#ac-root .ac-sim-table caption{text-align:left;color:var(--muted);padding:.5rem 0;}
+#ac-root .ac-sim-table th,#ac-root .ac-sim-table td{padding:.7rem .6rem;border-bottom:1px solid var(--line);text-align:right;vertical-align:top;white-space:nowrap;}
+#ac-root .ac-sim-table th:first-child{text-align:left;}
+#ac-root .ac-sim-table thead th{color:var(--muted);font-weight:600;}
+#ac-root .ac-sim-table small{display:block;font-size:.72rem;color:var(--muted);font-weight:400;}
+#ac-root .ac-sim-table [data-result="loss"] strong{color:var(--accent-2);}
+#ac-root .ac-sim-table [data-result="gain"] strong{color:var(--accent-3);}
+#ac-root .ac-benchmark{margin:1rem 0;}
+#ac-root .ac-benchmark summary{min-height:44px;align-content:center;cursor:pointer;font-size:.9rem;font-weight:700;}
+#ac-root .ac-benchmark details{margin-top:1rem;}
+#ac-root .ac-muted a{overflow-wrap:anywhere;}
+
+/* Keep widget copy and disclosures independent of the article prose rules. */
+#ac-root .ac-intro{padding:.3rem 0 1.5rem;}
+#ac-root .ac-intro .ac-title{font-size:clamp(1.2rem,2.1vw,1.7rem);}
+#ac-root .ac-intro .ac-lede{max-width:var(--measure);font-size:1rem;}
+#ac-root p.ac-summary{display:flex;flex-wrap:wrap;gap:.5rem 1.5rem;margin:1rem 0 0;color:var(--muted);font-size:.875rem;}
+#ac-root .ac-benchmark,#ac-root .ac-research-details{height:auto;margin:1.5rem 0;padding:0;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);}
+#ac-root .ac-benchmark > summary,#ac-root .ac-research-details > summary{padding:1rem 1.25rem;font-size:1rem;}
+#ac-root .ac-benchmark-body,#ac-root .ac-research-body{padding:0 1.25rem 1.25rem;}
+#ac-root .ac-method-details,#ac-root .ac-engine-details{margin:1.25rem 0 0;padding:0;background:var(--bg);}
+#ac-root .ac-method-details summary,#ac-root .ac-engine-details summary{font-size:.95rem;}
+#ac-root .ac-method-body,#ac-root .ac-engine-body{display:grid;gap:1.5rem;padding:1.25rem;}
+#ac-root .ac-method-body section{margin:0;}
+#ac-root .ac-method-body p{max-width:var(--measure);margin:.65rem 0 0;font-size:1rem;line-height:1.65;}
+#ac-root .ac-method-body h4{font-size:1rem;}
+#ac-root dl.ac-settings{display:grid;grid-template-columns:minmax(8rem,.35fr) minmax(0,1fr);gap:.65rem 1.25rem;max-width:var(--measure);margin:0;font-size:.95rem;line-height:1.55;}
+#ac-root .ac-settings dt{color:var(--muted);}
+#ac-root .ac-settings dd{margin:0;color:var(--text);}
+#ac-root ul.ac-engine-options,#ac-root ul.ac-engine-messages{margin:0;padding:0;list-style:none;}
+#ac-root .ac-engine-options li{margin:.5rem 0;font-size:.9rem;overflow-wrap:anywhere;}
+#ac-root .ac-engine-messages li{margin:0;padding:1rem 0;border-top:1px solid var(--line);}
+#ac-root .ac-engine-level{font-size:.8rem;font-weight:700;color:var(--muted);}
+#ac-root .ac-engine-body code{font-size:.85rem;overflow-wrap:anywhere;white-space:normal;}
+#ac-root .ac-engine-body p{margin:.35rem 0 0;}
+#ac-root .ac-research-body .ac-hero{margin:0;padding:1.25rem 0;border:0;background:transparent;}
+#ac-root .ac-research-body .ac-title{font-size:1.25rem;}
+#ac-root .ac-research-body .ac-scope{grid-template-columns:1fr;}
+#ac-root ul.ac-chip-list{display:block;max-width:var(--measure);padding-left:1.1rem;list-style:disc;}
+#ac-root li.ac-chip{padding:0;margin:.6rem 0;border:0;border-radius:0;background:none;font-size:.95rem;line-height:1.6;}
+#ac-root .ac-scope .ac-callout{height:auto;border:0;padding:.5rem 0;background:transparent;}
+#ac-root .ac-copy,#ac-root p.ac-copy,#ac-root .ac-muted{font-size:.9rem;line-height:1.6;}
+#ac-root p.ac-copy,#ac-root p.ac-muted{max-width:var(--measure);}
+#ac-root .ac-apl-note{font-size:.875rem;line-height:1.6;padding:.9rem 1rem;}
+#ac-root table.ac-sim-table{font-size:.9rem;}
+#ac-root .ac-sim-table small{font-size:.8rem;line-height:1.5;}
+#ac-root .ac-detail-kicker{display:flex;flex-wrap:wrap;gap:.75rem;color:var(--text-soft);}
+#ac-root .ac-class-name,#ac-root .ac-score-line,#ac-root .ac-results-head{font-size:.78rem;line-height:1.4;}
+#ac-root .ac-spec-name{font-size:.95rem;}
+#ac-root button.ac-tab{min-height:44px;font-size:.875rem;}
+#ac-root .ac-step__condition{font-size:.85rem;line-height:1.6;}
+#ac-root .ac-step__action{font-size:.9rem;line-height:1.45;}
+#ac-root .ac-list-item,#ac-root li.ac-list-item{font-size:.9rem;line-height:1.6;margin:.6rem 0;}
+#ac-root .ac-source{min-height:44px;align-items:center;}
+#ac-root a.ac-source,#ac-root .ac-provenance{font-size:.8rem;line-height:1.6;}
 
 #ac-root .ac-sources{display:flex;flex-wrap:wrap;align-items:center;gap:.45rem;margin-top:1rem;padding:.8rem;border:1px solid var(--line,#1d2442);border-radius:var(--r-md,10px);background:rgb(255 255 255 / 2%);}
 #ac-root .ac-source-label{margin-right:.2rem;color:var(--text-soft,#c3cbe0);font-size:.85rem;font-weight:700;}
@@ -235,12 +284,19 @@ ${Object.entries(render.CLASS_COLORS).map(([name, color]) => `#ac-root [data-gam
   #ac-root .ac-block--wide{grid-column:auto;}
 }
 @media (max-width:520px){
+  #ac-root .ac-benchmark-body,#ac-root .ac-research-body,#ac-root .ac-method-body,#ac-root .ac-engine-body{padding-left:.85rem;padding-right:.85rem;}
+  #ac-root dl.ac-settings{grid-template-columns:1fr;gap:.2rem;}
+  #ac-root .ac-settings dd{margin-bottom:.65rem;}
+  #ac-root table.ac-sim-table{font-size:.8rem;}
+  #ac-root .ac-sim-table small{font-size:.75rem;}
   #ac-root .ac-toolbar{grid-template-columns:1fr;}
   #ac-root .ac-results{grid-template-columns:1fr;}
   #ac-root .ac-detail-head{display:block;}
   #ac-root .ac-badges{justify-content:flex-start;margin-top:.65rem;}
   #ac-root .ac-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));overflow:visible;}
+  #ac-root [data-detail-tab="sims"]{grid-column:1/-1;}
   #ac-root button.ac-tab{min-width:0;}
+  #ac-root .ac-sim-table th,#ac-root .ac-sim-table td{padding:.6rem .35rem;}
   #ac-root .ac-metric-row{grid-template-columns:1fr;}
   #ac-root .ac-step{grid-template-columns:1.75rem minmax(0,1fr);gap:.5rem;}
 }
@@ -443,7 +499,6 @@ const wiring = `
       var specButton=event.target.closest('[data-spec-key]');
       if(specButton){
         state.selected=specButton.getAttribute('data-spec-key');
-        state.tab='missing';
         paintDetail(null);
         return;
       }
@@ -500,13 +555,11 @@ function buildHtml(): string {
     ? `<div class="ac-detail" id="ac-detail" data-game-class="${esc(initialSpec.gameClass)}">${render.renderDetail(initialSpec, data, initialState)}</div>`
     : `<div class="ac-detail" id="ac-detail"><div class="ac-empty">No research data available.</div></div>`;
 
-  return (
-    `<div id="ac-root">` +
-      `<style${nonceAttr(NONCE_PLACEHOLDER)}>${css}</style>` +
+  const researchSections = (
       `<section class="ac-hero">` +
         `<p class="ac-eyebrow">Blizzard Assisted Combat research</p>` +
-        `<h2 class="ac-title">The core buttons are usually present. The optimized decisions are not.</h2>` +
-        `<p class="ac-lede">Across the ${summary.comparableSpecs} specs with a comparable SimulationCraft profile, the median Blizzard action match is <strong>${summary.medianOverlap}%${infoIconMarkup(medianBlizzardInfo)}</strong>, while Blizzard represents <strong>${summary.medianSimcCoverage}%${infoIconMarkup(medianSimcInfo)}</strong> of SimC actions. Spell selection is largely right; the material gap is build, timing, resource, targeting, and encounter logic. Pick a specialization below for its exact priority list, what SimC does that it doesn't, and how it compares with Icy Veins.</p>` +
+        `<h2 class="ac-title">Action overlap and source data</h2>` +
+        `<p class="ac-lede">Across the ${summary.comparableSpecs} specs with a comparable Season 2 SimulationCraft profile, the median Blizzard action match is <strong>${summary.medianOverlap}%${infoIconMarkup(medianBlizzardInfo)}</strong>, while Blizzard represents <strong>${summary.medianSimcCoverage}%${infoIconMarkup(medianSimcInfo)}</strong> of SimC actions. Pick a specialization for its exact Blizzard priority list, the actions unique to each system, and the decision features detected in SimC. These are action comparisons, not damage estimates.</p>` +
         `<button type="button" class="ac-method-toggle" data-method-toggle aria-expanded="false" aria-controls="ac-method"><span class="ac-method-toggle__label">Where the Blizzard APL data comes from</span><span class="ac-method-toggle__icon" aria-hidden="true">+</span></button>` +
         `<div class="ac-method" id="ac-method" hidden>` +
           `<p class="ac-method__intro">The Blizzard priority lists are reconstructed from three DB2 tables exported by Wago Tools for live build ${esc(data.currentBuild)}.</p>` +
@@ -523,34 +576,56 @@ function buildHtml(): string {
         `<div class="ui-panel ac-stat"><span class="ac-stat__value">${summary.specs}</span><span class="ac-stat__label">Specs reviewed · ${summary.classes} classes</span></div>` +
         `<div class="ui-panel ac-stat"><span class="ac-stat__value">${summary.medianOverlap}%${infoIconMarkup(medianBlizzardInfo)}</span><span class="ac-stat__label">Median Blizzard action match</span></div>` +
         `<div class="ui-panel ac-stat"><span class="ac-stat__value">${summary.medianSimcCoverage}%${infoIconMarkup(medianSimcInfo)}</span><span class="ac-stat__label">Median SimC actions represented</span></div>` +
-        `<div class="ui-panel ac-stat"><span class="ac-stat__value">${summary.currentSteps}</span><span class="ac-stat__label">Blizzard 12.1 steps</span></div>` +
+        `<div class="ui-panel ac-stat"><span class="ac-stat__value">${summary.currentSteps}</span><span class="ac-stat__label">Blizzard 12.1.5 steps</span></div>` +
         `<div class="ui-panel ac-stat"><span class="ac-stat__value">${summary.simcActionLines.toLocaleString("en-US")}${infoIconMarkup(actionLinesInfo)}</span><span class="ac-stat__label">SimC action lines</span></div>` +
       `</div>` +
+      `<section class="ui-panel ac-block" aria-labelledby="ac-patch-title"><h3 id="ac-patch-title" class="ac-block-title">What changed since 12.1</h3>` +
+        `<p class="ac-copy">${summary.changedSpecs} of ${summary.specs} Blizzard priority lists changed in the compared exports. The ${summary.currentSteps} steps and ${summary.currentRules.toLocaleString("en-US")} rules match the previous ${esc(data.baselineSourceBuild)} research tables. This verifies the exported APL, not every live spell effect or server hotfix.</p>` +
+        `<ul class="ac-list"><li class="ac-list-item">Devourer: Collapsing Star cancellation and range behavior changed, alongside talent placement and cooldown interactions.</li>` +
+        `<li class="ac-list-item">Marksmanship: Blood Fletching replaces Unload. Outlaw: Deft Maneuvers now scales Blade Flurry’s extra Energy cost by targets hit. Subtlety: Shadow damage modifier handling was corrected.</li>` +
+        `<li class="ac-list-item">Other changes include Restoration’s Nature’s Bounty redesign, Evoker adjustments and Frost Mage bug fixes. These affect spell behavior without rewriting the exported assistant priorities.</li>` +
+        `<li class="ac-list-item">October 27 tuning buffed Feral, Fire, Marksmanship, Unstable Affliction and Rain of Fire, while reducing Subtlety damage. Action overlap does not measure those damage changes.</li></ul>` +
+        `<p class="ac-muted">The SimC comparison is rebuilt from ${summary.profileCount} MID2 profiles at the October 28 commit, replacing the August snapshot. The comparable population changed, so the new median is not a direct patch performance comparison. ` +
+        `<a href="${esc(data.sources.patchNotes)}" target="_blank" rel="noopener noreferrer">Blizzard patch notes ↗</a> <a href="${esc(data.sources.hotfixes)}" target="_blank" rel="noopener noreferrer">Latest hotfix notes ↗</a></p></section>` +
       `<div class="ac-scope">` +
-        `<section class="ac-callout ac-callout--warning"><h3 class="ac-callout__title">How to read this</h3><p class="ac-callout__text">Assisted Combat is a baseline recommendation system, not a complete raid, dungeon, healing, or mitigation plan. Tanks are mostly shown offensive priorities; healer tables are overwhelmingly damage-oriented. Comparisons use a 12.1/MID2 SimC profile where one existed in the research snapshot, otherwise the latest available Midnight profile.</p></section>` +
-        `<section class="ac-callout ac-callout--omissions"><h3 class="ac-callout__title">Common omissions versus SimC</h3><ul class="ac-chip-list">${omissionChips}</ul></section>` +
+        `<section class="ac-callout ac-callout--warning"><h3 class="ac-callout__title">How to read this</h3><p class="ac-callout__text">Assisted Combat is a baseline recommendation system, not a complete raid, dungeon, healing, or mitigation plan. Tanks are mostly shown offensive priorities; healer tables are overwhelmingly damage-oriented. Comparisons use ${summary.profileCount} checked-in MID2 profiles from the pinned SimC snapshot. Balance, Guardian and Devastation have no MID2 profile in that snapshot, so their scores are omitted alongside healers and Augmentation.</p></section>` +
+        `<section class="ac-callout ac-callout--omissions"><h3 class="ac-callout__title">Comparison limits</h3><ul class="ac-chip-list">${omissionChips}</ul></section>` +
       `</div>` +
+      ""
+  );
+
+
+  return (
+    `<div id="ac-root">` +
+      `<style${nonceAttr(NONCE_PLACEHOLDER)}>${css}</style>` +
+      `<section class="ac-intro"><h2 class="ac-title">DPS and rotation comparison</h2><p class="ac-lede">Choose a specialization to compare paired DPS results, Blizzard’s priorities and the actions used by SimC.</p><p class="ac-summary"><span>Patch 12.1.5</span><span>${data.simulations.rows.length} specs simulated</span><span>1, 2, 3 and 5 targets</span></p></section>` +
+
       `<section class="ac-explorer" aria-label="Specialization research explorer">` +
         `<div class="ac-toolbar">` +
           `<label class="ac-field">Search<input class="ui-control ac-input" id="ac-search" type="search" placeholder="Spec, class, action, or missing logic…" autocomplete="off" /></label>` +
           `<label class="ac-field">Class<select class="ui-control ac-select" id="ac-class"><option value="all">All classes</option>${classOptions}</select></label>` +
           `<label class="ac-field">Role<select class="ui-control ac-select" id="ac-role"><option value="all">All roles</option><option>DPS</option><option>Tank</option><option>Healer</option><option>Support DPS</option></select></label>` +
         `</div>` +
-        `<noscript><p class="ac-noscript">Search, filtering, and switching between specializations need JavaScript. Every specialization is listed below and the full analysis for ${initialSpec ? esc(initialSpec.spec + " " + initialSpec.gameClass) : "the first specialization"} is shown, including all three sections.</p></noscript>` +
+        `<noscript><p class="ac-noscript">Search, filtering, and switching between specializations need JavaScript. Every specialization is listed below and the full analysis for ${initialSpec ? esc(initialSpec.spec + " " + initialSpec.gameClass) : "the first specialization"} is shown, including all sections.</p></noscript>` +
         `<p class="ac-sr" id="ac-status" role="status" aria-live="polite"></p>` +
         `<div class="ac-workspace">` +
           `<aside class="ac-browser"><div class="ac-results-head"><strong>Specializations</strong><span id="ac-result-count">${initialSpecs.length} of ${data.specs.length} specs</span></div><div class="ac-results" id="ac-results">${render.renderCards(initialSpecs, initialState)}</div></aside>` +
           initialDetail +
         `</div>` +
       `</section>` +
+      render.renderSimulationOverview(data.simulations) +
+      `<details class="ac-research-details"><summary>Patch changes and action research</summary><div class="ac-research-body">` +
+      researchSections +
+      `</div></details>` +
       `<div class="ac-sources">` +
         `<span class="ac-source-label">Pinned sources</span>` +
         sourceLink(`Wago live ${data.currentBuild}`, data.sources.wagoCurrent) +
         sourceLink("SimulationCraft APLs", data.sources.simc) +
         sourceLink("SimC action list docs", data.sources.simcDocs) +
-        sourceLink("Research workbook", data.sources.googleSheet) +
+        sourceLink("Condition decoder", data.sources.decoder) +
+        sourceLink("12.1.5 patch notes", data.sources.patchNotes) +
       `</div>` +
-      `<p class="ac-provenance">Blizzard data verified ${esc(data.verifiedAt)} on live build ${esc(data.currentBuild)}. Comparison research snapshot: ${esc(data.researchedAt)} · SimulationCraft ${esc(data.simcBranch)} commit <span class="ac-mono">${esc(data.simcCommit.slice(0, 12))}</span>. DB2 rows are exact; readable rule labels follow SimulationCraft's reverse-engineered condition decoder.</p>` +
+      `<p class="ac-provenance">DB2 exports retrieved ${esc(data.verifiedAt)} for live build ${esc(data.currentBuild)}, without Wago’s optional hotfix overlay. SimulationCraft ${esc(data.simcBranch)} commit <span class="ac-mono">${esc(data.simcCommit.slice(0, 12))}</span>. Readable conditions follow SimC’s reverse-engineered decoder; comparison boundaries are provisional, and nonzero undecoded fields are flagged in the affected steps.</p>` +
       `<script type="application/json" id="ac-data">${safeJson}<\/script>` +
       `<script${nonceAttr(NONCE_PLACEHOLDER)}>${clientJs}<\/script>` +
     `</div>`
@@ -570,3 +645,4 @@ export function generateAssistedCombatAnalysis(_attrs: Record<string, string>, n
     ? cachedHtml.replaceAll(NONCE_PLACEHOLDER, nonce)
     : cachedHtml.replaceAll(` nonce="${NONCE_PLACEHOLDER}"`, "");
 }
+
