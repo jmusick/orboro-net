@@ -61,8 +61,8 @@
     "easymde": "2.21.0",
     "font-awesome": "4.7.0",
     "highlight.js": "^11.12.0",
-    "marked": "^18.1.1",
-    "xss": "^1.0.15"
+    "marked": "^18.1.2",
+    "xss": "^1.0.17"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
