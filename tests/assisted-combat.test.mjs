@@ -81,5 +81,5 @@ test('shared server/client renderer has only Blizzard and SimC sections and pinn
   assert.match(html, /data-panel="apl"/);
   assert.ok(searchHaystack(spec).includes(spec.spec.toLowerCase()));
   const unsafe = {...spec, spec:'<script>alert(1)</script>', missingActions:['<img onerror=oops>']};
-  assert.doesNotMatch(renderDetail(unsafe, data, defaultState(data)), /<script>|<img onerror/);
+  assert.doesNotMatch(renderDetail(unsafe, data, defaultState(data)), /<script|<img/i);
 });
