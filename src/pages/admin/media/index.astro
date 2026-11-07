@@ -92,7 +92,7 @@ const errorFields = source === "upload"
               <p class="media-source">{item.url}</p>
             </div>
             <div class="media-footer">
-              <form method="post" action="/api/media/delete" class="delete-form" onsubmit="return confirm('Delete this media record?');">
+              <form method="post" action="/api/media/delete" class="delete-form" data-confirm="Delete this media record?">
                 <input type="hidden" name="id" value={item.id} />
                 <Button type="submit" variant="danger" size="sm" icon="trash-2">
                   Delete
