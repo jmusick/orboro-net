@@ -1,0 +1,32 @@
+---
+import { MAX_SUMMARY_LENGTH } from "../lib/content-writes";
+interface Props { value?: string; }
+const { value = "" } = Astro.props;
+---
+<div class="form-group full">
+  <label for="summary">Summary</label>
+  <textarea id="summary" name="summary" rows="3" maxlength={MAX_SUMMARY_LENGTH} aria-describedby="summary-hint summary-count">{value}</textarea>
+  <small id="summary-hint">Shown on cards, in search results and social previews. Leave empty to use the opening paragraph. Use a single line of plain text.</small>
+  <small id="summary-count" aria-live="polite" aria-atomic="true">{value.length} / {MAX_SUMMARY_LENGTH} characters</small>
+</div>
+<style>
+  small { color: var(--muted); }
+  #summary-count { font-variant-numeric: tabular-nums; }
+</style>
+<script>
+  function initSummaryField() {
+    const field = document.querySelector<HTMLTextAreaElement>("#summary");
+    const count = document.querySelector("#summary-count");
+    if (!field || !count || field.dataset.summaryInit) return;
+    field.dataset.summaryInit = "true";
+    const update = () => {
+      const text = `${field.value.length} / ${field.maxLength} characters`;
+      if (count.textContent !== text) count.textContent = text;
+      field.setCustomValidity(/[\r\n\u2028\u2029]/.test(field.value) ? "Keep the summary on a single line." : "");
+    };
+    field.addEventListener("input", update);
+    update();
+  }
+  initSummaryField();
+  document.addEventListener("astro:page-load", initSummaryField);
+</script>

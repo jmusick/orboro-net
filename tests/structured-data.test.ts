@@ -4,9 +4,21 @@ import {
   ARTICLE_MIN_WORDS, breadcrumbList, classifyPage, graphOf, pageNode, pageTrail, withHome,
 } from '../src/lib/structured-data.ts';
 import { jsonForHtml } from '../src/lib/json.ts';
+import { descriptionFromMarkdown, summaryOrExcerpt } from '../src/lib/excerpt.ts';
 
 const ORIGIN = 'https://orboro.net';
 const longProse = Array.from({ length: ARTICLE_MIN_WORDS + 5 }, (_, i) => `word${i}`).join(' ');
+
+test('page JSON-LD uses the same summary-first description as metadata', () => {
+  for (const type of ['Article', 'WebPage'] as const) {
+    const record = { summary: 'A <useful> guide & reference.', markdown: 'Different opening. {{widget}}' };
+    const description = summaryOrExcerpt(record, 155, descriptionFromMarkdown);
+    const node = pageNode({ type, origin: ORIGIN, path: '/pages/test', title: 'Test', description });
+    assert.equal(node.description, record.summary);
+    assert.ok(jsonForHtml(graphOf(node)).includes('A \\u003cuseful\\u003e guide \\u0026 reference.'));
+    assert.equal(summaryOrExcerpt({ ...record, summary: '' }, 155, descriptionFromMarkdown), 'Different opening.');
+  }
+});
 
 test('shortcode pages are never articles, even with long prose', () => {
   assert.equal(classifyPage(`${longProse}\n\n{{bookmarks}}`), 'WebPage');

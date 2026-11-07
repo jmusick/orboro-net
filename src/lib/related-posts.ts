@@ -1,7 +1,7 @@
 // "Keep reading" row at the end of a post. Dependency-free so tests can run the
 // query against the real migrations without the Workers runtime.
 import { EXCERPT_CHARS, EXCERPT_SOURCE_CHARS, type ListingDB } from "./blog-listing.ts";
-import { excerptFromMarkdown } from "./excerpt.ts";
+import { summaryOrExcerpt } from "./excerpt.ts";
 import { topicTone } from "./topics.ts";
 
 export const RELATED_POSTS_LIMIT = 3;
@@ -61,7 +61,7 @@ export async function queryRelatedPosts(db: ListingDB, contentId: string, limit 
   const rows = await db
     .prepare(
       `WITH mine AS (SELECT category_id FROM content_categories WHERE content_id = ?)
-       SELECT c.id, c.slug, c.title, substr(c.markdown, 1, ${EXCERPT_SOURCE_CHARS}) AS excerpt_source,
+       SELECT c.id, c.slug, c.title, c.summary, substr(c.markdown, 1, ${EXCERPT_SOURCE_CHARS}) AS excerpt_source,
               ranked.date, c.featured_image_url, ranked.shared,
               (SELECT json_group_array(json_object('name', cat.name, 'slug', cat.slug,
                         'shared', cc.category_id IN (SELECT category_id FROM mine)))
@@ -82,14 +82,14 @@ export async function queryRelatedPosts(db: ListingDB, contentId: string, limit 
     )
     .bind(contentId, contentId, Math.max(0, Math.floor(limit)))
     .all<{
-      id: string; slug: string; title: string; excerpt_source: string | null; date: number; featured_image_url: string | null;
+      id: string; slug: string; title: string; summary: string; excerpt_source: string | null; date: number; featured_image_url: string | null;
       shared: number; categories_json: string | null;
     }>();
   return (rows.results ?? []).map((r) => ({
     id: r.id,
     slug: r.slug,
     title: r.title,
-    excerpt: excerptFromMarkdown(r.excerpt_source ?? "", EXCERPT_CHARS),
+    excerpt: summaryOrExcerpt({ summary: r.summary, markdown: r.excerpt_source ?? "" }, EXCERPT_CHARS),
     date: r.date,
     featuredImageUrl: r.featured_image_url,
     sharedCategories: Number(r.shared),

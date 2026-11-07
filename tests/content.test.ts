@@ -57,7 +57,21 @@ function setup(t: { after: (fn: () => void) => void }) {
   }
   sqlite.exec(`INSERT INTO content_categories (content_id, category_id) VALUES
     ('post-draft', 'draft-only'), ('page-draft', 'draft-only'), ('page-wow', 'pages-only');`);
+  return { sqlite };
 }
+
+test('migration defaults summaries to empty and content saves round-trip through public reads', async (t) => {
+  const { sqlite } = setup(t);
+  assert.equal((await content.getPublishedBySlugAndType(locals, 'post-new', 'post'))?.summary, '');
+  const post = await content.getContentById(locals, 'post-new');
+  await content.saveContent(locals, { ...post!, summary: '  Hand-written summary.  ', categoryIds: ['shared'] });
+  assert.equal((await content.getPublishedBySlugAndType(locals, 'post-new', 'post'))?.summary, 'Hand-written summary.');
+  assert.equal((await content.getPublishedContentByType(locals, 'post'))[0].summary, 'Hand-written summary.');
+  assert.equal((await content.getPublishedContentByCategory(locals, 'shared', 'post'))[0].summary, 'Hand-written summary.');
+  sqlite.prepare("UPDATE content SET summary = 'Tool summary.' WHERE id = 'page-wow'").run();
+  assert.equal((await content.listHomepageFeatures(locals)).find(p => p.slug === 'page-wow')?.summary, 'Tool summary.');
+  assert.equal((await content.listFeaturedTools(locals, ['wow']))[0].summary, 'Tool summary.');
+});
 
 test('published slug lookups reject drafts and the wrong page type', async (t) => {
   setup(t);

@@ -12,6 +12,10 @@ export function excerptFromMarkdown(markdown: string, maxLen = 155): string {
     .replace(/\n+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+  return truncatePlainText(plain, maxLen);
+}
+
+function truncatePlainText(plain: string, maxLen: number): string {
   if (plain.length <= maxLen) return plain;
   // Cut at the last word boundary so an excerpt never ends mid-word, unless
   // that would throw away most of the allowance (one very long token).
@@ -21,12 +25,25 @@ export function excerptFromMarkdown(markdown: string, maxLen = 155): string {
   return plain.slice(0, end).replace(/[\s,;:.–—-]+$/, "") + "…";
 }
 
-/**
- * Tool tile copy: the editor's homepage description, else the page's opening
- * prose with shortcode tokens and HTML tags removed. A token or tag left open
- * by a bounded Markdown prefix is dropped too.
+/** Prefer the author's plain-text summary, bounded for the destination. The
+ * optional fallback preserves surfaces with their own Markdown cleanup rules.
+ * Summaries are literal text, never parsed as Markdown or HTML.
  */
-export function toolDescription(page: { homepageDescription: string; markdown: string }, maxLen = 140): string {
+export function summaryOrExcerpt(
+  record: { summary?: string; markdown: string },
+  maxLen = 155,
+  fallback: (markdown: string, maxLen: number) => string = excerptFromMarkdown,
+): string {
+  const summary = record.summary?.trim();
+  return summary ? truncatePlainText(summary, maxLen) : fallback(record.markdown, maxLen);
+}
+
+/**
+ * Tool tile copy: the editor's homepage description, else the page's summary,
+ * else opening prose with shortcode tokens and HTML tags removed. A token or
+ * tag left open by a bounded Markdown prefix is dropped too.
+ */
+export function toolDescription(page: { homepageDescription: string; summary?: string; markdown: string }, maxLen = 140): string {
   if (page.homepageDescription) return page.homepageDescription;
   let prose = page.markdown
     .replace(/\{\{[\s\S]*?\}\}/g, "")
@@ -37,5 +54,26 @@ export function toolDescription(page: { homepageDescription: string; markdown: s
     previous = prose;
     prose = prose.replace(/<[^>]*(?:>|$)/g, "");
   } while (prose !== previous);
-  return excerptFromMarkdown(prose, maxLen);
+  return summaryOrExcerpt({ ...page, markdown: prose }, maxLen);
+}
+
+export function descriptionFromMarkdown(md: string, maxLen = 155): string {
+  const plain = md
+    .replace(/```[\s\S]*?```/g, '')
+    // Shortcode tokens are widget placeholders, not prose. Without this a
+    // shortcode-only page ends up with "{{atlasfarmingstrategies}}" as its
+    // meta description (the underscores get eaten by the emphasis strip).
+    .replace(/\{\{\w+[^}]*\}\}/g, '')
+    // Markdown may contain raw HTML (the About page opens with an <img>), and
+    // an unstripped tag ends up escaped into the meta description verbatim.
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/#{1,6}\s+[^\n]*/g, '')
+    .replace(/!\[.*?\]\(.*?\)/g, '')
+    .replace(/\[(.+?)\]\(.*?\)/g, '$1')
+    .replace(/[*_`~]+/g, '')
+    .replace(/^\s*[-*+>|]\s*/gm, '')
+    .replace(/\n+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return plain.length > maxLen ? plain.slice(0, maxLen).trimEnd() + '…' : plain;
 }

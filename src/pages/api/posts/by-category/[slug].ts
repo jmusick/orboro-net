@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { excerptFromMarkdown, getCategoryBySlug, getPublishedContentByCategory } from "../../../../lib/content";
+import { summaryOrExcerpt, getCategoryBySlug, getPublishedContentByCategory } from "../../../../lib/content";
 
 // Public, read-only feed of published posts for a category — consumed by other
 // sites (e.g. HiddenLodgeWebsite's /articles) that want to embed Orboro posts
@@ -41,7 +41,7 @@ export const GET: APIRoute = async ({ params, site, request, locals }) => {
       title: post.title,
       slug: post.slug,
       url: `${origin}/blog/${post.slug}`,
-      excerpt: excerptFromMarkdown(post.markdown),
+      excerpt: summaryOrExcerpt(post),
       publishedAt: post.publishedAt ? new Date(post.publishedAt).toISOString() : null,
       featuredImageUrl: post.featuredImageUrl
         ? new URL(post.featuredImageUrl, origin).toString()
