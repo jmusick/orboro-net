@@ -6,23 +6,35 @@ import { runInNewContext } from 'node:vm';
 const layout = readFileSync(new URL('../src/layouts/AdminLayout.astro', import.meta.url), 'utf8');
 const controller = layout.match(/<script([^>]*id="admin-confirm-controller"[^>]*)>([\s\S]*?)<\/script>/);
 
-function harness() {
+function harness(withRouter = false) {
   const listeners = new Map();
   const prompts = [];
   class HTMLFormElement {
     constructor(message) { this.dataset = message === undefined ? {} : { confirm: message }; }
   }
-  const document = { addEventListener(name, listener) {
+  let navigations = 0;
+  const document = { addEventListener(name, listener, options = {}) {
     const handlers = listeners.get(name) || [];
-    handlers.push(listener);
+    handlers.push({ listener, capture: options === true || options.capture === true });
     listeners.set(name, handlers);
   } };
   const window = { confirm(message) { prompts.push(message); return window.approved; }, approved: false };
   const context = { document, window, HTMLFormElement };
   const run = () => runInNewContext(controller[2], context);
-  const emit = (name, event = {}) => (listeners.get(name) || []).forEach(fn => fn(event));
+  const emit = (name, event = {}) => {
+    const handlers = listeners.get(name) || [];
+    for (const capture of [true, false]) {
+      handlers.filter(handler => handler.capture === capture).forEach(({ listener }) => listener(event));
+    }
+  };
+  // Public ClientRouter may already be installed before navigating into admin.
+  if (withRouter) document.addEventListener('submit', event => {
+    if (event.defaultPrevented) return;
+    event.preventDefault();
+    navigations++;
+  });
   run();
-  return { window, prompts, listeners, run, emit, submit(message, defaultPrevented = false) {
+  return { window, prompts, listeners, run, emit, get navigations() { return navigations; }, submit(message, defaultPrevented = false) {
     const event = { target: new HTMLFormElement(message), defaultPrevented, preventDefault() { this.defaultPrevented = true; } };
     emit('submit', event);
     return event;
@@ -68,4 +80,18 @@ test('all three delete forms declare confirmation without inline handlers', () =
     assert.doesNotMatch(form, /onsubmit=/);
     assert.match(form, /method="post"/);
   }
+});
+
+
+test('confirmation precedes a persistent ClientRouter bubble listener', () => {
+  const browser = harness(true);
+  browser.submit('Delete this item?');
+  assert.equal(browser.navigations, 0);
+  assert.deepEqual(browser.prompts, ['Delete this item?']);
+  browser.window.approved = true;
+  browser.submit('Delete this item?');
+  assert.equal(browser.navigations, 1);
+  assert.equal(browser.prompts.length, 2);
+  browser.submit();
+  assert.equal(browser.navigations, 2);
 });
