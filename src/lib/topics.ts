@@ -36,6 +36,14 @@ export function gameHubsForCategories(slugs: string[]): GameHub[] {
   return GAME_HUBS.filter((hub) => tones.has(hub.tone));
 }
 
+/** Broad categories stay available elsewhere, but add no homepage topic choice. */
+export const UMBRELLA_TOPICS: ReadonlySet<string> = new Set(["gaming"]);
+
+/** Preserve the caller's ordering while removing homepage umbrella topics. */
+export function homepageTopics<T extends { slug: string }>(categories: T[]): T[] {
+  return categories.filter((category) => !UMBRELLA_TOPICS.has(category.slug));
+}
+
 export interface CoverCandidate {
   categoryId: string;
   imageUrl: string;
@@ -43,16 +51,20 @@ export interface CoverCandidate {
 
 /**
  * Give each category the newest post artwork that no earlier category has
- * already taken, so overlapping categories (Gaming and World of Warcraft) don't
- * show the same banner. `candidates` must be newest first; `categoryIds` is the
- * order categories claim art in. Falls back to a shared image rather than none.
+ * already taken, including artwork elsewhere on the page. `candidates` must be
+ * newest first; `categoryIds` is the order categories claim art in. Categories
+ * with no unused artwork have no entry, so their plain tile can render.
  */
-export function assignCovers(categoryIds: string[], candidates: CoverCandidate[]): Map<string, string> {
+export function assignCovers(
+  categoryIds: string[],
+  candidates: CoverCandidate[],
+  takenImageUrls: Iterable<string> = [],
+): Map<string, string> {
   const covers = new Map<string, string>();
-  const taken = new Set<string>();
+  const taken = new Set(takenImageUrls);
   for (const id of categoryIds) {
     const own = candidates.filter((c) => c.categoryId === id);
-    const pick = own.find((c) => !taken.has(c.imageUrl)) ?? own[0];
+    const pick = own.find((c) => !taken.has(c.imageUrl));
     if (!pick) continue;
     covers.set(id, pick.imageUrl);
     taken.add(pick.imageUrl);
