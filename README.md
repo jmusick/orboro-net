@@ -193,9 +193,11 @@ npm run scan:secrets:self-test    # proves a synthetic leak is caught and a clea
 
 Numbered migrations in `migrations/` apply in order. Tables: `users`, `sessions`, `content`, `media`, `categories`, `content_categories`, `nav_items`, `login_attempts`.
 
-Page and post Markdown is stored in `content.markdown`. Local D1 (`.wrangler/state/v3/d1`) is separate from production: content edited locally, through the admin UI or `wrangler d1 execute DB --local`, doesn't appear on the live site until it is reproduced against remote D1. Re-runnable seed scripts for individual pages and posts follow the pattern described in [AGENTS.md](AGENTS.md).
+Page and post Markdown is stored in `content.markdown`. The editor's optional Summary field stores up to 200 characters of single-line plain text in `content.summary`. Cards, the homepage lead, search and social previews, RSS descriptions and public API excerpts use it when supplied; leaving it empty keeps the Markdown-derived description. A tool's homepage card description overrides its summary. Blog search also matches summaries.
 
-The homepage combines a latest-article hero, featured tool pages grouped by game, and four recent articles. In the content editor, use **Feature on homepage**, choose a group and set the display order (lower first within each group). Only published pages are eligible. Card descriptions can be supplied explicitly or fall back to introductory Markdown.
+Local D1 (`.wrangler/state/v3/d1`) is separate from production: content edited locally, through the admin UI or `wrangler d1 execute DB --local`, doesn't appear on the live site until it is reproduced against remote D1. Re-runnable seed scripts for individual pages and posts follow the pattern described in [AGENTS.md](AGENTS.md).
+
+The homepage combines a latest-article hero, featured tool pages grouped by game, and four recent articles. In the content editor, use **Feature on homepage**, choose a group and set the display order (lower first within each group). Only published pages are eligible. Card descriptions can be supplied explicitly or fall back to the summary, then introductory Markdown.
 
 ### Disaster recovery
 
