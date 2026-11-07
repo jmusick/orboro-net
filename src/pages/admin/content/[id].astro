@@ -100,7 +100,7 @@ const selectedCategoryIds = await getContentCategoryIds(Astro.locals, id);
     <section class="delete-section">
       <h3>Danger Zone</h3>
       <p>Delete this content item permanently. This action cannot be undone.</p>
-      <form method="post" action="/api/content/delete" class="delete-form">
+      <form method="post" action="/api/content/delete" class="delete-form" data-confirm="Delete this content item? This cannot be undone.">
         <input type="hidden" name="id" value={content.id} />
         <Button type="submit" variant="danger" icon="trash-2">
           Delete Content
