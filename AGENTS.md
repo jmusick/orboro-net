@@ -114,6 +114,8 @@ Breadcrumbs (`Breadcrumbs.astro`) render the same trail the JSON-LD describes. P
 
 ## Form feedback
 
+Admin content, category and media delete forms declare their prompt in `data-confirm`. `AdminLayout.astro` installs one nonce-authorized delegated submit listener in capture phase, before ClientRouter can intercept the form; keep confirmations out of inline event-handler attributes, which CSP blocks. Run `node --test tests/admin-confirm.test.mjs` when changing it.
+
 `src/components/FormMessage.astro` provides shared form feedback: successes are an atomic polite status; errors take focus on arrival and link to the relevant controls, with descriptions associated without marking every linked field invalid. Keep existing hint IDs when extending `aria-describedby`. Markdown-field links must focus EasyMDE's generated input, which inherits the source textarea's error descriptions. The controller guards each summary and initializes on `astro:page-load`. Don't move focus for filtering or simulator updates; use concise polite statuses and avoid rewriting unchanged text. Content/category validation redirects return to the editor without retaining unsaved values.
 
 ## Content model and D1
