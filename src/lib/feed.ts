@@ -1,5 +1,11 @@
 import { marked } from 'marked';
 import xss from 'xss';
+import { summaryOrExcerpt } from './excerpt.ts';
+
+/** Preserve the feed's shortcode-free fallback when no summary was supplied. */
+export function feedDescription(record: { summary?: string; markdown: string }): string {
+  return summaryOrExcerpt({ ...record, markdown: record.markdown.replace(/\{\{\w+[^}]*\}\}/g, '') });
+}
 
 // Feed markup is kept for reader portability, rather than passed through the
 // site's author-content allowlist. Use the HTML parser to omit script/style

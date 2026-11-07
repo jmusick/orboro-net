@@ -13,7 +13,7 @@ import {
   getPublishedBySlugAndType,
   listPostSummaries,
   getContentCategories,
-  excerptFromMarkdown,
+  summaryOrExcerpt,
   listCategoriesWithPostCounts,
   listFeaturedTools,
   listRelatedPosts,
@@ -78,7 +78,7 @@ const showToc = headings.length >= 3;
 
 const updated = new Date(post.updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
-const description = excerptFromMarkdown(post.markdown);
+const description = summaryOrExcerpt(post);
 
 const readingMinutes = estimateReadingMinutes(post.markdown);
 

@@ -13,7 +13,8 @@ function makeDb() {
   const sqlite = new DatabaseSync(':memory:');
   sqlite.exec(`
     CREATE TABLE content (id TEXT PRIMARY KEY, slug TEXT UNIQUE NOT NULL, title TEXT NOT NULL, markdown TEXT NOT NULL,
-      page_type TEXT NOT NULL, status TEXT NOT NULL, published_at INTEGER, created_at INTEGER NOT NULL, featured_image_url TEXT);
+      page_type TEXT NOT NULL, status TEXT NOT NULL, published_at INTEGER, created_at INTEGER NOT NULL, featured_image_url TEXT,
+      summary TEXT NOT NULL DEFAULT '');
     CREATE TABLE categories (id TEXT PRIMARY KEY, name TEXT NOT NULL);
     CREATE TABLE content_categories (content_id TEXT NOT NULL, category_id TEXT NOT NULL);
   `);
@@ -26,11 +27,11 @@ function makeDb() {
     }),
   };
   let n = 0;
-  const add = (o: Partial<{ title: string; markdown: string; type: string; status: string; at: number | null; created: number; image: string | null; cats: string[] }> = {}) => {
+  const add = (o: Partial<{ title: string; markdown: string; summary: string; type: string; status: string; at: number | null; created: number; image: string | null; cats: string[] }> = {}) => {
     const id = `id${++n}`;
-    sqlite.prepare('INSERT INTO content VALUES (?,?,?,?,?,?,?,?,?)').run(
+    sqlite.prepare('INSERT INTO content VALUES (?,?,?,?,?,?,?,?,?,?)').run(
       id, `post-${n}`, o.title ?? `Post ${n}`, o.markdown ?? `Body ${n}`, o.type ?? 'post', o.status ?? 'published',
-      o.at === undefined ? 1000 + n : o.at, o.created ?? 1, o.image ?? null);
+      o.at === undefined ? 1000 + n : o.at, o.created ?? 1, o.image ?? null, o.summary ?? '');
     for (const name of o.cats ?? []) {
       sqlite.prepare('INSERT OR IGNORE INTO categories VALUES (?,?)').run(`cat-${name}`, name);
       sqlite.prepare('INSERT INTO content_categories VALUES (?,?)').run(id, `cat-${name}`);
@@ -125,6 +126,21 @@ test('filtered results paginate by the filtered total', async () => {
   for (let i = 0; i < 5; i++) add({ title: `Other ${i}` });
   const p2 = await queryBlogPage(db, { page: 2, filters: { q: 'match', sort: 'newest' } });
   assert.deepEqual([p2.total, p2.totalPages, p2.posts.length], [15, 2, 3]);
+});
+
+test('summary is used for cards and search, including literal wildcard characters', async () => {
+  const { db, add } = makeDb();
+  add({ title: 'Summarized', markdown: 'Unrelated body.', summary: 'Queue_100%: A & B with **literal** punctuation.' });
+  add({ title: 'Draft', summary: 'Queue_100%', status: 'draft' });
+  add({ title: 'Page', summary: 'Queue_100%', type: 'page' });
+  add({ title: 'Fallback', markdown: 'Original **opening**.' });
+  for (const q of ['queue', '_', '%', 'Queue_100%']) {
+    const result = await queryBlogPage(db, { page: 1, filters: { q, sort: 'newest' } });
+    assert.equal(result.total, 1);
+    assert.equal(result.posts[0].excerpt, 'Queue_100%: A & B with **literal** punctuation.');
+  }
+  const result = await queryBlogPage(db, { page: 1, filters: NEWEST });
+  assert.equal(result.posts.find(p => p.title === 'Fallback')?.excerpt, 'Original opening.');
 });
 
 test('queries read a bounded body prefix only, and attach categories for the page', async () => {

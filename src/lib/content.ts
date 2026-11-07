@@ -13,7 +13,7 @@ import { EXCERPT_SOURCE_CHARS, queryBlogPage, type BlogFilters, type BlogPage } 
 import { queryRelatedPosts, RELATED_POSTS_LIMIT, type RelatedPost } from "./related-posts";
 import type { CoverCandidate } from "./topics";
 
-export { excerptFromMarkdown } from "./excerpt";
+export { excerptFromMarkdown, summaryOrExcerpt } from "./excerpt";
 
 export type ContentStatus = "draft" | "published";
 
@@ -22,6 +22,7 @@ export interface ContentRecord {
   slug: string;
   title: string;
   markdown: string;
+  summary: string;
   pageType: string;
   status: ContentStatus;
   authorId: string;
@@ -51,6 +52,7 @@ function mapContentRow(row: any): ContentRecord {
     slug: row.slug,
     title: row.title,
     markdown: row.markdown,
+    summary: row.summary ?? "",
     pageType: row.page_type,
     status: row.status,
     authorId: row.author_id,
@@ -98,7 +100,7 @@ export async function listHomepageFeatures(locals: App.Locals): Promise<ContentR
   return (result.results ?? []).map(mapContentRow);
 }
 
-export type FeaturedTool = Pick<ContentRecord, "id" | "slug" | "title" | "homepageGroup" | "homepageDescription" | "markdown">;
+export type FeaturedTool = Pick<ContentRecord, "id" | "slug" | "title" | "homepageGroup" | "homepageDescription" | "summary" | "markdown">;
 
 // Featured tool pages in the given homepage groups, in homepage order. `markdown`
 // is only the opening prefix, enough for `toolDescription`.
@@ -106,18 +108,19 @@ export async function listFeaturedTools(locals: App.Locals, groups: string[]): P
   const db = getDB(locals);
   if (!db || groups.length === 0) return [];
   const result = await db.prepare(
-    `SELECT id, slug, title, homepage_group, homepage_description, substr(markdown, 1, ${EXCERPT_SOURCE_CHARS}) AS markdown_prefix
+    `SELECT id, slug, title, homepage_group, homepage_description, summary, substr(markdown, 1, ${EXCERPT_SOURCE_CHARS}) AS markdown_prefix
      FROM content
      WHERE page_type = 'page' AND status = 'published' AND homepage_featured = 1
        AND homepage_group IN (${groups.map(() => "?").join(",")})
      ORDER BY homepage_order ASC, title COLLATE NOCASE ASC, id ASC`,
-  ).bind(...groups).all<{ id: string; slug: string; title: string; homepage_group: string; homepage_description: string | null; markdown_prefix: string | null }>();
+  ).bind(...groups).all<{ id: string; slug: string; title: string; homepage_group: string; homepage_description: string | null; summary: string; markdown_prefix: string | null }>();
   return (result.results ?? []).map((row) => ({
     id: row.id,
     slug: row.slug,
     title: row.title,
     homepageGroup: row.homepage_group,
     homepageDescription: row.homepage_description ?? "",
+    summary: row.summary,
     markdown: row.markdown_prefix ?? "",
   }));
 }

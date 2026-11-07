@@ -10,6 +10,7 @@ export const MAX_CLIENT_ID_LENGTH = 100;
 export const MAX_ID_LENGTH = 100;
 export const MAX_CATEGORIES_PER_CONTENT = 100;
 export const MAX_TITLE_LENGTH = 200;
+export const MAX_SUMMARY_LENGTH = 200;
 export const MAX_SLUG_LENGTH = 200;
 export const MAX_MARKDOWN_LENGTH = 200_000;
 export const MAX_IMAGE_URL_LENGTH = 2048;
@@ -29,7 +30,7 @@ const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const CONTROL_OR_SPACE = /[\s\u0000-\u001f\u007f-\u009f]/;
 
 // `code` selects the editor's error message (`?error=<code>`).
-export type WriteErrorCode = "invalid" | "homepage" | "image";
+export type WriteErrorCode = "invalid" | "homepage" | "image" | "summary";
 
 export class WriteValidationError extends Error {
   code: WriteErrorCode;
@@ -222,6 +223,7 @@ export interface ContentWriteInput {
   slug: string;
   title: string;
   markdown: string;
+  summary?: string;
   pageType: string;
   status: "draft" | "published";
   authorId: string;
@@ -239,6 +241,10 @@ export interface ContentWriteInput {
 export function validateContentInput(input: ContentWriteInput): void {
   if (input.id !== undefined && parseRecordId(input.id) !== input.id) throw new WriteValidationError("Invalid content id.");
   if (!within(input.title, MAX_TITLE_LENGTH)) throw new WriteValidationError("Invalid title.");
+  const summary = input.summary ?? "";
+  if (typeof summary !== "string" || summary.trim().length > MAX_SUMMARY_LENGTH || /[\r\n\u2028\u2029]/.test(summary)) {
+    throw new WriteValidationError("Summary must be a single line of at most 200 characters.", "summary");
+  }
   if (typeof input.slug !== "string" || input.slug.length > MAX_SLUG_LENGTH || !SLUG_PATTERN.test(input.slug)) {
     throw new WriteValidationError("Invalid slug.");
   }
@@ -289,6 +295,7 @@ export async function saveContentWithCategories(
   if (categoryIds.some((id) => !known.has(id))) throw new WriteValidationError("Unknown category.");
 
   const featuredImageUrl = input.featuredImageUrl || null;
+  const summary = (input.summary ?? "").trim();
   const homepageValues = [
     input.homepageFeatured ? 1 : 0,
     input.homepageGroup ?? "other",
@@ -308,10 +315,10 @@ export async function saveContentWithCategories(
                published_at = CASE WHEN status = 'draft' AND ? = 'published' THEN ? ELSE published_at END,
                updated_at = ?, featured_image_url = ?,
                homepage_featured = ?, homepage_group = ?, homepage_order = ?, homepage_description = ?,
-               comments_mode = ?
+               comments_mode = ?, summary = ?
            WHERE id = ?`,
         )
-        .bind(input.slug, input.title, input.markdown, input.pageType, input.status, input.status, now, now, featuredImageUrl, ...homepageValues, id),
+        .bind(input.slug, input.title, input.markdown, input.pageType, input.status, input.status, now, now, featuredImageUrl, ...homepageValues, summary, id),
     );
   } else {
     statements.push(
@@ -319,10 +326,10 @@ export async function saveContentWithCategories(
         .prepare(
           `INSERT INTO content
            (id, slug, title, markdown, page_type, status, author_id, published_at, created_at, updated_at, featured_image_url,
-            homepage_featured, homepage_group, homepage_order, homepage_description, comments_mode)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            homepage_featured, homepage_group, homepage_order, homepage_description, comments_mode, summary)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
-        .bind(id, input.slug, input.title, input.markdown, input.pageType, input.status, input.authorId, input.status === "published" ? now : null, now, now, featuredImageUrl, ...homepageValues),
+        .bind(id, input.slug, input.title, input.markdown, input.pageType, input.status, input.authorId, input.status === "published" ? now : null, now, now, featuredImageUrl, ...homepageValues, summary),
     );
   }
   statements.push(db.prepare("DELETE FROM content_categories WHERE content_id = ?").bind(id));

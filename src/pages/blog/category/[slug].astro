@@ -5,7 +5,7 @@ import PageHeader from "../../../components/PageHeader.astro";
 import Sidebar from "../../../components/Sidebar.astro";
 import SidebarLayout from "../../../components/SidebarLayout.astro";
 import { breadcrumbList, graphOf } from "../../../lib/structured-data";
-import { getCategoryBySlug, getPublishedContentByCategory, excerptFromMarkdown, listCategoriesWithPostCounts, listPostSummaries } from "../../../lib/content";
+import { getCategoryBySlug, getPublishedContentByCategory, summaryOrExcerpt, listCategoriesWithPostCounts, listPostSummaries } from "../../../lib/content";
 
 const { slug } = Astro.params;
 if (!slug) return Astro.redirect("/blog");
@@ -59,7 +59,7 @@ const structuredData = graphOf(
           <StoryCard title={post.title} slug={post.slug} image={post.featuredImageUrl} category={category} headingLevel="h2"
             dateIso={new Date(post.publishedAt ?? post.createdAt).toISOString()}
             dateLabel={new Date(post.publishedAt ?? post.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
-            excerpt={excerptFromMarkdown(post.markdown, 140)} />
+            excerpt={summaryOrExcerpt(post, 140)} />
         ))}
       </div>
     )}

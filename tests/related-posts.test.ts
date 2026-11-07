@@ -47,6 +47,16 @@ test('drafts and pages never appear', async () => {
   assert.deepEqual(related.map((p) => p.id), ['wow-post', 'post1']);
 });
 
+test('related cards prefer summaries and keep the body fallback when cleared', async () => {
+  const { db, sqlite, add } = setup();
+  add('current', 500, ['wow']);
+  add('related', 100, ['wow'], { markdown: 'Original **body**.' });
+  sqlite.prepare("UPDATE content SET summary = 'A hand-written summary.' WHERE id = 'related'").run();
+  assert.equal((await queryRelatedPosts(db, 'current'))[0].excerpt, 'A hand-written summary.');
+  sqlite.prepare("UPDATE content SET summary = '' WHERE id = 'related'").run();
+  assert.equal((await queryRelatedPosts(db, 'current'))[0].excerpt, 'Original body.');
+});
+
 test('a short related row is topped up with the newest other posts, without duplicates', async () => {
   const { db, add } = setup();
   add('current', 500, ['wow', 'gaming']);
