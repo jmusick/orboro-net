@@ -14,7 +14,7 @@ import {
 	getContentCategories,
 } from "../lib/content";
 import { responsiveImage, ART_WIDTHS } from "../lib/images";
-import { assignCovers, topicTone } from "../lib/topics";
+import { assignCovers, homepageTopics, topicTone } from "../lib/topics";
 
 const [rawPosts, featuredPages, categories, coverCandidates] = await Promise.all([
 	getPublishedContentByType(Astro.locals, "post", 5),
@@ -37,9 +37,10 @@ const posts = rawPosts.map((post, index) => {
 const lead = posts[0];
 const latest = posts.slice(1);
 
-// Larger topics claim cover art first, so overlapping ones don't repeat it.
-const topics = [...categories].sort((a, b) => b.postCount - a.postCount || a.name.localeCompare(b.name));
-const covers = assignCovers(topics.map((topic) => topic.id), coverCandidates);
+// Larger topics claim unused artwork first; broad umbrella categories stay off this list.
+const topics = homepageTopics(categories).sort((a, b) => b.postCount - a.postCount || a.name.localeCompare(b.name));
+const takenImageUrls = posts.flatMap((post) => post.featuredImageUrl ? [post.featuredImageUrl] : []);
+const covers = assignCovers(topics.map((topic) => topic.id), coverCandidates, takenImageUrls);
 const noun = (n: number) => (n === 1 ? "post" : "posts");
 ---
 
