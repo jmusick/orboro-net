@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { registerHooks } from "node:module";
+import { register } from "node:module";
 import { test } from "node:test";
 
 // Replace only the widget imports made by shortcodes.ts. The parser and registry
@@ -11,29 +11,20 @@ const exports = [
   "generateHiddenLodgeFeature", "generateAssistedCombatAnalysis", "generateMidnightCreatorAccuracyTierList",
   "generateMidnightSheetLink", "generateMidnightTierList", "generateMidnightS2Interrupts", "generateSpellQueueLab",
 ];
-const hooks = registerHooks({
-  resolve(specifier, context, nextResolve) {
-    if (context.parentURL === shortcodeUrl && specifier.startsWith("./")) {
-      return { url: `shortcode-test:${specifier}`, shortCircuit: true };
-    }
-    return nextResolve(specifier, context);
-  },
-  load(url, context, nextLoad) {
-    if (url.startsWith("shortcode-test:")) {
-      return {
-        format: "module",
-        source: `async function generate(attrs, nonce) {
-          if (attrs.delay) await new Promise(resolve => setTimeout(resolve, Number(attrs.delay)));
-          return JSON.stringify({ attrs, nonce });
-        }\n${exports.map(name => `export const ${name} = generate;`).join("\n")}`,
-        shortCircuit: true,
-      };
-    }
-    return nextLoad(url, context);
-  },
-});
+const widgetSource = `async function generate(attrs, nonce) {
+  if (attrs.delay) await new Promise(resolve => setTimeout(resolve, Number(attrs.delay)));
+  return JSON.stringify({ attrs, nonce });
+}\n${exports.map(name => `export const ${name} = generate;`).join("\n")}`;
+const widgetUrl = `data:text/javascript,${encodeURIComponent(widgetSource)}`;
+const loaderSource = `export async function resolve(specifier, context, nextResolve) {
+  if (context.parentURL === ${JSON.stringify(shortcodeUrl)} && specifier.startsWith("./")) {
+    return { url: ${JSON.stringify(widgetUrl)}, shortCircuit: true };
+  }
+  return nextResolve(specifier, context);
+}`;
+// Async loader hooks work on the project's minimum supported Node 22.12.
+register(`data:text/javascript,${encodeURIComponent(loaderSource)}`, import.meta.url);
 const { processShortcodes } = await import("../src/lib/shortcodes.ts");
-hooks.deregister();
 
 const generated = (attrs: Record<string, string> = {}, nonce?: string) => JSON.stringify({ attrs, nonce });
 
