@@ -7,7 +7,7 @@ import FormMessage from "../../components/FormMessage.astro";
 import StoryCard from "../../components/StoryCard.astro";
 import TopicChip from "../../components/TopicChip.astro";
 import { requireAdmin } from "../../lib/http";
-import { getPublishedContentByType, summaryOrExcerpt } from "../../lib/content";
+import { getPublishedContentByType, summaryOrExcerpt, CARD_EXCERPT_LENGTH } from "../../lib/content";
 import { generateExpeditionRumourSheet } from "../../lib/expedition-rumours";
 
 const access = requireAdmin(Astro);
@@ -16,7 +16,7 @@ const [post] = await getPublishedContentByType(Astro.locals, "post", 1);
 const date = post ? new Date(post.publishedAt ?? post.createdAt) : null;
 const dateIso = date?.toISOString() ?? "";
 const dateLabel = date?.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) ?? "";
-const excerpt = post ? summaryOrExcerpt(post, 140) : "";
+const excerpt = post ? summaryOrExcerpt(post, CARD_EXCERPT_LENGTH) : "";
 const showError = Astro.url.searchParams.has("error");
 const colors = ["bg", "surface", "surface-2", "text", "muted", "accent", "line", "line-strong", "game-wow", "game-poe"];
 ---

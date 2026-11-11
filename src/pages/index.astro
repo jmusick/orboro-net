@@ -8,6 +8,7 @@ import FeaturedTools from "../components/FeaturedTools.astro";
 import {
 	getPublishedContentByType,
 	summaryOrExcerpt,
+	CARD_EXCERPT_LENGTH,
 	listCategoriesWithPostCounts,
 	listCategoryCoverCandidates,
 	listHomepageFeatures,
@@ -28,7 +29,9 @@ const posts = rawPosts.map((post, index) => {
 	return {
 		...post,
 		categories: postCategories[index],
+		// The lead keeps a longer excerpt; cards share CARD_EXCERPT_LENGTH.
 		excerpt: summaryOrExcerpt(post, 180),
+		cardExcerpt: summaryOrExcerpt(post, CARD_EXCERPT_LENGTH),
 		dateIso: new Date(date).toISOString(),
 		dateLabel: new Date(date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
 	};
@@ -85,7 +88,7 @@ const noun = (n: number) => (n === 1 ? "post" : "posts");
 				<div class="story-grid">
 					{latest.map((post) => (
 						<StoryCard imageSizes="auto, (max-width: 559px) 92vw, (max-width: 1279px) calc((92vw - 24px) / 2), (max-width: 1439px) calc((100vw - 184px) / 4), 314px" slug={post.slug} title={post.title} image={post.featuredImageUrl}
-							dateIso={post.dateIso} dateLabel={post.dateLabel} excerpt={post.excerpt}
+							dateIso={post.dateIso} dateLabel={post.dateLabel} excerpt={post.cardExcerpt}
 							category={post.categories[0] ?? null} />
 					))}
 				</div>

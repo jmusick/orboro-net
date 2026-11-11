@@ -1,4 +1,15 @@
 // Dependency-free so tests and the listing query can use it without the Workers runtime.
+
+/**
+ * Story-card excerpt length, shared by every StoryCard caller. Measured in
+ * Hanken Grotesk at 1rem / 1.6 against the published posts' openings: 100
+ * characters fit in three lines on cards 17rem (273px) and wider (homepage at
+ * 1280px+, /blog, category pages) and in four on the narrowest cards, the
+ * three-across "Keep reading" row at 768px (~14rem, 222px), where four lines
+ * hold up to 110. StoryCard's four-line clamp is only a safety net for wide
+ * glyphs and zoomed text; lengthening this makes the clamp cut words again.
+ */
+export const CARD_EXCERPT_LENGTH = 100;
 export function excerptFromMarkdown(markdown: string, maxLen = 155): string {
   const plain = markdown
     .replace(/```[\s\S]*?```/g, "")

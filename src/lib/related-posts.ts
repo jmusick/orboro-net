@@ -1,7 +1,7 @@
 // "Keep reading" row at the end of a post. Dependency-free so tests can run the
 // query against the real migrations without the Workers runtime.
-import { EXCERPT_CHARS, EXCERPT_SOURCE_CHARS, type ListingDB } from "./blog-listing.ts";
-import { summaryOrExcerpt } from "./excerpt.ts";
+import { EXCERPT_SOURCE_CHARS, type ListingDB } from "./blog-listing.ts";
+import { CARD_EXCERPT_LENGTH, summaryOrExcerpt } from "./excerpt.ts";
 import { topicTone } from "./topics.ts";
 
 export const RELATED_POSTS_LIMIT = 3;
@@ -89,7 +89,7 @@ export async function queryRelatedPosts(db: ListingDB, contentId: string, limit 
     id: r.id,
     slug: r.slug,
     title: r.title,
-    excerpt: summaryOrExcerpt({ summary: r.summary, markdown: r.excerpt_source ?? "" }, EXCERPT_CHARS),
+    excerpt: summaryOrExcerpt({ summary: r.summary, markdown: r.excerpt_source ?? "" }, CARD_EXCERPT_LENGTH),
     date: r.date,
     featuredImageUrl: r.featured_image_url,
     sharedCategories: Number(r.shared),

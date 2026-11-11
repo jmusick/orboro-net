@@ -13,7 +13,7 @@ import { EXCERPT_SOURCE_CHARS, queryBlogPage, type BlogFilters, type BlogPage } 
 import { queryRelatedPosts, RELATED_POSTS_LIMIT, type RelatedPost } from "./related-posts";
 import type { CoverCandidate } from "./topics";
 
-export { excerptFromMarkdown, summaryOrExcerpt } from "./excerpt";
+export { excerptFromMarkdown, summaryOrExcerpt, CARD_EXCERPT_LENGTH } from "./excerpt";
 
 export type ContentStatus = "draft" | "published";
 
