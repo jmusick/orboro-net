@@ -48,11 +48,14 @@ const artwork = image ? responsiveImage(image, ART_WIDTHS, Astro.props.imageSize
   .story__title a { color: var(--text); text-decoration: none; transition: color var(--transition-fast); }
   .story__title a:hover { color: var(--accent); }
 
+  /* Callers pass CARD_EXCERPT_LENGTH (src/lib/excerpt.ts), which fits in three
+     lines on most cards and four on the narrowest. The clamp is a safety net for
+     wide glyphs and zoomed text, not the truncation: it cuts mid-word. */
   .story__excerpt {
     display: -webkit-box;
     -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-    line-clamp: 3;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
     overflow: hidden;
     margin: 0;
     color: var(--muted);

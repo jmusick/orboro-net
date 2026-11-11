@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { CARD_EXCERPT_LENGTH } from '../src/lib/excerpt.ts';
 import { pickKicker, queryRelatedPosts } from '../src/lib/related-posts.ts';
 import { makeMigratedDb, seedContent } from './helpers/d1.ts';
 
@@ -100,7 +101,7 @@ Opening **words** here. ${'x'.repeat(2000)}` });
   assert.equal(kicker('untagged'), null);
   const card = related.find((p) => p.id === 'wow-gaming')!;
   assert.ok(card.excerpt.startsWith('Opening words here.'));
-  assert.ok(card.excerpt.length <= 141);
+  assert.ok(card.excerpt.length <= CARD_EXCERPT_LENGTH + 1);
 });
 
 test('kicker choice: shared game category, then shared by name, then first by name', () => {

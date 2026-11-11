@@ -1,10 +1,9 @@
-import { summaryOrExcerpt } from "./excerpt.ts";
+import { CARD_EXCERPT_LENGTH, summaryOrExcerpt } from "./excerpt.ts";
 
-// Cards show ~140 characters of plain text. Markdown syntax, headings and code
-// fences are stripped first, so read a generous bounded prefix instead of the
+// Cards show CARD_EXCERPT_LENGTH characters of plain text. Markdown syntax, headings
+// and code fences are stripped first, so read a generous bounded prefix instead of the
 // whole article body. Search matches the summary and same prefix, not the full text.
 export const EXCERPT_SOURCE_CHARS = 1200;
-export const EXCERPT_CHARS = 140;
 // 12 divides evenly into the 1-, 2- and 3-column grid layouts.
 export const BLOG_PAGE_SIZE = 12;
 export const MAX_QUERY_CHARS = 100;
@@ -139,7 +138,7 @@ export async function queryBlogPage(
       id: r.id,
       slug: r.slug,
       title: r.title,
-      excerpt: summaryOrExcerpt({ summary: r.summary, markdown: r.excerpt_source ?? "" }, EXCERPT_CHARS),
+      excerpt: summaryOrExcerpt({ summary: r.summary, markdown: r.excerpt_source ?? "" }, CARD_EXCERPT_LENGTH),
       date: r.date,
       featuredImageUrl: r.featured_image_url,
       categories: categories[r.id] ?? [],

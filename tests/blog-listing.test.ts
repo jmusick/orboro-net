@@ -4,7 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 import {
   BLOG_PAGE_SIZE, blogHref, parseFilters, parsePageNumber, queryBlogPage, type BlogFilters,
 } from '../src/lib/blog-listing.ts';
-import { excerptFromMarkdown } from '../src/lib/excerpt.ts';
+import { CARD_EXCERPT_LENGTH, excerptFromMarkdown } from '../src/lib/excerpt.ts';
 
 const NEWEST: BlogFilters = { q: '', sort: 'newest' };
 
@@ -141,6 +141,19 @@ test('summary is used for cards and search, including literal wildcard character
   }
   const result = await queryBlogPage(db, { page: 1, filters: NEWEST });
   assert.equal(result.posts.find(p => p.title === 'Fallback')?.excerpt, 'Original opening.');
+});
+
+test('card excerpts and summaries are capped at the shared card length on a word boundary', async () => {
+  const { db, add } = makeDb();
+  const long = 'Start with the opening quests and build a small working base before you head into the Shroud for longer trips.';
+  add({ title: 'Body', markdown: long });
+  add({ title: 'Summary', markdown: 'Body.', summary: long });
+  const result = await queryBlogPage(db, { page: 1, filters: NEWEST });
+  for (const { excerpt } of result.posts) {
+    assert.ok(excerpt.length <= CARD_EXCERPT_LENGTH + 1);
+    assert.ok(excerpt.endsWith('…'));
+    assert.match(long.slice(excerpt.length - 1), /^\s/, 'cut where a word ends');
+  }
 });
 
 test('queries read a bounded body prefix only, and attach categories for the page', async () => {
