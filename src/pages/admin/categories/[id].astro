@@ -56,7 +56,7 @@ const saved = url.searchParams.get("saved") === "1";
     <section class="delete-section">
       <h3>Danger Zone</h3>
       <p>Delete this category permanently. This action cannot be undone.</p>
-      <form method="post" action="/api/categories/delete" class="delete-form" onsubmit="return confirm('Delete this category? This cannot be undone.');">
+      <form method="post" action="/api/categories/delete" class="delete-form" data-confirm="Delete this category? This cannot be undone.">
         <input type="hidden" name="id" value={category.id} />
         <Button type="submit" variant="danger" icon="trash-2">
           Delete Category

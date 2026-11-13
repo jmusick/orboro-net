@@ -241,5 +241,26 @@ const membersActive = currentPath.startsWith('/admin/members');
         <slot />
       </main>
     </div>
+    <script is:inline nonce={Astro.locals.nonce} id="admin-confirm-controller">
+      (() => {
+        if (window.__orboroAdminConfirmInstalled) return;
+        window.__orboroAdminConfirmInstalled = true;
+
+        function init() {
+          // Capture before ClientRouter can intercept the submit; delegation also covers new pages.
+          if (document.__orboroAdminConfirmInit) return;
+          document.__orboroAdminConfirmInit = true;
+          document.addEventListener('submit', (event) => {
+            const form = event.target;
+            if (!(form instanceof HTMLFormElement) || event.defaultPrevented) return;
+            const message = form.dataset.confirm;
+            if (message && !window.confirm(message)) event.preventDefault();
+          }, { capture: true });
+        }
+
+        init();
+        document.addEventListener('astro:page-load', init);
+      })();
+    </script>
   </body>
 </html>
