@@ -7,7 +7,7 @@ import { BODY_LIMITS, bodyRejection, formText, readBoundedForm } from "../../../
 import { pingWebSub } from "../../../lib/websub";
 
 const TEXT_FIELDS = [
-  "id", "title", "slug", "markdown", "pageType", "status", "featuredImageUrl",
+  "id", "title", "slug", "markdown", "summary", "pageType", "status", "featuredImageUrl",
   "homepageFeatured", "homepageGroup", "homepageOrder", "homepageDescription", "commentsMode",
 ] as const;
 
@@ -56,6 +56,7 @@ export const POST: APIRoute = async (context) => {
       title,
       slug,
       markdown,
+      summary: text.summary,
       pageType,
       status,
       authorId: user.id,

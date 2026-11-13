@@ -1,7 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getDB } from '../lib/db';
-import { excerptFromMarkdown } from '../lib/content';
-import { escapeXml, escapeCdata, renderFeedHtml } from '../lib/feed';
+import { escapeXml, escapeCdata, feedDescription, renderFeedHtml } from '../lib/feed';
 
 export const GET: APIRoute = async ({ site, locals }) => {
   const BASE = (site ?? new URL('https://orboro.net')).origin;
@@ -11,6 +10,7 @@ export const GET: APIRoute = async ({ site, locals }) => {
     slug: string;
     title: string;
     markdown: string;
+    summary: string;
     published_at: number | null;
     created_at: number;
     updated_at: number;
@@ -20,7 +20,7 @@ export const GET: APIRoute = async ({ site, locals }) => {
   if (db) {
     const result = await db
       .prepare(
-        `SELECT slug, title, markdown, published_at, created_at, updated_at
+        `SELECT slug, title, markdown, summary, published_at, created_at, updated_at
          FROM content
          WHERE page_type = 'post' AND status = 'published'
          ORDER BY COALESCE(published_at, created_at) DESC
@@ -34,7 +34,7 @@ export const GET: APIRoute = async ({ site, locals }) => {
     rows.map(async (row) => {
       const link = `${BASE}/blog/${row.slug}`;
       const pubDate = new Date(row.published_at ?? row.created_at).toUTCString();
-      const excerpt = excerptFromMarkdown(row.markdown.replace(/\{\{\w+[^}]*\}\}/g, ''));
+      const excerpt = feedDescription(row);
       const html = renderFeedHtml(row.markdown, excerpt, link, BASE);
       return [
         '  <item>',

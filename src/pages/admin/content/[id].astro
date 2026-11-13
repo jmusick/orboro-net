@@ -2,6 +2,7 @@
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 import easyMdeUrl from "easymde/dist/easymde.min.js?url";
 import FormMessage from "../../../components/FormMessage.astro";
+import SummaryField from "../../../components/SummaryField.astro";
 import HomepageFeatureFields from "../../../components/HomepageFeatureFields.astro";
 import CommentsModeField from "../../../components/CommentsModeField.astro";
 import Button from "../../../components/Button.astro";
@@ -26,6 +27,7 @@ const selectedCategoryIds = await getContentCategoryIds(Astro.locals, id);
 ---
 
 <AdminLayout title={`Edit ${content.title}`}>
+  {Astro.url.searchParams.get("error") === "summary" && <FormMessage error fields={[{ id: "summary", label: "Summary" }]}>Content was not saved. Keep the summary on a single line of at most 200 characters, or leave it empty. Re-enter any unsaved changes before saving again.</FormMessage>}
   {Astro.url.searchParams.get("saved") === "1" && <FormMessage>Content saved successfully.</FormMessage>}
   {Astro.url.searchParams.get("error") === "invalid" && <FormMessage error fields={[{ id: "title", label: "Title" }, { id: "slug", label: "Slug" }, { id: "markdown", label: "Markdown" }]}>Content was not saved. Provide a title of up to 200 characters, a slug that is not used by other content, and Markdown of up to 200,000 characters. Re-enter any unsaved changes before saving again.</FormMessage>}
   {Astro.url.searchParams.get("error") === "homepage" && <FormMessage error fields={[{ id: "homepageGroup", label: "Group" }, { id: "homepageOrder", label: "Display order" }, { id: "homepageDescription", label: "Card description" }]}>Content was not saved. Choose a homepage group, an order from 0 to 9999, and a description of at most 240 characters. Re-enter any unsaved changes before saving again.</FormMessage>}
@@ -44,6 +46,8 @@ const selectedCategoryIds = await getContentCategoryIds(Astro.locals, id);
           <input id="slug" type="text" name="slug" maxlength="200" value={content.slug} required placeholder="my-post" />
         </div>
       </div>
+
+      <SummaryField value={content.summary} />
 
       <div class="form-row">
         <div class="form-group">

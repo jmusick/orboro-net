@@ -1,10 +1,9 @@
-import { excerptFromMarkdown } from "./excerpt.ts";
+import { CARD_EXCERPT_LENGTH, summaryOrExcerpt } from "./excerpt.ts";
 
-// Cards show ~140 characters of plain text. Markdown syntax, headings and code
-// fences are stripped first, so read a generous bounded prefix instead of the
-// whole article body. Search matches the same prefix, not the full text.
+// Cards show CARD_EXCERPT_LENGTH characters of plain text. Markdown syntax, headings
+// and code fences are stripped first, so read a generous bounded prefix instead of the
+// whole article body. Search matches the summary and same prefix, not the full text.
 export const EXCERPT_SOURCE_CHARS = 1200;
-export const EXCERPT_CHARS = 140;
 // 12 divides evenly into the 1-, 2- and 3-column grid layouts.
 export const BLOG_PAGE_SIZE = 12;
 export const MAX_QUERY_CHARS = 100;
@@ -90,10 +89,11 @@ export async function queryBlogPage(
   if (filters.q) {
     const pattern = likePattern(filters.q);
     where += ` AND (c.title LIKE ? ESCAPE '\\'
+      OR c.summary LIKE ? ESCAPE '\\'
       OR substr(c.markdown, 1, ${EXCERPT_SOURCE_CHARS}) LIKE ? ESCAPE '\\'
       OR EXISTS (SELECT 1 FROM content_categories cc INNER JOIN categories cat ON cat.id = cc.category_id
                  WHERE cc.content_id = c.id AND cat.name LIKE ? ESCAPE '\\'))`;
-    params.push(pattern, pattern, pattern);
+    params.push(pattern, pattern, pattern, pattern);
   }
 
   const countResult = await db
@@ -107,14 +107,14 @@ export async function queryBlogPage(
 
   const rows = await db
     .prepare(
-      `SELECT c.id, c.slug, c.title, substr(c.markdown, 1, ${EXCERPT_SOURCE_CHARS}) AS excerpt_source,
+      `SELECT c.id, c.slug, c.title, c.summary, substr(c.markdown, 1, ${EXCERPT_SOURCE_CHARS}) AS excerpt_source,
               COALESCE(c.published_at, c.created_at) AS date, c.featured_image_url
        FROM content c WHERE ${where}
        ORDER BY ${ORDER_BY[filters.sort]}
        LIMIT ? OFFSET ?`,
     )
     .bind(...params, pageSize, (options.page - 1) * pageSize)
-    .all<{ id: string; slug: string; title: string; excerpt_source: string; date: number; featured_image_url: string | null }>();
+    .all<{ id: string; slug: string; title: string; summary: string; excerpt_source: string; date: number; featured_image_url: string | null }>();
   const results = rows.results ?? [];
 
   const categories: Record<string, string[]> = {};
@@ -138,7 +138,7 @@ export async function queryBlogPage(
       id: r.id,
       slug: r.slug,
       title: r.title,
-      excerpt: excerptFromMarkdown(r.excerpt_source ?? "", EXCERPT_CHARS),
+      excerpt: summaryOrExcerpt({ summary: r.summary, markdown: r.excerpt_source ?? "" }, CARD_EXCERPT_LENGTH),
       date: r.date,
       featuredImageUrl: r.featured_image_url,
       categories: categories[r.id] ?? [],

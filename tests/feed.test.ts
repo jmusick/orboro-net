@@ -1,8 +1,17 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { escapeCdata, renderFeedHtml } from '../src/lib/feed.ts';
+import { escapeCdata, escapeXml, feedDescription, renderFeedHtml } from '../src/lib/feed.ts';
 import { sitemapDate } from '../src/lib/sitemap.ts';
 import { sanitizeSlug } from '../src/lib/http.ts';
+
+test('feed descriptions prefer summaries and retain the shortcode-free fallback', () => {
+  const markdown = 'Original **opening**.\n\n{{widget}}';
+  assert.equal(feedDescription({ summary: '', markdown }), 'Original opening.');
+  const excerpt = feedDescription({ summary: 'A & B <guide> with **literal** text.', markdown });
+  assert.equal(excerpt, 'A & B <guide> with **literal** text.');
+  assert.equal(escapeXml(excerpt), 'A &amp; B &lt;guide&gt; with **literal** text.');
+  assert.match(renderFeedHtml(markdown, excerpt, 'https://orboro.net/blog/test', 'https://orboro.net'), /A &amp; B &lt;guide&gt; with \*\*literal\*\* text\./);
+});
 
 test('feeds resolve markdown and raw HTML URLs without touching code samples', () => {
   const html = renderFeedHtml('[Guide](/pages/guide)\n\n![Art](/images/art.png)\n\n<img src="../images/raw.png?a=1&amp;b=2">\n\n`<img src="/code.png">`', '', 'https://orboro.net/blog/post', 'https://orboro.net');

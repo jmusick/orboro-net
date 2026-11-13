@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { CARD_EXCERPT_LENGTH } from '../src/lib/excerpt.ts';
 import { pickKicker, queryRelatedPosts } from '../src/lib/related-posts.ts';
 import { makeMigratedDb, seedContent } from './helpers/d1.ts';
 
@@ -47,6 +48,16 @@ test('drafts and pages never appear', async () => {
   assert.deepEqual(related.map((p) => p.id), ['wow-post', 'post1']);
 });
 
+test('related cards prefer summaries and keep the body fallback when cleared', async () => {
+  const { db, sqlite, add } = setup();
+  add('current', 500, ['wow']);
+  add('related', 100, ['wow'], { markdown: 'Original **body**.' });
+  sqlite.prepare("UPDATE content SET summary = 'A hand-written summary.' WHERE id = 'related'").run();
+  assert.equal((await queryRelatedPosts(db, 'current'))[0].excerpt, 'A hand-written summary.');
+  sqlite.prepare("UPDATE content SET summary = '' WHERE id = 'related'").run();
+  assert.equal((await queryRelatedPosts(db, 'current'))[0].excerpt, 'Original body.');
+});
+
 test('a short related row is topped up with the newest other posts, without duplicates', async () => {
   const { db, add } = setup();
   add('current', 500, ['wow', 'gaming']);
@@ -90,7 +101,7 @@ Opening **words** here. ${'x'.repeat(2000)}` });
   assert.equal(kicker('untagged'), null);
   const card = related.find((p) => p.id === 'wow-gaming')!;
   assert.ok(card.excerpt.startsWith('Opening words here.'));
-  assert.ok(card.excerpt.length <= 141);
+  assert.ok(card.excerpt.length <= CARD_EXCERPT_LENGTH + 1);
 });
 
 test('kicker choice: shared game category, then shared by name, then first by name', () => {

@@ -1,4 +1,5 @@
 ---
+import { summaryOrExcerpt, descriptionFromMarkdown } from "../../lib/excerpt";
 import { renderMarkdown } from "../../lib/markdown";
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import SidebarLayout from "../../components/SidebarLayout.astro";
@@ -19,28 +20,7 @@ if (!page) return Astro.rewrite("/404");
 const html = await processShortcodes(renderMarkdown(page.markdown), Astro.locals.nonce);
 const updated = formatPageUpdatedAt(page.updatedAt);
 
-function descriptionFromMarkdown(md: string, maxLen = 155): string {
-  const plain = md
-    .replace(/```[\s\S]*?```/g, '')
-    // Shortcode tokens are widget placeholders, not prose. Without this a
-    // shortcode-only page ends up with "{{atlasfarmingstrategies}}" as its
-    // meta description (the underscores get eaten by the emphasis strip).
-    .replace(/\{\{\w+[^}]*\}\}/g, '')
-    // Markdown may contain raw HTML (the About page opens with an <img>), and
-    // an unstripped tag ends up escaped into the meta description verbatim.
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/#{1,6}\s+[^\n]*/g, '')
-    .replace(/!\[.*?\]\(.*?\)/g, '')
-    .replace(/\[(.+?)\]\(.*?\)/g, '$1')
-    .replace(/[*_`~]+/g, '')
-    .replace(/^\s*[-*+>|]\s*/gm, '')
-    .replace(/\n+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  return plain.length > maxLen ? plain.slice(0, maxLen).trimEnd() + '…' : plain;
-}
-
-const description = descriptionFromMarkdown(page.markdown) || `${page.title} on Orboro.net.`;
+const description = summaryOrExcerpt(page, 155, descriptionFromMarkdown) || `${page.title} on Orboro.net.`;
 
 // Shortcode widgets (cheat sheets, explorers) need the whole panel. A page
 // that is only prose would leave most of the panel empty beside its capped

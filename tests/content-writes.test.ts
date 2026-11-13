@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DatabaseSync } from 'node:sqlite';
 import {
-  MAX_CATEGORIES_PER_CONTENT, MAX_MARKDOWN_LENGTH, MAX_TITLE_LENGTH,
+  MAX_CATEGORIES_PER_CONTENT, MAX_MARKDOWN_LENGTH, MAX_TITLE_LENGTH, MAX_SUMMARY_LENGTH,
   WriteValidationError, isAllowedImageUrl, parseNavItems, parseRecordId, replaceNavItems,
   saveCategoryRecord, saveContentWithCategories, validateContentInput, validateMediaInput,
 } from '../src/lib/content-writes.ts';
@@ -15,7 +15,7 @@ function makeDb(options: { failOn?: string } = {}) {
     CREATE TABLE content (id TEXT PRIMARY KEY, slug TEXT UNIQUE NOT NULL, title TEXT NOT NULL, markdown TEXT NOT NULL,
       page_type TEXT NOT NULL, status TEXT NOT NULL, author_id TEXT NOT NULL, published_at INTEGER, created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL, featured_image_url TEXT, homepage_featured INTEGER, homepage_group TEXT,
-      homepage_order INTEGER, homepage_description TEXT, comments_mode TEXT NOT NULL DEFAULT 'open');
+      homepage_order INTEGER, homepage_description TEXT, comments_mode TEXT NOT NULL DEFAULT 'open', summary TEXT NOT NULL DEFAULT '');
     CREATE TABLE categories (id TEXT PRIMARY KEY, name TEXT, slug TEXT UNIQUE, created_at INTEGER);
     CREATE TABLE content_categories (content_id TEXT NOT NULL REFERENCES content(id) ON DELETE CASCADE,
       category_id TEXT NOT NULL REFERENCES categories(id) ON DELETE CASCADE, PRIMARY KEY (content_id, category_id));
@@ -131,6 +131,18 @@ test('content and categories are saved together', async () => {
   assert.deepEqual(rows(sqlite, "SELECT category_id FROM content_categories WHERE content_id = 'p1'"), [{ category_id: 'c2' }]);
 });
 
+test('summaries are trimmed on create and edit and can be cleared', async () => {
+  const { db, sqlite } = makeDb();
+  seed(sqlite);
+  const summary = () => (sqlite.prepare("SELECT summary FROM content WHERE id = 'new-id'").get() as any).summary;
+  await saveContentWithCategories(db, content({ id: undefined, slug: 'three', summary: '  A useful summary.  ' }), 9, () => 'new-id');
+  assert.equal(summary(), 'A useful summary.');
+  await saveContentWithCategories(db, content({ id: 'new-id', slug: 'three', summary: 'Updated summary.' }), 10);
+  assert.equal(summary(), 'Updated summary.');
+  await saveContentWithCategories(db, content({ id: 'new-id', slug: 'three', summary: '   ' }), 11);
+  assert.equal(summary(), '');
+});
+
 test('a new content row gets its categories', async () => {
   const { db, sqlite } = makeDb();
   seed(sqlite);
@@ -172,6 +184,15 @@ const codeOf = (fn: () => unknown) => {
   }
   return null;
 };
+
+test('summary is optional, bounded after trimming, and rejects newlines before trimming', () => {
+  for (const summary of [undefined, '', '   ', 'x'.repeat(MAX_SUMMARY_LENGTH), '  ' + 'x'.repeat(MAX_SUMMARY_LENGTH) + '  ', 'A & B: **literal** <text>.']) {
+    assert.doesNotThrow(() => validateContentInput(content({ summary })));
+  }
+  for (const summary of ['x'.repeat(MAX_SUMMARY_LENGTH + 1), 'a\nb', 'a\rb', 'a\r\nb', '\nline', 'line\n', 'a\u2028b', 'a\u2029b', 42]) {
+    assert.equal(codeOf(() => validateContentInput(content({ summary }))), 'summary', JSON.stringify(summary));
+  }
+});
 
 test('image URLs are limited to https:// and root-relative site paths', () => {
   for (const ok of ['https://media.orboro.net/images/a.webp', '/media/uploads/2026/10/a.png', '/images/x.jpg?v=2']) {
@@ -225,7 +246,7 @@ test('invalid content input writes nothing', async () => {
   for (const bad of [
     { pageType: 'nope' }, { status: 'archived' }, { featuredImageUrl: 'javascript:alert(1)' },
     { homepageGroup: 'nope' }, { homepageOrder: Number.NaN }, { markdown: '' },
-    { id: 'missing' }, { slug: 'two' }, { categoryIds: ['zzz'] },
+    { id: 'missing' }, { slug: 'two' }, { categoryIds: ['zzz'] }, { summary: 'a\nb' }, { summary: 'x'.repeat(201) },
   ]) {
     const { db, sqlite } = makeDb();
     seed(sqlite);
