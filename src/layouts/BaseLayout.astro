@@ -305,7 +305,7 @@ function isActive(url: string): boolean {
           });
           nav.querySelectorAll('.nav-dropdown-wrapper, .nav-flyout-item').forEach(function(item) {
             item.addEventListener('pointerenter', function() {
-              if (matchMedia('(hover: hover) and (pointer: fine) and (min-width: 769px)').matches) setSubmenuOpen(item, true);
+              if (matchMedia('(hover: hover) and (pointer: fine) and (min-width: 1025px)').matches) setSubmenuOpen(item, true);
             });
             item.addEventListener('pointerleave', function() {
               if (!item.contains(document.activeElement)) setSubmenuOpen(item, false);

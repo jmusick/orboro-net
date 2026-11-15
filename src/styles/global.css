@@ -345,14 +345,16 @@ hr {
   border-top: 1px solid var(--line);
   margin: 2rem 0;
 }
-/* Below 768px this is the only usable nav layout regardless of input
-   type. Between 768–1024px, touch/coarse-pointer devices (tablets)
-   also get it — the horizontal nav's tap-driven .nav-caret dropdowns
-   don't leave enough room at those widths and wrap into a messy
-   multi-row layout, so fall back to the stacked accordion nav. Wider
-   coarse-pointer devices (e.g. touchscreen desktops) still get the
-   horizontal nav with tap dropdowns. */
-@media (max-width: 768px), ((pointer: coarse) and (max-width: 1024px)) {
+/* At 1024px and below the stacked accordion nav is the only layout, for
+   every input type. The horizontal bar (logo, Home, Blog, Tools,
+   Development, Gaming, About, Sign in, Support) needs about 975px of
+   viewport, more with a member's name in place of "Sign in", so below
+   this width it overflowed sideways for mouse users and wrapped into a
+   messy multi-row layout for touch users. Measure again before adding a
+   top-level nav item: the bar must fit at 1025px. Wider coarse-pointer
+   devices (e.g. touchscreen desktops) still get the horizontal nav with
+   tap dropdowns. Keep in sync with the hover check in BaseLayout.astro. */
+@media (max-width: 1024px) {
   .site-header__inner {
     flex-wrap: wrap;
     justify-content: space-between;
