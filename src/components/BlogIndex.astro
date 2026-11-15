@@ -8,8 +8,9 @@ import Button from "./Button.astro";
 import { blogHref, type BlogPage } from "../lib/blog-listing";
 import type { CategoryWithCount } from "../lib/content";
 
-// Shared by /blog (page 1) and /blog/page/[page]. Pure server rendering: search,
-// sort and paging are plain GET links and a GET form, so everything works without JS.
+// Shared by /blog (page 1) and /blog/page/[page]. Server rendered: search, sort and
+// paging are plain GET links and a GET form, so everything works without JS. The
+// bundled script below only submits on sort change and hides the Apply button.
 interface Props {
   listing: BlogPage;
   categories: CategoryWithCount[];
@@ -66,7 +67,7 @@ for (let n = 1; n <= totalPages; n++) {
               {sorts.map(([value, label]) => <option value={value} selected={value === filters.sort}>{label}</option>)}
             </select>
           </div>
-          <Button type="submit" variant="secondary" size="sm">Apply</Button>
+          <Button type="submit" variant="secondary" size="sm" class="blog-apply">Apply</Button>
           {isFiltered && <Button href="/blog" variant="tertiary" size="sm">Clear</Button>}
           <span id="blog-count" class="blog-count" role="status">
             {total === 0 ? "0 posts" : `Showing ${first}–${last} of ${total} ${noun(total)}`}
@@ -106,6 +107,16 @@ for (let n = 1; n <= totalPages; n++) {
     </SidebarLayout>
   )}
 </BaseLayout>
+
+<script>
+  import { initBlogControls, type BlogControlsState } from "../scripts/blog-controls";
+
+  // Bundled module: runs once, so re-init on every ClientRouter navigation.
+  const state: BlogControlsState = { refocusSort: false };
+  const init = () => initBlogControls(document, state);
+  init();
+  document.addEventListener("astro:page-load", init);
+</script>
 
 <style>
   .blog-controls {
@@ -148,6 +159,10 @@ for (let n = 1; n <= totalPages; n++) {
     outline-offset: 2px;
     border-color: var(--accent);
 
+  }
+
+  .blog-controls.is-enhanced :global(.blog-apply) {
+    display: none;
   }
 
   .blog-count {
