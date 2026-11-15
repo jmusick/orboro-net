@@ -81,6 +81,7 @@ test('article node carries dates and image; implausible dates are dropped', () =
   assert.equal(node['@type'], 'Article');
   assert.equal(node.datePublished, '2026-01-01T00:00:00.000Z');
   assert.deepEqual(node.image, ['https://orboro.net/i.png']);
+  assert.equal(node.author.image, 'https://orboro.net/images/jd-avatar-192.webp');
   const bad = pageNode({ type: 'Article', origin: ORIGIN, path: '/pages/a', title: 'A', description: 'd', publishedAt: 12345, updatedAt: now * 10, now }) as any;
   assert.equal('datePublished' in bad, false);
   assert.equal('dateModified' in bad, false);

@@ -19,7 +19,7 @@ import {
   listRelatedPosts,
 } from "../../lib/content";
 import { processShortcodes } from "../../lib/shortcodes";
-import { breadcrumbList, graphOf } from "../../lib/structured-data";
+import { AUTHOR_AVATAR_PATH, breadcrumbList, graphOf } from "../../lib/structured-data";
 import { addHeadingIds } from "../../lib/toc";
 import { PATREON_URL } from "../../lib/profiles";
 import { gameHubsForCategories } from "../../lib/topics";
@@ -107,7 +107,7 @@ const blogPosting = {
   dateModified: updatedIso,
   mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
   ...(absoluteImageUrl ? { image: [absoluteImageUrl] } : {}),
-  author: { "@type": "Person", name: "JD" },
+  author: { "@type": "Person", name: "JD", url: `${BASE}/pages/about`, image: `${BASE}${AUTHOR_AVATAR_PATH}` },
   publisher: {
     "@type": "Organization",
     name: "Orboro.net",
@@ -149,7 +149,7 @@ const structuredData = graphOf(blogPosting, breadcrumbList(trail, BASE));
       <div class="prose" set:html={html} />
 
       <aside class="author" aria-label="About the author">
-        <img src="/favicon-192.png" alt="" width="48" height="48" loading="lazy" />
+        <img src="/images/jd-avatar-96.webp" srcset="/images/jd-avatar-96.webp 1x, /images/jd-avatar-192.webp 2x" alt="" width="48" height="48" loading="lazy" decoding="async" />
         <div class="author__text">
           <strong>Written by JD</strong>
           <span>Guides, analysis and tools for World of Warcraft and Path of Exile 2. Reader-supported.</span>
@@ -311,8 +311,10 @@ const structuredData = graphOf(blogPosting, breadcrumbList(trail, BASE));
   }
 
   .author img {
+    flex: none;
     width: 48px;
     height: 48px;
+    border-radius: 50%;
   }
 
   .author__text {

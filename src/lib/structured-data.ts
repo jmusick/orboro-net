@@ -18,6 +18,9 @@ export interface NavNodeLike {
 /** Prose pages shorter than this are not treated as articles. */
 export const ARTICLE_MIN_WORDS = 300;
 
+/** JD's avatar (192px), used by the post author card and the author `Person` in JSON-LD. */
+export const AUTHOR_AVATAR_PATH = "/images/jd-avatar-192.webp";
+
 export type PageSchemaType = "Article" | "WebPage";
 
 export function countProseWords(markdown: string): number {
@@ -117,7 +120,7 @@ export function pageNode(input: PageSchemaInput): Record<string, unknown> {
       ...(published ? { datePublished: published } : {}),
       ...(modified ? { dateModified: modified } : {}),
       ...(image ? { image } : {}),
-      author: { "@type": "Person", name: "JD", url: new URL("/pages/about", input.origin).href },
+      author: { "@type": "Person", name: "JD", url: new URL("/pages/about", input.origin).href, image: new URL(AUTHOR_AVATAR_PATH, input.origin).href },
       publisher: {
         "@type": "Organization",
         name: "Orboro.net",
