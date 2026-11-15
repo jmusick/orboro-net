@@ -14,7 +14,7 @@ register(`data:text/javascript,${encodeURIComponent(`
       return { url: ${JSON.stringify(workerModule)}, shortCircuit: true };
     }
     if (context.parentURL === ${JSON.stringify(contentUrl)} &&
-        ['./content-writes', './db', './blog-listing', './related-posts', './excerpt'].includes(specifier)) {
+        ['./content-writes', './db', './blog-listing', './related-posts', './excerpt', './tools'].includes(specifier)) {
       return nextResolve(specifier + '.ts', context);
     }
     return nextResolve(specifier, context);
@@ -95,6 +95,30 @@ test('homepage features and grouped tools include only featured published pages'
   assert.equal(tools[0].homepageGroup, 'wow');
   assert.equal(tools[0].homepageDescription, 'Tool description');
   assert.equal(tools[0].markdown, 'Opening body');
+});
+
+test('tool pages are published pages with a shortcode, minus the hub pages, in homepage order', async (t) => {
+  const { sqlite } = setup(t);
+  const insert = sqlite.prepare(`INSERT INTO content
+    (id, slug, title, markdown, page_type, status, author_id, created_at, updated_at, homepage_group, homepage_order, featured_image_url)
+    VALUES (?, ?, ?, ?, ?, ?, 'admin', 0, 0, ?, ?, ?)`);
+  for (const [slug, title, markdown, type, status, group, order] of [
+    ['tool-b', 'Beta tool', 'Intro. {{spell_queue_lab}}', 'page', 'published', 'wow', 1],
+    ['tool-a', 'alpha tool', '{{bookmarks tag=&quot;x&quot;}}', 'page', 'published', 'wow', 1],
+    ['tool-first', 'Zed tool', 'Text {{atlas_farming_strategies}}', 'page', 'published', 'other', 0],
+    ['world-of-warcraft', 'WoW hub', '{{wow_featured}}', 'page', 'published', 'wow', 0],
+    ['tool-draft', 'Draft tool', '{{spell_queue_lab}}', 'page', 'draft', 'wow', 0],
+    ['post-tool', 'Post with widget', '{{spell_queue_lab}}', 'post', 'published', 'wow', 0],
+    ['not-a-token', 'Braces only', 'Use {{ this }} syntax', 'page', 'published', 'other', 0],
+  ] as const) {
+    insert.run(slug, slug, title, markdown, type, status, group, order, slug === 'tool-b' ? '/images/b.webp' : null);
+  }
+  const tools = await content.listToolPages(locals);
+  assert.deepEqual(tools.map(row => row.slug), ['tool-first', 'tool-a', 'tool-b']);
+  assert.deepEqual(tools[2], {
+    slug: 'tool-b', title: 'Beta tool', homepageGroup: 'wow', homepageDescription: '', summary: '',
+    markdown: 'Intro. {{spell_queue_lab}}', featuredImageUrl: '/images/b.webp',
+  });
 });
 
 test('category content excludes drafts with and without a page type filter', async (t) => {

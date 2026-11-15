@@ -1,0 +1,57 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import PageHeader from "../components/PageHeader.astro";
+import ToolTile from "../components/ToolTile.astro";
+import { listToolPages } from "../lib/content";
+import { groupToolPages } from "../lib/tools";
+import { collectionPageNode, graphOf } from "../lib/structured-data";
+
+// Every published tool and link hub, grouped by game. A code page, not a D1 row.
+const groups = groupToolPages(await listToolPages(Astro.locals));
+const total = groups.reduce((sum, entry) => sum + entry.tiles.length, 0);
+
+const BASE = (Astro.site ?? new URL("https://orboro.net")).origin;
+const title = "Tools";
+const description = "Every simulator, analysis, cheat sheet and link hub on Orboro.net, grouped by game.";
+const structuredData = graphOf(collectionPageNode({
+  origin: BASE,
+  path: "/tools",
+  title,
+  description,
+  items: groups.flatMap((entry) => entry.tiles.map((tile) => ({ name: tile.title, path: `/pages/${tile.slug}` }))),
+}));
+---
+
+<BaseLayout title={`${title} | Orboro.net`} description={description} structuredData={structuredData}>
+  <PageHeader slot="hero" title={title} lede="Simulators, analysis, cheat sheets and curated link hubs for World of Warcraft, Path of Exile 2 and more.">
+    <span>{total} {total === 1 ? "tool" : "tools"}</span>
+  </PageHeader>
+  <div class="tools">
+    {groups.length === 0 ? (
+      <p class="empty">No tools published yet.</p>
+    ) : groups.map((entry) => (
+      <section aria-labelledby={`tools-${entry.group.key}`}>
+        <h2 id={`tools-${entry.group.key}`}>{entry.group.heading}</h2>
+        <ul class="tile-grid">
+          {entry.tiles.map((tile) => (
+            <li><ToolTile tile={tile} /></li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </div>
+</BaseLayout>
+
+<style>
+  .tools {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(3rem, 2.5rem + 2vw, 4.5rem);
+    padding-top: var(--space-6);
+  }
+  .tools h2 {
+    margin: 0 0 var(--space-6);
+    font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
+  }
+  .empty { color: var(--muted); }
+</style>

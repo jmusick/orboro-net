@@ -4,7 +4,7 @@ import StoryCard from "../../../components/StoryCard.astro";
 import PageHeader from "../../../components/PageHeader.astro";
 import Sidebar from "../../../components/Sidebar.astro";
 import SidebarLayout from "../../../components/SidebarLayout.astro";
-import { breadcrumbList, graphOf } from "../../../lib/structured-data";
+import { breadcrumbList, collectionPageNode, graphOf } from "../../../lib/structured-data";
 import { getCategoryBySlug, getPublishedContentByCategory, summaryOrExcerpt, CARD_EXCERPT_LENGTH, listCategoriesWithPostCounts, listPostSummaries } from "../../../lib/content";
 
 const { slug } = Astro.params;
@@ -33,14 +33,7 @@ const trail = [
 ];
 const categoryDescription = `Browse posts in the ${category.name} category on Orboro.net.`;
 const structuredData = graphOf(
-  {
-    "@type": "CollectionPage",
-    "@id": `${BASE}${categoryPath}`,
-    url: `${BASE}${categoryPath}`,
-    name: category.name,
-    description: categoryDescription,
-    isPartOf: { "@id": `${BASE}/#website` },
-  },
+  collectionPageNode({ origin: BASE, path: categoryPath, title: category.name, description: categoryDescription }),
   breadcrumbList(trail, BASE),
 );
 ---

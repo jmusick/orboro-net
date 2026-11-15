@@ -12,6 +12,7 @@ import { ensureDB, getDB } from "./db";
 import { EXCERPT_SOURCE_CHARS, queryBlogPage, type BlogFilters, type BlogPage } from "./blog-listing";
 import { queryRelatedPosts, RELATED_POSTS_LIMIT, type RelatedPost } from "./related-posts";
 import type { CoverCandidate } from "./topics";
+import { EMBEDS_SHORTCODE_SQL, TOOL_INDEX_EXCLUDED_SLUGS, type ToolPage } from "./tools";
 
 export { excerptFromMarkdown, summaryOrExcerpt, CARD_EXCERPT_LENGTH } from "./excerpt";
 
@@ -122,6 +123,34 @@ export async function listFeaturedTools(locals: App.Locals, groups: string[]): P
     homepageDescription: row.homepage_description ?? "",
     summary: row.summary,
     markdown: row.markdown_prefix ?? "",
+  }));
+}
+
+// Every published tool or link-hub page for /tools: a page whose Markdown embeds a
+// `{{shortcode}}` (EMBEDS_SHORTCODE_SQL), minus the hub
+// pages in TOOL_INDEX_EXCLUDED_SLUGS. Ordered like the homepage toolkit; callers
+// group with `groupToolPages`. `markdown` is only the opening prefix.
+export async function listToolPages(locals: App.Locals): Promise<ToolPage[]> {
+  const db = getDB(locals);
+  if (!db) return [];
+  const excluded = [...TOOL_INDEX_EXCLUDED_SLUGS];
+  const result = await db.prepare(
+    `SELECT slug, title, homepage_group, homepage_description, summary, featured_image_url,
+            substr(markdown, 1, ${EXCERPT_SOURCE_CHARS}) AS markdown_prefix
+     FROM content
+     WHERE page_type = 'page' AND status = 'published'
+       AND ${EMBEDS_SHORTCODE_SQL}
+       AND slug NOT IN (${excluded.map(() => "?").join(",")})
+     ORDER BY homepage_order ASC, title COLLATE NOCASE ASC, id ASC`,
+  ).bind(...excluded).all<{ slug: string; title: string; homepage_group: string | null; homepage_description: string | null; summary: string | null; featured_image_url: string | null; markdown_prefix: string | null }>();
+  return (result.results ?? []).map((row) => ({
+    slug: row.slug,
+    title: row.title,
+    homepageGroup: row.homepage_group ?? "other",
+    homepageDescription: row.homepage_description ?? "",
+    summary: row.summary ?? "",
+    markdown: row.markdown_prefix ?? "",
+    featuredImageUrl: row.featured_image_url,
   }));
 }
 

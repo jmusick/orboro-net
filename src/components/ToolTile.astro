@@ -1,0 +1,90 @@
+---
+// One art-backed tool tile, shared by the homepage toolkit (FeaturedTools.astro)
+// and the /tools index so the two can't drift. Place it inside a `.tile-grid`
+// list item; the grid itself is styled here too (`:global(.tile-grid)`).
+import type { ToolTileData } from "../lib/tools";
+import { responsiveImage, ART_WIDTHS } from "../lib/images";
+interface Props { tile: ToolTileData; }
+const { tile } = Astro.props;
+---
+<a class="tile" href={`/pages/${tile.slug}`} data-tone={tile.tone}>
+  <div class:list={["tile__art", !tile.featuredImageUrl && "tile__art--plain"]}>
+    {tile.featuredImageUrl ? (
+      <img {...responsiveImage(tile.featuredImageUrl, ART_WIDTHS, "auto, (max-width: 595px) 92vw, (max-width: 904px) 44vw, (max-width: 1213px) 29vw, 320px", Astro.url)} alt="" loading="lazy" />
+    ) : (
+      <span class="tile__mark" aria-hidden="true">{tile.group.mark}</span>
+    )}
+    <span class="tile__game">{tile.group.title}</span>
+  </div>
+  <div class="tile__body">
+    <h3 class="tile__title">{tile.title}</h3>
+    {tile.description && <p>{tile.description}</p>}
+    <span class="tile__cta">Open tool</span>
+  </div>
+</a>
+<style>
+  :global(.tile-grid) { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16.5rem), 1fr)); gap: 1.25rem; margin: 0; padding: 0; list-style: none; }
+  :global(.tile-grid > li) { margin: 0; display: flex; }
+
+  .tile {
+    --tone: var(--accent);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: var(--r-lg,16px);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    color: var(--text);
+    text-decoration: none;
+    transition: border-color var(--transition-fast);
+  }
+  .tile[data-tone="wow"] { --tone: var(--game-wow); }
+  .tile[data-tone="poe"] { --tone: var(--game-poe); }
+  .tile:hover { border-color: var(--line-strong); }
+  .tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .tile__art { position: relative; aspect-ratio: 16 / 10; overflow: hidden; }
+  .tile__art img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
+  .tile:hover .tile__art img { transform: scale(1.04); }
+
+  /* Without artwork, the game's color and a large wordmark carry the tile. */
+  .tile__art--plain {
+    aspect-ratio: 16 / 7;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    background:
+      radial-gradient(circle at 80% 15%, rgb(from var(--tone) r g b / 30%), transparent 60%),
+      radial-gradient(circle at 10% 110%, rgb(from var(--accent) r g b / 12%), transparent 55%),
+      var(--surface-2);
+  }
+  .tile__mark {
+    padding: 0 0.9rem 0.4rem 0;
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 2rem + 2vw, 3.5rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: rgb(from var(--tone) r g b / 30%);
+    transition: color var(--transition-fast);
+  }
+  .tile:hover .tile__mark { color: rgb(from var(--tone) r g b / 45%); }
+
+  .tile__game {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: var(--r-pill,999px);
+    background: rgb(from var(--bg) r g b / 78%);
+    color: var(--tone);
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .tile__body { flex: 1; display: flex; flex-direction: column; gap: var(--space-2); padding: 1.25rem 1.25rem 1.35rem; }
+  .tile__title { margin: 0; font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; line-height: 1.3; }
+  .tile__body p { margin: 0; color: var(--muted); font-size: 0.95rem; line-height: 1.5; }
+  .tile__cta { margin-top: auto; padding-top: var(--space-3); color: var(--accent); font-size: 0.9rem; font-weight: 700; }
+</style>

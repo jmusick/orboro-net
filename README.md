@@ -297,7 +297,7 @@ Artwork in heroes, cards, tool tiles, topic banners and adjacent-post links uses
 ## Design system
 
 - `src/styles/tokens.css` is the shared palette, typography, spacing, radius and interaction source for both layouts. `src/styles/primitives.css` supplies opt-in `ui-control`, `ui-action`, `ui-panel` and `ui-callout` classes, `src/styles/forms.css` owns form fields, and `src/styles/editor.css` owns the EasyMDE theme.
-- `SidebarLayout.astro` owns the content and sidebar columns. `PageHeader.astro` titles every inner page over `HeroArt.astro`; `StoryCard.astro`, `TopicChip.astro` and `FeaturedTools.astro` supply post cards, category chips and homepage tool tiles.
+- `SidebarLayout.astro` owns the content and sidebar columns. `PageHeader.astro` titles every inner page over `HeroArt.astro`; `StoryCard.astro` and `TopicChip.astro` supply post cards and category chips; `ToolTile.astro` is the tool tile shared by the homepage toolkit (`FeaturedTools.astro`) and the `/tools` index.
 - Visit `/admin/design-system` while signed in for component examples, field feedback and a live widget.
 - Run `npm run check:styles` before shipping style changes. It checks fixed accent tints, off-scale radii, hover lift, broad transitions, unimported monospace fonts and duplicate token definitions.
 

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
-  ARTICLE_MIN_WORDS, breadcrumbList, classifyPage, graphOf, pageNode, pageTrail, withHome,
+  ARTICLE_MIN_WORDS, breadcrumbList, classifyPage, collectionPageNode, graphOf, pageNode, pageTrail, withHome,
 } from '../src/lib/structured-data.ts';
 import { jsonForHtml } from '../src/lib/json.ts';
 import { descriptionFromMarkdown, summaryOrExcerpt } from '../src/lib/excerpt.ts';
@@ -97,4 +97,25 @@ test('graph drops undefined nodes and serializes safely', () => {
   const graph = graphOf(pageNode({ type: 'WebPage', origin: ORIGIN, path: '/pages/t', title: '</script><b>', description: 'a & b' }), undefined);
   assert.equal((graph['@graph'] as unknown[]).length, 1);
   assert.doesNotMatch(jsonForHtml(graph), /[<>&]/);
+});
+
+test('collection pages list their items with absolute URLs and omit an empty list', () => {
+  const node = collectionPageNode({
+    origin: ORIGIN, path: '/tools', title: 'Tools', description: 'Every tool.',
+    items: [{ name: 'Spell Queue', path: '/pages/spell-queue-window-simulator' }, { name: 'Atlas', path: '/pages/atlas' }],
+  });
+  assert.equal(node['@type'], 'CollectionPage');
+  assert.equal(node['@id'], 'https://orboro.net/tools');
+  assert.deepEqual(node.isPartOf, { '@id': 'https://orboro.net/#website' });
+  assert.deepEqual(node.mainEntity, {
+    '@type': 'ItemList',
+    numberOfItems: 2,
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Spell Queue', url: 'https://orboro.net/pages/spell-queue-window-simulator' },
+      { '@type': 'ListItem', position: 2, name: 'Atlas', url: 'https://orboro.net/pages/atlas' },
+    ],
+  });
+  const category = collectionPageNode({ origin: ORIGIN, path: '/blog/category/wow', title: 'WoW', description: 'Posts.' });
+  assert.equal('mainEntity' in category, false);
+  assert.equal(category.url, 'https://orboro.net/blog/category/wow');
 });

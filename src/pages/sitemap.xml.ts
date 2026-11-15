@@ -3,12 +3,14 @@ import { getDB } from '../lib/db';
 import { PRIVACY_UPDATED_AT } from '../lib/privacy';
 import { sitemapDate } from '../lib/sitemap';
 import { escapeXml } from '../lib/feed';
+import { EMBEDS_SHORTCODE_SQL, TOOL_INDEX_EXCLUDED_SLUGS } from '../lib/tools';
 
 export const GET: APIRoute = async ({ site, locals }) => {
   const BASE = (site ?? new URL('https://orboro.net')).origin;
   const staticPages = [
     { loc: `${BASE}/`, lastmod: undefined as string | undefined },
     { loc: `${BASE}/blog`, lastmod: undefined as string | undefined },
+    { loc: `${BASE}/tools`, lastmod: undefined as string | undefined },
     { loc: `${BASE}/privacy-policy`, lastmod: PRIVACY_UPDATED_AT },
   ];
 
@@ -19,13 +21,19 @@ export const GET: APIRoute = async ({ site, locals }) => {
   if (db) {
     const contentResult = await db
       .prepare(
-        "SELECT slug, page_type, updated_at FROM content WHERE status = 'published' ORDER BY updated_at DESC"
+        `SELECT slug, page_type, updated_at, (page_type = 'page' AND ${EMBEDS_SHORTCODE_SQL}) AS is_tool FROM content WHERE status = 'published' ORDER BY updated_at DESC`
       )
-      .all<{ slug: string; page_type: string; updated_at: number }>();
+      .all<{ slug: string; page_type: string; updated_at: number; is_tool: number }>();
 
     const rows = contentResult.results ?? [];
     const postDates = rows.filter(row => row.page_type === 'post').map(row => sitemapDate(row.updated_at)).filter((date): date is string => !!date);
     staticPages[0].lastmod = staticPages[1].lastmod = postDates.sort().at(-1);
+    // /tools changes when any tool page does (same rule as listToolPages).
+    staticPages[2].lastmod = rows
+      .filter(row => row.is_tool === 1 && !TOOL_INDEX_EXCLUDED_SLUGS.has(row.slug))
+      .map(row => sitemapDate(row.updated_at))
+      .filter((date): date is string => !!date)
+      .sort().at(-1);
     for (const row of rows) {
       const path = row.page_type === 'post' ? `/blog/${row.slug}` : `/pages/${row.slug}`;
       contentPages.push({

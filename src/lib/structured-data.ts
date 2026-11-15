@@ -136,6 +136,41 @@ export function pageNode(input: PageSchemaInput): Record<string, unknown> {
   };
 }
 
+export interface CollectionPageInput {
+  origin: string;
+  path: string;
+  title: string;
+  description: string;
+  /** Listed pages, in display order; omitted when empty. */
+  items?: Crumb[];
+}
+
+/** Index pages (categories, /tools): a CollectionPage, optionally with its list. */
+export function collectionPageNode(input: CollectionPageInput): Record<string, unknown> {
+  const url = new URL(input.path, input.origin).href;
+  const items = input.items ?? [];
+  return {
+    "@type": "CollectionPage",
+    "@id": url,
+    url,
+    name: input.title,
+    description: input.description,
+    isPartOf: { "@id": `${input.origin}/#website` },
+    ...(items.length > 0 ? {
+      mainEntity: {
+        "@type": "ItemList",
+        numberOfItems: items.length,
+        itemListElement: items.map((item, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: item.name,
+          url: new URL(item.path, input.origin).href,
+        })),
+      },
+    } : {}),
+  };
+}
+
 /** One document: a @graph of the supplied nodes (undefined entries dropped). */
 export function graphOf(...nodes: Array<Record<string, unknown> | undefined>): Record<string, unknown> {
   return { "@context": "https://schema.org", "@graph": nodes.filter(Boolean) };
