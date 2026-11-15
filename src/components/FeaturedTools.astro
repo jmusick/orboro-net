@@ -16,7 +16,7 @@ const tiles = groupToolPages(pages).flatMap(entry => entry.tiles);
       </div>
       <p>Simulators, analysis and quick references for your next session.</p>
     </div>
-    <ul class="tile-grid">
+    <ul class="tile-grid" data-count={tiles.length}>
       {tiles.map(tile => (
         <li><ToolTile tile={tile} /></li>
       ))}
@@ -30,4 +30,14 @@ const tiles = groupToolPages(pages).flatMap(entry => entry.tiles);
   .section-head p { margin: 0; color: var(--muted); }
   .section-link { font-weight: 700; text-decoration: none; }
   .section-link:hover { color: var(--accent-hover); }
+  /* Five tiles in the shared auto-fill grid wrap 4 + 1 once it reaches four
+     columns (about 1116px wide). Keep them 3 + 2 there, and one row of five once
+     each tile can still be about 15rem wide. */
+  .toolkit { container-type: inline-size; }
+  @container (min-width: 1116px) {
+    .tile-grid[data-count="5"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  @container (min-width: 1300px) {
+    .tile-grid[data-count="5"] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  }
 </style>

@@ -46,7 +46,7 @@ If a local `main` branch already exists, inspect it before renaming anything. Ex
 
 ### Production content steps
 
-- **Homepage tools.** After migration `0012_homepage_features.sql`, `scripts/content/homepage-featured-tools.sql` selected the initial four tools (two per game). Running it again with `--remote` restores that selection and those descriptions.
+- **Homepage tools.** After migration `0012_homepage_features.sql`, `scripts/content/homepage-featured-tools.sql` selected the initial four tools (two per game). It now also features the Midnight Season 2 M+ cheat sheet as the lead WoW tile for the rest of that season; its comment says how to revert when the season ends. Running it again with `--remote` restores the selection and descriptions in the file. `FeaturedTools.astro` lays five tiles out as 3 + 2, or one row of five on wide screens, instead of the shared grid's 4 + 1.
 - **Tools nav item.** Apply migration `0016_nav_code_pages.sql` remotely before deploying the code that reads `nav_items.path`, then run `scripts/content/tools-nav.sql` with `--remote` to add the top-level Tools link. It does nothing if a `/tools` item already exists.
 - **R2 media records.** `scripts/content/backfill-r2-media-library.sql` registers the 13 content images checked on October 6, 2026. It can be rerun without duplicating records or overwriting existing metadata.
 - **Content images.** Run `npm run media:migrate -- --remote` only after reviewing its dry-run manifest, then `--remote --apply` to copy objects and update production D1.
