@@ -1,0 +1,181 @@
+---
+// The admin content editor, shared by /admin/content/new (no `content`) and
+// /admin/content/[id] (edit: prefilled values, saved notice and danger zone).
+import easyMdeUrl from "easymde/dist/easymde.min.js?url";
+import FormMessage from "./FormMessage.astro";
+import SummaryField from "./SummaryField.astro";
+import HomepageFeatureFields from "./HomepageFeatureFields.astro";
+import CommentsModeField from "./CommentsModeField.astro";
+import Button from "./Button.astro";
+import type { CategoryRecord, ContentRecord } from "../lib/content";
+
+interface Props {
+  categories: CategoryRecord[];
+  content?: ContentRecord;
+  selectedCategoryIds?: string[];
+}
+
+const { categories, content, selectedCategoryIds = [] } = Astro.props;
+const error = Astro.url.searchParams.get("error");
+const saved = content && Astro.url.searchParams.get("saved") === "1";
+---
+
+{error === "summary" && <FormMessage error fields={[{ id: "summary", label: "Summary" }]}>Content was not saved. Keep the summary on a single line of at most 200 characters, or leave it empty. Re-enter any unsaved changes before saving again.</FormMessage>}
+{saved && <FormMessage>Content saved successfully.</FormMessage>}
+{error === "invalid" && <FormMessage error fields={[{ id: "title", label: "Title" }, { id: "slug", label: "Slug" }, { id: "markdown", label: "Markdown" }]}>Content was not saved. Provide a title of up to 200 characters, a slug that is not used by other content, and Markdown of up to 200,000 characters. Re-enter any unsaved changes before saving again.</FormMessage>}
+{error === "homepage" && <FormMessage error fields={[{ id: "homepageGroup", label: "Group" }, { id: "homepageOrder", label: "Display order" }, { id: "homepageDescription", label: "Card description" }]}>Content was not saved. Choose a homepage group, an order from 0 to 9999, and a description of at most 240 characters. Re-enter any unsaved changes before saving again.</FormMessage>}
+{error === "image" && <FormMessage error fields={[{ id: "featuredImageUrl", label: "Featured Image URL" }]}>Content was not saved. Use an https:// image URL or a site path starting with /, up to 2,048 characters. Re-enter any unsaved changes before saving again.</FormMessage>}
+<section class="editor-section">
+  <form method="post" action="/api/content/save" id="content-form" class="content-editor">
+    {content && <input type="hidden" name="id" value={content.id} />}
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="title">Title</label>
+        <input id="title" type="text" name="title" maxlength="200" value={content?.title} required placeholder="Enter content title" />
+      </div>
+      <div class="form-group">
+        <label for="slug">Slug</label>
+        <input id="slug" type="text" name="slug" maxlength="200" value={content?.slug} required placeholder="my-post" />
+      </div>
+    </div>
+
+    <SummaryField value={content?.summary} />
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="pageType">Page Type</label>
+        <select id="pageType" name="pageType">
+          <option value="post" selected={content?.pageType === "post"}>Post</option>
+          <option value="page" selected={content?.pageType === "page"}>Page</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="status">Status</label>
+        <select id="status" name="status">
+          <option value="draft" selected={content?.status === "draft"}>Draft</option>
+          <option value="published" selected={content?.status === "published"}>Published</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group full">
+      <label for="featuredImageUrl">Featured Image URL</label>
+      <input id="featuredImageUrl" type="text" name="featuredImageUrl" maxlength="2048" value={content ? (content.featuredImageUrl ?? "") : undefined} placeholder="/images/example.jpg or https://example.com/image.jpg" />
+    </div>
+
+    <HomepageFeatureFields featured={content?.homepageFeatured} group={content?.homepageGroup} order={content?.homepageOrder} description={content?.homepageDescription} />
+
+    <CommentsModeField mode={content?.commentsMode} />
+
+    <div class="form-group full">
+      <label id="markdown-label" for="markdown">Markdown Content</label>
+      <textarea id="markdown" name="markdown" rows="20" placeholder="Write your content in Markdown...">{content?.markdown}</textarea>
+    </div>
+
+    {categories.length > 0 && (
+      <div class="form-group full">
+        <label>Categories</label>
+        <div class="category-checkboxes">
+          {categories.map((cat) => (
+            <label class="category-label">
+              <input type="checkbox" name="categoryId" value={cat.id} checked={selectedCategoryIds.includes(cat.id)} />
+              <span>{cat.name}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    )}
+
+    <div class="form-actions">
+      <Button type="submit" variant="primary" icon="check">
+        {content ? "Save Changes" : "Publish Content"}
+      </Button>
+    </div>
+  </form>
+
+  {content && (
+    <section class="delete-section">
+      <h3>Danger Zone</h3>
+      <p>Delete this content item permanently. This action cannot be undone.</p>
+      <form method="post" action="/api/content/delete" class="delete-form" data-confirm="Delete this content item? This cannot be undone.">
+        <input type="hidden" name="id" value={content.id} />
+        <Button type="submit" variant="danger" icon="trash-2">
+          Delete Content
+        </Button>
+      </form>
+    </section>
+  )}
+</section>
+
+<script is:inline src={easyMdeUrl}></script>
+<script>
+  import "../scripts/admin-editor.ts";
+</script>
+
+<style>
+  .editor-section {
+    margin-bottom: 2rem;
+  }
+
+  .content-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .category-checkboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .category-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+  }
+
+  .delete-section {
+    padding: 1.5rem;
+    border: 2px solid rgb(255 61 77 / 30%);
+    border-radius: var(--r-md);
+    background:rgb(from var(--danger) r g b / 5%);
+    margin-top: 2rem;
+  }
+
+  .delete-section h3 {
+    margin: 0 0 0.5rem;
+    color: #ff3d4d;
+    font-size: 1.1rem;
+  }
+
+  .delete-section p {
+    margin: 0 0 1rem;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .delete-form {
+    display: inline-block;
+  }
+
+  @media (max-width: 768px) {
+    .form-row { grid-template-columns: 1fr; }
+    .delete-form :global(.btn) { width: 100%; }
+  }
+</style>

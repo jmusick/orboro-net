@@ -108,9 +108,12 @@ test("scripts, handlers, unsafe URLs and malformed HTML are neutralized", () => 
 test("the content editors load the bundled editor, not a static copy", async () => {
   const script = await readFile(new URL("../src/scripts/admin-editor.ts", import.meta.url), "utf8");
   assert.match(script, /new EasyMDE\(editorOptions\(markdownEl\)\)/);
+  const form = await readFile(new URL("../src/components/ContentForm.astro", import.meta.url), "utf8");
+  assert.match(form, /import "\.\.\/scripts\/admin-editor\.ts";/);
+  assert.doesNotMatch(form, /\/admin-editor\.js/);
   for (const page of ["new.astro", "[id].astro"]) {
     const source = await readFile(new URL(`../src/pages/admin/content/${page}`, import.meta.url), "utf8");
-    assert.match(source, /import "\.\.\/\.\.\/\.\.\/scripts\/admin-editor\.ts";/, page);
-    assert.doesNotMatch(source, /\/admin-editor\.js/, page);
+    assert.match(source, /<ContentForm\b/, page);
+    assert.doesNotMatch(source, /admin-editor/, page);
   }
 });

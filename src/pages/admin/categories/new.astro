@@ -1,7 +1,6 @@
 ---
 import AdminLayout from "../../../layouts/AdminLayout.astro";
-import FormMessage from "../../../components/FormMessage.astro";
-import Button from "../../../components/Button.astro";
+import CategoryForm from "../../../components/CategoryForm.astro";
 import { requireAdmin } from "../../../lib/http";
 
 const access = requireAdmin(Astro);
@@ -9,85 +8,5 @@ if (access instanceof Response) return access;
 ---
 
 <AdminLayout title="New Category">
-  {Astro.url.searchParams.get("error") === "invalid" && <FormMessage error fields={[{ id: "name", label: "Name" }, { id: "slug", label: "Slug" }]}>Category was not saved. Provide a name of up to 100 characters and a slug that no other category uses. Re-enter any unsaved changes before saving again.</FormMessage>}
-  <section class="editor-section">
-    <form method="post" action="/api/categories/save" class="category-editor">
-      <div class="form-row">
-        <div class="form-group">
-          <label for="name">Name</label>
-          <input id="name" type="text" name="name" maxlength="100" required placeholder="Category name" />
-        </div>
-        <div class="form-group">
-          <label for="slug">Slug</label>
-          <input id="slug" type="text" name="slug" maxlength="200" required placeholder="category-slug" />
-        </div>
-      </div>
-
-      <div class="form-actions">
-        <Button href="/admin/categories" variant="secondary">
-          Cancel
-        </Button>
-        <Button type="submit" variant="primary" icon="check">
-          Create Category
-        </Button>
-      </div>
-    </form>
-  </section>
-
-  <script is:inline nonce={Astro.locals.nonce}>
-    (function () {
-      var nameEl = document.querySelector('#name');
-      var slugEl = document.querySelector('#slug');
-      if (!(nameEl instanceof HTMLInputElement) || !(slugEl instanceof HTMLInputElement)) return;
-      var slugDirty = false;
-      slugEl.addEventListener('input', function () { slugDirty = true; });
-      nameEl.addEventListener('input', function () {
-        if (slugDirty) return;
-        slugEl.value = nameEl.value
-          .toLowerCase()
-          .trim()
-          .replace(/[^a-z0-9\s-]/g, '')
-          .replace(/[\s-]+/g, '-')
-          .replace(/^-+|-+$/g, '');
-      });
-    })();
-  </script>
-
-  <style>
-    .editor-section {
-      margin-bottom: 2rem;
-    }
-
-    .category-editor {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-
-    .form-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 1rem;
-    }
-
-    .form-actions {
-      display: flex;
-      gap: 1rem;
-      align-items: center;
-      justify-content: flex-end;
-      padding: 1.5rem 0;
-      border-top: 1px solid var(--line);
-    }
-
-    @media (max-width: 768px) {
-      .form-row {
-        grid-template-columns: 1fr;
-      }
-
-      .form-actions {
-        flex-direction: column;
-        align-items: stretch;
-      }
-    }
-  </style>
+  <CategoryForm />
 </AdminLayout>

@@ -70,11 +70,11 @@ test('navigation and repeated controller execution prompt once for new forms', (
 
 test('all three delete forms declare confirmation without inline handlers', () => {
   for (const [path, action] of [
-    ['categories/[id].astro', 'categories'],
-    ['media/index.astro', 'media'],
-    ['content/[id].astro', 'content']
+    ['components/CategoryForm.astro', 'categories'],
+    ['pages/admin/media/index.astro', 'media'],
+    ['components/ContentForm.astro', 'content']
   ]) {
-    const source = readFileSync(new URL(`../src/pages/admin/${path}`, import.meta.url), 'utf8');
+    const source = readFileSync(new URL(`../src/${path}`, import.meta.url), 'utf8');
     const form = source.match(new RegExp(`<form[^>]*action="/api/${action}/delete"[^>]*>`))[0];
     assert.match(form, /data-confirm="[^"]+"/);
     assert.doesNotMatch(form, /onsubmit=/);
