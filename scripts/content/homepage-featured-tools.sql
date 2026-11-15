@@ -9,7 +9,7 @@ UPDATE content SET homepage_featured = 1, homepage_group = 'wow', homepage_order
 WHERE slug = 'midnight-season-2-mythic-plus-interrupt-utility-cheat-sheet' AND page_type = 'page';
 
 UPDATE content SET homepage_featured = 1, homepage_group = 'wow', homepage_order = 10,
-  homepage_description = 'Compare Blizzard''s Assisted Combat priorities across specializations with SimulationCraft.'
+  homepage_description = 'Compare Blizzard''s 12.1.5 Assisted Combat priorities and simulated DPS with SimulationCraft.'
 WHERE slug = 'assisted-combat-analysis' AND page_type = 'page';
 
 UPDATE content SET homepage_featured = 1, homepage_group = 'wow', homepage_order = 20,
