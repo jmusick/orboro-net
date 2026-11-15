@@ -55,8 +55,8 @@ const noun = (n: number) => (n === 1 ? "post" : "posts");
 	],
 }}>
 	{lead && (
-		<section slot="hero" class="lead" aria-labelledby="lead-title">
-			<HeroArt image={lead.featuredImageUrl} scrim="side" />
+		<section slot="hero" class:list={["lead", lead.featuredImageUrl && "lead--art"]} aria-labelledby="lead-title">
+			<HeroArt image={lead.featuredImageUrl} scrim="side" stack />
 			<div class="lead__inner">
 				<p class="lead__meta">
 					{lead.categories.map((cat) => (
@@ -317,5 +317,47 @@ const noun = (n: number) => (n === 1 ? "post" : "posts");
 	.topic__count {
 		color: var(--text-soft);
 		font-size: 0.9rem;
+	}
+
+	/* ── Phones: shorter page, and the lead's art shows above its copy ── */
+	@media (max-width: 760px) {
+		/* The copy starts below HeroArt's `stack` art band. */
+		.lead {
+			min-height: 0;
+			padding-bottom: var(--space-10);
+		}
+
+		.lead--art {
+			padding-top: 11rem;
+		}
+	}
+
+	@media (max-width: 599px) {
+		.topic-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 0.75rem;
+		}
+
+		/* An odd last banner spans the row instead of leaving a hole. */
+		.topic-grid li:last-child:nth-child(odd) {
+			grid-column: 1 / -1;
+		}
+
+		.topic {
+			min-height: 8rem;
+			border-radius: var(--r-md,10px);
+		}
+
+		.topic__label {
+			padding: 0.85rem 1rem;
+		}
+
+		.topic__name {
+			font-size: 1.05rem;
+		}
+
+		.topic__count {
+			font-size: 0.85rem;
+		}
 	}
 </style>

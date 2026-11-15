@@ -6,11 +6,13 @@ interface Props {
   image?: string | null;
   /** "side" darkens from the left for text beside the art; "bottom" from below. */
   scrim?: "side" | "bottom";
+  /** Phones only: show the art in a band above the copy instead of behind it. */
+  stack?: boolean;
 }
-const { image, scrim = "side" } = Astro.props;
+const { image, scrim = "side", stack = false } = Astro.props;
 const artwork = image ? responsiveImage(image, HERO_WIDTHS, scrim === "side" ? "(max-width: 760px) 100vw, 74vw" : "100vw", Astro.url) : null;
 ---
-<div class:list={["hero-art", `hero-art--${scrim}`, !image && "hero-art--plain"]} aria-hidden="true">
+<div class:list={["hero-art", `hero-art--${scrim}`, stack && "hero-art--stack", !image && "hero-art--plain"]} aria-hidden="true">
   {image && <img {...artwork} alt="" fetchpriority="high" decoding="async" />}
 </div>
 <style>
@@ -87,6 +89,18 @@ const artwork = image ? responsiveImage(image, HERO_WIDTHS, scrim === "side" ? "
     }
     .hero-art--side::before {
       background: linear-gradient(0deg, var(--bg) 15%, rgb(from var(--bg) r g b / 88%) 55%, rgb(from var(--bg) r g b / 55%) 100%);
+    }
+
+    /* `stack`: the art fills an unscrimmed band at the top of the frame (only
+       the header's own scrim covers it) and fades into solid ground. The page
+       must start its copy below the band: the homepage lead pads it 11rem. */
+    .hero-art--stack img {
+      bottom: auto;
+      height: 17rem;
+      mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+    }
+    .hero-art--stack::before {
+      background: linear-gradient(180deg, transparent 0, transparent 12rem, var(--bg) 17rem);
     }
   }
 </style>
