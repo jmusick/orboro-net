@@ -150,3 +150,13 @@ test('post summaries exclude drafts and pages and order by publication with a cr
   assert.equal(summaries[1].createdAt, 200);
   assert.deepEqual((await content.listPostSummaries(locals, 2)).map(row => row.slug), ['post-new', 'post-fallback']);
 });
+
+test('nav items link to their content or to their own code-page path', async (t) => {
+  const { sqlite } = setup(t);
+  sqlite.exec(`INSERT INTO nav_items (id, label, content_id, path, sort_order, created_at) VALUES
+    ('n-tools', 'Tools', NULL, '/tools', 0, 0), ('n-page', 'WoW', 'page-wow', NULL, 1, 0), ('n-post', 'Post', 'post-new', NULL, 2, 0);`);
+  const nav = await content.listNavItems(locals);
+  assert.deepEqual(nav.map(i => [i.label, i.url, i.path]), [
+    ['Tools', '/tools', '/tools'], ['WoW', '/pages/page-wow', null], ['Post', '/blog/post-new', null],
+  ]);
+});

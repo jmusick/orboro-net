@@ -445,6 +445,8 @@ export interface NavItemRecord {
   id: string;
   label: string;
   contentId: string | null;
+  /** Code-page path (see NAV_CODE_PAGES) when the item has no content row. */
+  path: string | null;
   url: string;
   sortOrder: number;
   parentItemId: string | null;
@@ -459,7 +461,7 @@ export async function listNavItems(locals: App.Locals): Promise<NavItemRecord[]>
   if (!db) return [];
   const result = await db
     .prepare(
-      `SELECT nav_items.id, nav_items.label, nav_items.content_id,
+      `SELECT nav_items.id, nav_items.label, nav_items.content_id, nav_items.path,
               nav_items.sort_order, nav_items.parent_item_id,
               content.slug AS content_slug, content.page_type AS content_page_type
        FROM nav_items
@@ -471,7 +473,9 @@ export async function listNavItems(locals: App.Locals): Promise<NavItemRecord[]>
     id: row.id,
     label: row.label,
     contentId: row.content_id ?? null,
-    url: contentPageUrl(row.content_page_type ?? "page", row.content_slug ?? ""),
+    path: row.path ?? null,
+    // A code-page item (e.g. /tools) carries its own path; others link to their content.
+    url: row.path ?? contentPageUrl(row.content_page_type ?? "page", row.content_slug ?? ""),
     sortOrder: row.sort_order,
     parentItemId: row.parent_item_id ?? null,
   }));

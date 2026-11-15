@@ -5,6 +5,7 @@ import Button from "../../../components/Button.astro";
 import { requireAdmin } from "../../../lib/http";
 import { listNavItems, listAdminContent } from "../../../lib/content";
 import { jsonForHtml } from "../../../lib/json";
+import { NAV_CODE_PAGES } from "../../../lib/content-writes";
 
 const access = requireAdmin(Astro);
 if (access instanceof Response) return access;
@@ -21,6 +22,7 @@ const initNav = navItems
   .map((item) => ({
     clientId: item.id,
     contentId: item.contentId ?? undefined,
+    path: item.path ?? undefined,
     label: item.label,
     parentId: item.parentItemId ?? null,
     sortOrder: item.sortOrder,
@@ -31,13 +33,15 @@ const initContent = publishedContent.map((c) => ({
   slug: c.slug,
   pageType: c.pageType,
 }));
+// Code pages (not D1 rows) that can also go in the nav, e.g. /tools.
+const initSitePages = NAV_CODE_PAGES.map((page) => ({ path: page.path, title: page.title }));
 ---
 
 <AdminLayout title="Navigation">
   {saved && <FormMessage>Navigation saved successfully.</FormMessage>}
   {error === "invalid" && <FormMessage error fields={[{ id: "nav-list", label: "Review navigation items" }]}>Navigation was not saved. Review the items and try again.</FormMessage>}
 
-  <script is:inline type="application/json" id="nav-init" set:html={jsonForHtml({ nav: initNav, content: initContent })} />
+  <script is:inline type="application/json" id="nav-init" set:html={jsonForHtml({ nav: initNav, content: initContent, sitePages: initSitePages })} />
 
   <section class="nav-section">
     <form id="nav-form" method="post" action="/api/nav/save">
@@ -53,7 +57,7 @@ const initContent = publishedContent.map((c) => ({
         <h2 class="panel-title">Add Item</h2>
         <div class="add-row">
           <div class="nav-field add-field">
-            <label for="content-select">Page or post</label>
+            <label for="content-select">Page, post or site page</label>
             <select id="content-select" class="field-select">
               <option value="">— select page —</option>
             </select>
@@ -81,6 +85,9 @@ const initContent = publishedContent.map((c) => ({
       var data = JSON.parse(initEl.textContent || '{}');
       var navItems = (data.nav || []).slice();
       var allContent = data.content || [];
+      var sitePages = data.sitePages || [];
+      // The add dropdown keys site pages as "path:/tools" so they can't collide with content IDs.
+      var SITE_PREFIX = 'path:';
       var idCounter = Date.now();
 
       function newId() { return 'c' + (++idCounter); }
@@ -95,13 +102,19 @@ const initContent = publishedContent.map((c) => ({
           .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
       }
 
+      function sitePageFor(item) {
+        return item.path ? sitePages.find(function (p) { return p.path === item.path; }) : undefined;
+      }
+
       function getItemUrl(item) {
+        if (item.path) return item.path;
         var c = allContent.find(function (c) { return c.id === item.contentId; });
         if (!c) return '#';
         return c.pageType === 'post' ? '/blog/' + c.slug : '/pages/' + c.slug;
       }
 
       function getItemBadge(item) {
+        if (item.path) return 'site';
         var c = allContent.find(function (c) { return c.id === item.contentId; });
         return c ? c.pageType : 'page';
       }
@@ -174,7 +187,7 @@ const initContent = publishedContent.map((c) => ({
       }
 
       function controlName(control, item) {
-        var content = allContent.find(function (c) { return c.id === item.contentId; });
+        var content = allContent.find(function (c) { return c.id === item.contentId; }) || sitePageFor(item);
         var name = item.label.trim() || (content ? content.title : 'unlabelled item');
         if (control === 'up' || control === 'down') return 'Move ' + name + ' ' + control;
         if (control === 'remove') return 'Remove ' + name;
@@ -290,7 +303,11 @@ const initContent = publishedContent.map((c) => ({
         var contentSel = document.getElementById('content-select');
         var addBtn = document.getElementById('add-btn');
         var usedContentIds = navItems.map(function (n) { return n.contentId; });
-        var avail = allContent.filter(function (c) { return usedContentIds.indexOf(c.id) === -1; });
+        var usedPaths = navItems.map(function (n) { return n.path; });
+        var avail = sitePages
+          .filter(function (p) { return usedPaths.indexOf(p.path) === -1; })
+          .map(function (p) { return { id: SITE_PREFIX + p.path, title: p.title, pageType: 'site page' }; })
+          .concat(allContent.filter(function (c) { return usedContentIds.indexOf(c.id) === -1; }));
         if (contentSel) {
           var selected = contentSel.value;
           contentSel.innerHTML = avail.length === 0
@@ -313,10 +330,16 @@ const initContent = publishedContent.map((c) => ({
         var sel = document.getElementById('content-select');
         var id = sel ? sel.value : '';
         if (!id) return;
-        var c = allContent.find(function (c) { return c.id === id; });
-        if (!c) return;
         var clientId = newId();
-        navItems.push({ clientId: clientId, contentId: id, label: c.title, parentId: parentId, sortOrder: maxOrder + 1 });
+        if (id.indexOf(SITE_PREFIX) === 0) {
+          var site = sitePages.find(function (p) { return p.path === id.slice(SITE_PREFIX.length); });
+          if (!site) return;
+          navItems.push({ clientId: clientId, path: site.path, label: site.title, parentId: parentId, sortOrder: maxOrder + 1 });
+        } else {
+          var c = allContent.find(function (c) { return c.id === id; });
+          if (!c) return;
+          navItems.push({ clientId: clientId, contentId: id, label: c.title, parentId: parentId, sortOrder: maxOrder + 1 });
+        }
         render({ id: clientId, control: 'label' });
       });
 

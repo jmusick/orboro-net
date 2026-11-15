@@ -119,3 +119,14 @@ test('collection pages list their items with absolute URLs and omit an empty lis
   assert.equal('mainEntity' in category, false);
   assert.equal(category.url, 'https://orboro.net/blog/category/wow');
 });
+
+test('a code-page nav parent such as /tools appears in the trail', () => {
+  const withTools = [
+    { id: 't', label: 'Tools', contentId: null, url: '/tools', parentItemId: null },
+    { id: 'u', label: 'Sim', contentId: 'c-sim', url: '/pages/sim', parentItemId: 't' },
+  ];
+  assert.deepEqual(pageTrail(withTools, 'c-sim', 'Sim', '/pages/sim'), [
+    { name: 'Tools', path: '/tools' },
+    { name: 'Sim', path: '/pages/sim' },
+  ]);
+});

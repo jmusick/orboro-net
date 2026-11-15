@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DatabaseSync } from 'node:sqlite';
 import {
-  MAX_CATEGORIES_PER_CONTENT, MAX_MARKDOWN_LENGTH, MAX_TITLE_LENGTH, MAX_SUMMARY_LENGTH,
+  MAX_CATEGORIES_PER_CONTENT, MAX_MARKDOWN_LENGTH, NAV_CODE_PAGES, MAX_TITLE_LENGTH, MAX_SUMMARY_LENGTH,
   WriteValidationError, isAllowedImageUrl, parseNavItems, parseRecordId, replaceNavItems,
   saveCategoryRecord, saveContentWithCategories, validateContentInput, validateMediaInput,
 } from '../src/lib/content-writes.ts';
@@ -21,7 +21,7 @@ function makeDb(options: { failOn?: string } = {}) {
       category_id TEXT NOT NULL REFERENCES categories(id) ON DELETE CASCADE, PRIMARY KEY (content_id, category_id));
     CREATE TABLE nav_items (id TEXT PRIMARY KEY, label TEXT NOT NULL, content_id TEXT REFERENCES content(id) ON DELETE CASCADE,
       sort_order INTEGER NOT NULL DEFAULT 0, created_at INTEGER NOT NULL,
-      parent_item_id TEXT REFERENCES nav_items(id) ON DELETE CASCADE);
+      parent_item_id TEXT REFERENCES nav_items(id) ON DELETE CASCADE, path TEXT);
   `);
   const make = (sql: string, values: unknown[] = []) => ({
     sql,
@@ -83,6 +83,31 @@ test('malformed items, duplicate IDs, bad references and cycles are rejected', (
   assert.throws(() => parseNavItems(raw([item('a', 'missing')])), WriteValidationError);
   assert.throws(() => parseNavItems(raw([item('a', 'a')])), WriteValidationError);
   assert.throws(() => parseNavItems(raw([item('a', 'b'), item('b', 'c'), item('c', 'a')])), WriteValidationError);
+});
+
+test('a nav item links to exactly one page or one listed site path', () => {
+  const site = (clientId: string, extra: object = {}) => item(clientId, null, { contentId: undefined, path: '/tools', ...extra });
+  assert.deepEqual(parseNavItems(raw([site('t')]))[0], {
+    clientId: 't', contentId: null, path: '/tools', label: 't', sortOrder: 0, parentClientId: null,
+  });
+  assert.equal(parseNavItems(raw([item('p')]))[0].path, null);
+  assert.ok(NAV_CODE_PAGES.some((page) => page.path === '/tools'));
+  assert.throws(() => parseNavItems(raw([site('t', { contentId: 'p1' })])), WriteValidationError);
+  assert.throws(() => parseNavItems(raw([site('t', { path: undefined })])), WriteValidationError);
+  for (const path of ['/admin', 'https://evil.example/', '//evil.example', '/tools/', 'tools']) {
+    assert.throws(() => parseNavItems(raw([site('t', { path })])), WriteValidationError, path);
+  }
+});
+
+test('replaceNavItems stores site-path items with a null page', async () => {
+  const { db, sqlite } = makeDb();
+  seed(sqlite);
+  await replaceNavItems(db, parseNavItems(raw([item('t', null, { contentId: '', path: '/tools', label: 'Tools' }), item('p', 't')])), 5);
+  const nav = rows(sqlite, 'SELECT label, content_id, path, parent_item_id FROM nav_items ORDER BY label');
+  const tools = nav.find((r: any) => r.label === 'Tools');
+  assert.equal(tools.content_id, null);
+  assert.equal(tools.path, '/tools');
+  assert.equal(nav.find((r: any) => r.label === 'p').path, null);
 });
 
 test('parents are ordered ahead of children whatever the input order', () => {

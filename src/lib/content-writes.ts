@@ -75,9 +75,21 @@ export function isAllowedImageUrl(value: string): boolean {
 const within = (value: unknown, max: number, allowEmpty = false): value is string =>
   typeof value === "string" && value.length <= max && (allowEmpty || value.trim().length > 0);
 
+/**
+ * Code pages (Astro files, not D1 rows) that a nav item may link to through
+ * `nav_items.path` instead of `content_id`. Add a page here to offer it in
+ * /admin/nav; nothing else is accepted, so a nav item can't point off-site.
+ */
+export const NAV_CODE_PAGES: ReadonlyArray<{ path: string; title: string }> = [
+  { path: "/tools", title: "Tools" },
+];
+const NAV_CODE_PATHS = new Set(NAV_CODE_PAGES.map((page) => page.path));
+
 export interface NavItemInput {
   clientId: string;
-  contentId: string;
+  /** Exactly one of contentId and path is set. */
+  contentId: string | null;
+  path: string | null;
   label: string;
   sortOrder: number;
   parentClientId: string | null;
@@ -119,10 +131,14 @@ export function parseNavItems(raw: string): NavItemInput[] {
   const items: NavItemInput[] = parsed.map((entry, index) => {
     if (!isRecord(entry)) throw new WriteValidationError(`Item ${index} is not an object.`);
     const clientId = requiredString(entry.clientId, MAX_CLIENT_ID_LENGTH);
-    const contentId = requiredString(entry.contentId, MAX_ID_LENGTH);
+    const contentId = entry.contentId == null || entry.contentId === "" ? null : requiredString(entry.contentId, MAX_ID_LENGTH);
+    const path = entry.path == null || entry.path === "" ? null : requiredString(entry.path, MAX_ID_LENGTH);
     const label = requiredString(entry.label, MAX_NAV_LABEL_LENGTH);
-    if (!clientId || !contentId || !label) {
-      throw new WriteValidationError(`Item ${index} needs an id, a page and a label.`);
+    if (!clientId || !label || (contentId === null) === (path === null)) {
+      throw new WriteValidationError(`Item ${index} needs an id, a label and either a page or a site path.`);
+    }
+    if (path !== null && !NAV_CODE_PATHS.has(path)) {
+      throw new WriteValidationError(`Item ${index} links to an unknown site path.`);
     }
     const sortOrder = entry.sortOrder;
     if (typeof sortOrder !== "number" || !Number.isSafeInteger(sortOrder)) {
@@ -133,7 +149,7 @@ export function parseNavItems(raw: string): NavItemInput[] {
       parentClientId = requiredString(entry.parentId, MAX_CLIENT_ID_LENGTH);
       if (!parentClientId) throw new WriteValidationError(`Item ${index} has an invalid parent.`);
     }
-    return { clientId, contentId, label, sortOrder, parentClientId };
+    return { clientId, contentId, path, label, sortOrder, parentClientId };
   });
 
   return orderParentsFirst(items);
@@ -189,9 +205,14 @@ export async function replaceNavItems(
   newId: () => string = () => crypto.randomUUID(),
 ): Promise<void> {
   const ordered = orderParentsFirst(items);
-  const known = await existingIds(db, "content", ordered.map((i) => i.contentId));
+  const contentIds = ordered.flatMap((i) => (i.contentId === null ? [] : [i.contentId]));
+  const known = await existingIds(db, "content", contentIds);
   for (const item of ordered) {
-    if (!known.has(item.contentId)) throw new WriteValidationError(`Unknown page ${item.contentId}.`);
+    if ((item.contentId === null) === (item.path === null)) {
+      throw new WriteValidationError(`Item ${item.clientId} needs either a page or a site path.`);
+    }
+    if (item.contentId !== null && !known.has(item.contentId)) throw new WriteValidationError(`Unknown page ${item.contentId}.`);
+    if (item.path !== null && !NAV_CODE_PATHS.has(item.path)) throw new WriteValidationError(`Unknown site path ${item.path}.`);
   }
 
   const realIds = new Map<string, string>();
@@ -202,13 +223,14 @@ export async function replaceNavItems(
     statements.push(
       db
         .prepare(
-          `INSERT INTO nav_items (id, label, content_id, parent_item_id, sort_order, created_at)
-           VALUES (?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO nav_items (id, label, content_id, path, parent_item_id, sort_order, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
         )
         .bind(
           realIds.get(item.clientId),
           item.label,
           item.contentId,
+          item.path,
           item.parentClientId === null ? null : realIds.get(item.parentClientId),
           item.sortOrder,
           now,

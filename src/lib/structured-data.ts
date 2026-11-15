@@ -63,7 +63,8 @@ export function pageTrail(navItems: NavNodeLike[], contentId: string, pageTitle:
   let cursor = own.parentItemId ? byId.get(own.parentItemId) : undefined;
   while (cursor && !seen.has(cursor.id)) {
     seen.add(cursor.id);
-    if (cursor.contentId && cursor.url.startsWith("/") && cursor.url !== "/pages/") {
+    // Label-only parents resolve to "/pages/"; content and code-page items (e.g. /tools) link.
+    if (cursor.url.startsWith("/") && cursor.url !== "/pages/") {
       ancestors.unshift({ name: cursor.label, path: cursor.url });
     }
     cursor = cursor.parentItemId ? byId.get(cursor.parentItemId) : undefined;
