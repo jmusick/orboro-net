@@ -191,7 +191,7 @@ npm run scan:secrets:self-test    # proves a synthetic leak is caught and a clea
 
 ## Database
 
-Numbered migrations in `migrations/` apply in order. Tables: `users`, `sessions`, `content`, `media`, `categories`, `content_categories`, `nav_items`, `login_attempts`.
+Numbered migrations in `migrations/` apply in order. Tables: `users`, `sessions`, `content`, `media`, `categories`, `content_categories`, `nav_items`, `login_attempts`, plus the member tables `members`, `member_sessions`, `member_tokens`, `comments`, `comment_votes`, `comment_reports` and `rate_limits`.
 
 Page and post Markdown is stored in `content.markdown`. The editor's optional Summary field stores up to 200 characters of single-line plain text in `content.summary`. Cards, the homepage lead, search and social previews, RSS descriptions and public API excerpts use it when supplied; leaving it empty keeps the Markdown-derived description. A tool's homepage card description overrides its summary. Blog search also matches summaries.
 

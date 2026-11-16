@@ -107,10 +107,6 @@ These rationales were consolidated from earlier project notes; they are historic
 - **v1.37.0:** took the palette from the logo and header art instead of the previous neon colors. Fonts became self-hosted because the prior stylesheet named an unloaded face and visitors saw Segoe UI. The homepage began leading with the newest post, and text-only pages gained the blog sidebar.
 - **October 4, 2026:** removed `/admin/setup`, which was unnecessary for a one-user site and had a race on empty databases. `admin:create` handles fresh and restored databases.
 
-## Research data
-
-The assisted-combat generator reads external inputs through `ASSISTED_COMBAT_RESEARCH_ROOT` and `ASSISTED_COMBAT_NOTES_ROOT`. The input filenames and error handling are documented in [the generator](../scripts/generate-assisted-combat-data.mjs). Set the variables when using another workspace; do not copy personal research locations into runtime code.
-
 ## Image Transformations — October 28, 2026
 
 For [issue #55](https://github.com/jmusick/orboro-net/issues/55), checked the authenticated Cloudflare dashboard under Images & Stream → Transformations → orboro.net. Transformations was disabled. With JD's authorization, enabled it and verified the settings page now offers **Disable for zone**. Sources remains **This zone only**, allowing `orboro.net` and `*.orboro.net`, including the R2 custom domain `media.orboro.net`. Any-origin access was not enabled.
