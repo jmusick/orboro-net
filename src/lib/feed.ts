@@ -1,10 +1,11 @@
 import { marked } from 'marked';
 import xss from 'xss';
 import { summaryOrExcerpt } from './excerpt.ts';
+import { hasCompleteShortcode, stripShortcodes } from './shortcode-tokens.ts';
 
 /** Preserve the feed's shortcode-free fallback when no summary was supplied. */
 export function feedDescription(record: { summary?: string; markdown: string }): string {
-  return summaryOrExcerpt({ ...record, markdown: record.markdown.replace(/\{\{\w+[^}]*\}\}/g, '') });
+  return summaryOrExcerpt({ ...record, markdown: stripShortcodes(record.markdown) });
 }
 
 // Feed markup is kept for reader portability, rather than passed through the
@@ -56,7 +57,7 @@ export function escapeCdata(html: string): string {
 // Feed readers cannot execute or style our widgets. Keep those posts useful and
 // small by linking to the full article instead of expanding shortcode payloads.
 export function renderFeedHtml(markdown: string, excerpt: string, link: string, base: string): string {
-  if (/\{\{\w+[^}]*\}\}/.test(markdown)) {
+  if (hasCompleteShortcode(markdown)) {
     return `<p>${escapeXml(excerpt)}</p><p><a href="${escapeXml(link)}">Read the full article on Orboro.net</a></p>`;
   }
   const html = omitFeedCode(marked.parse(markdown, { async: false }));

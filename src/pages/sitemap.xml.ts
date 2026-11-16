@@ -3,7 +3,8 @@ import { getDB } from '../lib/db';
 import { PRIVACY_UPDATED_AT } from '../lib/privacy';
 import { sitemapDate } from '../lib/sitemap';
 import { escapeXml } from '../lib/feed';
-import { EMBEDS_SHORTCODE_SQL, TOOL_INDEX_EXCLUDED_SLUGS } from '../lib/tools';
+import { TOOL_INDEX_EXCLUDED_SLUGS } from '../lib/tools';
+import { EMBEDS_SHORTCODE_SQL } from '../lib/shortcode-tokens';
 
 export const GET: APIRoute = async ({ site, locals }) => {
   const BASE = (site ?? new URL('https://orboro.net')).origin;

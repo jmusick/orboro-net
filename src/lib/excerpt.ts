@@ -1,5 +1,7 @@
 // Dependency-free so tests and the listing query can use it without the Workers runtime.
 
+import { stripShortcodePrefix, stripShortcodes } from './shortcode-tokens.ts';
+
 /**
  * Story-card excerpt length, shared by every StoryCard caller. Measured in
  * Hanken Grotesk at 1rem / 1.6 against the published posts' openings: 100
@@ -70,9 +72,7 @@ export function summaryOrExcerpt(
  */
 export function toolDescription(page: { homepageDescription: string; summary?: string; markdown: string }, maxLen = 140): string {
   if (page.homepageDescription) return page.homepageDescription;
-  let prose = page.markdown
-    .replace(/\{\{[\s\S]*?\}\}/g, "")
-    .replace(/\{\{[\s\S]*$/, "");
+  let prose = stripShortcodePrefix(page.markdown);
   // Repeat until stable so removing one tag can't leave another behind ("<<a>script>").
   let previous;
   do {
@@ -83,12 +83,10 @@ export function toolDescription(page: { homepageDescription: string; summary?: s
 }
 
 export function descriptionFromMarkdown(md: string, maxLen = 155): string {
-  const plain = md
-    .replace(/```[\s\S]*?```/g, '')
-    // Shortcode tokens are widget placeholders, not prose. Without this a
-    // shortcode-only page ends up with "{{atlasfarmingstrategies}}" as its
-    // meta description (the underscores get eaten by the emphasis strip).
-    .replace(/\{\{\w+[^}]*\}\}/g, '')
+  // Shortcode tokens are widget placeholders, not prose. Without this a
+  // shortcode-only page ends up with "{{atlasfarmingstrategies}}" as its
+  // meta description (the underscores get eaten by the emphasis strip).
+  const plain = stripShortcodes(md.replace(/```[\s\S]*?```/g, ''))
     // Markdown may contain raw HTML (the About page opens with an <img>), and
     // an unstripped tag ends up escaped into the meta description verbatim.
     .replace(/<[^>]+>/g, ' ')

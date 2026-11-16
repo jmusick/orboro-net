@@ -12,7 +12,9 @@ import { ensureDB, getDB } from "./db";
 import { EXCERPT_SOURCE_CHARS, queryBlogPage, type BlogFilters, type BlogPage } from "./blog-listing";
 import { queryRelatedPosts, RELATED_POSTS_LIMIT, type RelatedPost } from "./related-posts";
 import type { CoverCandidate } from "./topics";
-import { EMBEDS_SHORTCODE_SQL, TOOL_INDEX_EXCLUDED_SLUGS, type ToolPage } from "./tools";
+import { TOOL_INDEX_EXCLUDED_SLUGS, type ToolPage } from "./tools";
+// Keep the .ts extension: tests/content.test.ts only adds one for a fixed list of imports.
+import { EMBEDS_SHORTCODE_SQL } from "./shortcode-tokens.ts";
 
 export { excerptFromMarkdown, summaryOrExcerpt, CARD_EXCERPT_LENGTH } from "./excerpt";
 

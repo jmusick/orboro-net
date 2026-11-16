@@ -35,12 +35,6 @@ export const TOOL_INDEX_EXCLUDED_SLUGS: ReadonlySet<string> = new Set([
   "development",
 ]);
 
-/**
- * SQL condition for "this Markdown embeds a `{{shortcode}}`", matching
- * `classifyPage`'s `\{\{\w` test. Shared by `listToolPages` and the sitemap.
- */
-export const EMBEDS_SHORTCODE_SQL = "markdown GLOB '*{{[A-Za-z0-9_]*'";
-
 export interface ToolPage {
   slug: string;
   title: string;

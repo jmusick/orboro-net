@@ -10,6 +10,7 @@ import { getPublishedBySlugAndType, listPostSummaries, listCategoriesWithPostCou
 import { breadcrumbList, classifyPage, graphOf, pageNode, pageTrail, withHome } from "../../lib/structured-data";
 import { processShortcodes } from "../../lib/shortcodes";
 import { formatPageUpdatedAt } from "../../lib/dates";
+import { hasShortcode } from "../../lib/shortcode-tokens";
 
 const { slug } = Astro.params;
 if (!slug) return Astro.rewrite("/404");
@@ -25,7 +26,7 @@ const description = summaryOrExcerpt(page, 155, descriptionFromMarkdown) || `${p
 // Shortcode widgets (cheat sheets, explorers) need the whole panel. A page
 // that is only prose would leave most of the panel empty beside its capped
 // text column, so it gets the blog sidebar instead, like a post.
-const hasWidgets = /\{\{\w+/.test(page.markdown);
+const hasWidgets = hasShortcode(page.markdown);
 const [categories, recentPosts] = hasWidgets
   ? [[], []]
   : await Promise.all([

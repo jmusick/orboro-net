@@ -1,6 +1,8 @@
 // Builders for page JSON-LD and breadcrumb trails. Pure functions so they can be
 // tested without Astro; every result must still be serialized with jsonForHtml.
 
+import { hasShortcode, stripShortcodes } from "./shortcode-tokens.ts";
+
 export interface Crumb {
   name: string;
   /** Site-relative path. */
@@ -26,9 +28,7 @@ export const AUTHOR_AVATAR_PATH = "/images/jd-avatar-192.webp";
 export type PageSchemaType = "Article" | "WebPage";
 
 export function countProseWords(markdown: string): number {
-  return markdown
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/\{\{\w+[^}]*\}\}/g, " ")
+  return stripShortcodes(markdown.replace(/```[\s\S]*?```/g, " "), " ")
     .replace(/<[^>]+>/g, " ")
     .replace(/!\[.*?\]\(.*?\)/g, " ")
     .replace(/\[(.+?)\]\(.*?\)/g, "$1")
@@ -42,7 +42,7 @@ export function countProseWords(markdown: string): number {
  * articles. Prose-only pages are Articles once they carry enough text.
  */
 export function classifyPage(markdown: string): PageSchemaType {
-  if (/\{\{\w+/.test(markdown)) return "WebPage";
+  if (hasShortcode(markdown)) return "WebPage";
   return countProseWords(markdown) >= ARTICLE_MIN_WORDS ? "Article" : "WebPage";
 }
 
