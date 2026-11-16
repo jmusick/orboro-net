@@ -451,6 +451,12 @@ export interface NavItemRecord {
   url: string;
   sortOrder: number;
   parentItemId: string | null;
+  /**
+   * False when the item links to a draft page or post. Code-page items are
+   * always published. Public nav, footer and breadcrumbs skip unpublished items
+   * (and everything under them); the admin editor still lists them.
+   */
+  published: boolean;
 }
 
 function contentPageUrl(pageType: string, slug: string): string {
@@ -464,7 +470,8 @@ export async function listNavItems(locals: App.Locals): Promise<NavItemRecord[]>
     .prepare(
       `SELECT nav_items.id, nav_items.label, nav_items.content_id, nav_items.path,
               nav_items.sort_order, nav_items.parent_item_id,
-              content.slug AS content_slug, content.page_type AS content_page_type
+              content.slug AS content_slug, content.page_type AS content_page_type,
+              content.status AS content_status
        FROM nav_items
        LEFT JOIN content ON content.id = nav_items.content_id
        ORDER BY nav_items.sort_order ASC`
@@ -479,6 +486,7 @@ export async function listNavItems(locals: App.Locals): Promise<NavItemRecord[]>
     url: row.path ?? contentPageUrl(row.content_page_type ?? "page", row.content_slug ?? ""),
     sortOrder: row.sort_order,
     parentItemId: row.parent_item_id ?? null,
+    published: row.content_id == null || row.content_status === "published",
   }));
 }
 

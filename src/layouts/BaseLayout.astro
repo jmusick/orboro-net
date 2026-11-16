@@ -74,7 +74,9 @@ function renderDropdownItems(nodes: NavNode[]): string {
   }).join('');
 }
 
-const navTree = buildNavTree(navItems);
+// Items that link to a draft are left out, and with them their whole submenu:
+// buildNavTree only reaches children through their parent.
+const navTree = buildNavTree(navItems.filter(i => i.published));
 
 function isActive(url: string): boolean {
   if (url === "/") return pathname === "/";

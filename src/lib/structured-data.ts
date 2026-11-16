@@ -13,6 +13,8 @@ export interface NavNodeLike {
   contentId: string | null;
   url: string;
   parentItemId: string | null;
+  /** False for an item that links to a draft; missing counts as published. */
+  published?: boolean;
 }
 
 /** Prose pages shorter than this are not treated as articles. */
@@ -56,6 +58,8 @@ export function isoOrUndefined(timestamp: number | null | undefined, now = Date.
  * with no linkable content (label-only menu parents) are skipped, because a
  * breadcrumb that cannot be followed is not a useful or valid trail entry.
  * Returns [] when the page has no linkable ancestor: "Home > Page" adds nothing.
+ * Also returns [] when any ancestor links to a draft: the public nav hides that
+ * ancestor's whole submenu, so the page isn't in the nav either.
  */
 export function pageTrail(navItems: NavNodeLike[], contentId: string, pageTitle: string, pagePath: string): Crumb[] {
   const byId = new Map(navItems.map((n) => [n.id, n]));
@@ -66,6 +70,7 @@ export function pageTrail(navItems: NavNodeLike[], contentId: string, pageTitle:
   let cursor = own.parentItemId ? byId.get(own.parentItemId) : undefined;
   while (cursor && !seen.has(cursor.id)) {
     seen.add(cursor.id);
+    if (cursor.published === false) return [];
     // Label-only parents resolve to "/pages/"; content and code-page items (e.g. /tools) link.
     if (cursor.url.startsWith("/") && cursor.url !== "/pages/") {
       ancestors.unshift({ name: cursor.label, path: cursor.url });

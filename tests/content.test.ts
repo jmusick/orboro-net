@@ -160,3 +160,16 @@ test('nav items link to their content or to their own code-page path', async (t)
     ['Tools', '/tools', '/tools'], ['WoW', '/pages/page-wow', null], ['Post', '/blog/post-new', null],
   ]);
 });
+
+test('nav items that link to a draft are marked unpublished but still listed', async (t) => {
+  const { sqlite } = setup(t);
+  sqlite.exec(`INSERT INTO nav_items (id, label, content_id, path, sort_order, parent_item_id, created_at) VALUES
+    ('n-tools', 'Tools', NULL, '/tools', 0, NULL, 0), ('n-page', 'WoW', 'page-wow', NULL, 1, NULL, 0),
+    ('n-draft', 'Draft', 'page-draft', NULL, 2, NULL, 0), ('n-under', 'Under', 'post-new', NULL, 3, 'n-draft', 0),
+    ('n-draft-post', 'Draft post', 'post-draft', NULL, 4, NULL, 0);`);
+  const nav = await content.listNavItems(locals);
+  assert.deepEqual(nav.map(i => [i.label, i.url, i.published]), [
+    ['Tools', '/tools', true], ['WoW', '/pages/page-wow', true], ['Draft', '/pages/page-draft', false],
+    ['Under', '/blog/post-new', true], ['Draft post', '/blog/post-draft', false],
+  ]);
+});

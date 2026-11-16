@@ -55,6 +55,21 @@ test('top-level, unlisted and label-only-parent pages get no trail', () => {
   assert.deepEqual(pageTrail(onlyLabel, 'c-z', 'Z', '/pages/z'), []);
 });
 
+test('a page under a draft ancestor gets no trail', () => {
+  const draftParent = nav.map((n) => (n.id === 'b' ? { ...n, published: false } : n));
+  assert.deepEqual(pageTrail(draftParent, 'c-tool', 'Tool Title', '/pages/tool'), []);
+  const draftGrandparent = [
+    { id: 'g', label: 'Hub', contentId: 'c-hub', url: '/pages/hub', parentItemId: null, published: false },
+    { id: 'p', label: 'Guides', contentId: 'c-guides', url: '/pages/guides', parentItemId: 'g', published: true },
+    { id: 'x', label: 'Tool', contentId: 'c-tool', url: '/pages/tool', parentItemId: 'p', published: true },
+  ];
+  assert.deepEqual(pageTrail(draftGrandparent, 'c-tool', 'Tool', '/pages/tool'), []);
+  assert.equal(breadcrumbList(withHome(pageTrail(draftGrandparent, 'c-tool', 'Tool', '/pages/tool')), ORIGIN), undefined);
+  // Published ancestors still link as before.
+  const allPublished = draftGrandparent.map((n) => ({ ...n, published: true }));
+  assert.deepEqual(pageTrail(allPublished, 'c-tool', 'Tool', '/pages/tool').map((c) => c.path), ['/pages/hub', '/pages/guides', '/pages/tool']);
+});
+
 test('nav cycles terminate', () => {
   const trail = pageTrail(nav, 'c-loop', 'Loop', '/pages/loop');
   assert.deepEqual(trail.map((c) => c.path), ['/pages/loop2', '/pages/loop']);

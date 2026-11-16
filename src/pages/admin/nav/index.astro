@@ -26,6 +26,10 @@ const initNav = navItems
     label: item.label,
     parentId: item.parentItemId ?? null,
     sortOrder: item.sortOrder,
+    // Drafts aren't in `content` (it lists published pages only), so the editor
+    // takes their URL from here and marks them; saving keeps them.
+    url: item.url,
+    draft: !item.published,
   }));
 const initContent = publishedContent.map((c) => ({
   id: c.id,
@@ -50,6 +54,7 @@ const initSitePages = NAV_CODE_PAGES.map((page) => ({ path: page.path, title: pa
       <div class="nav-panel">
         <h2 class="panel-title">Current Navigation</h2>
         <p class="panel-desc">Top-level items appear in the nav bar. Sub-items appear as a dropdown. Use ↑↓ to reorder within each level.</p>
+        <p class="panel-desc">An item marked <strong>draft</strong> links to an unpublished page. It and everything under it (marked <strong>hidden</strong>) stay off the public site until that page is published.</p>
         <ul id="nav-list" tabindex="-1" class="nav-list"></ul>
       </div>
 
@@ -108,6 +113,8 @@ const initSitePages = NAV_CODE_PAGES.map((page) => ({ path: page.path, title: pa
 
       function getItemUrl(item) {
         if (item.path) return item.path;
+        // Saved items carry the server's URL; only newly added ones are built here.
+        if (item.url) return item.url;
         var c = allContent.find(function (c) { return c.id === item.contentId; });
         if (!c) return '#';
         return c.pageType === 'post' ? '/blog/' + c.slug : '/pages/' + c.slug;
@@ -115,8 +122,21 @@ const initSitePages = NAV_CODE_PAGES.map((page) => ({ path: page.path, title: pa
 
       function getItemBadge(item) {
         if (item.path) return 'site';
-        var c = allContent.find(function (c) { return c.id === item.contentId; });
-        return c ? c.pageType : 'page';
+        return getItemUrl(item).indexOf('/blog/') === 0 ? 'post' : 'page';
+      }
+
+      // Is the item under a draft? The public nav drops a draft's whole submenu.
+      function underDraft(item) {
+        var seen = {};
+        var parentId = item.parentId;
+        while (parentId && !seen[parentId]) {
+          seen[parentId] = true;
+          var parent = navItems.find(function (i) { return i.clientId === parentId; });
+          if (!parent) return false;
+          if (parent.draft) return true;
+          parentId = parent.parentId;
+        }
+        return false;
       }
 
       function siblingsOf(parentId) {
@@ -227,6 +247,8 @@ const initSitePages = NAV_CODE_PAGES.map((page) => ({ path: page.path, title: pa
             '<div class="nav-item-body">' +
               '<div class="nav-item-meta">' +
                 '<span class="nav-badge' + (isChild ? ' nav-badge--child' : '') + '">' + escapeHtml(badge) + '</span>' +
+                (item.draft ? '<span class="nav-badge nav-badge--draft">draft</span>'
+                  : underDraft(item) ? '<span class="nav-badge nav-badge--draft">hidden</span>' : '') +
                 '<span class="nav-url">' + escapeHtml(url) + '</span>' +
               '</div>' +
               '<div class="nav-item-row">' +
@@ -428,6 +450,12 @@ const initSitePages = NAV_CODE_PAGES.map((page) => ({ path: page.path, title: pa
       background: rgb(from var(--accent) r g b / 6%);
       color: var(--muted);
       border-color: rgb(from var(--accent) r g b / 15%);
+    }
+
+    .nav-badge--draft {
+      background: transparent;
+      color: var(--muted);
+      border: 1px dashed var(--line);
     }
 
     .nav-url { font-size: 0.8rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
