@@ -9,9 +9,8 @@ output/
 coverage/
 *.tsbuildinfo
 
-# Local scratch files and personal tool preferences
+# Local scratch files
 .tmp/
-.baoyu-skills/
 
 # Cloudflare / Wrangler local state
 .wrangler/
