@@ -151,6 +151,40 @@ test('post summaries exclude drafts and pages and order by publication with a cr
   assert.deepEqual((await content.listPostSummaries(locals, 2)).map(row => row.slug), ['post-new', 'post-fallback']);
 });
 
+async function adjacentSlugs(slug: string) {
+  const post = await content.getPublishedBySlugAndType(locals, slug, 'post');
+  const { older, newer } = await content.getAdjacentPosts(locals, post!);
+  return { older: older?.slug ?? null, newer: newer?.slug ?? null };
+}
+
+test('adjacent posts skip drafts and pages and fall back to the creation date', async (t) => {
+  const { sqlite } = setup(t);
+  // Drafts and a page dated between the published posts must never be linked.
+  sqlite.exec(`INSERT INTO content (id, slug, title, markdown, page_type, status, author_id, published_at, created_at, updated_at) VALUES
+    ('draft-mid', 'draft-mid', 'draft-mid', '', 'post', 'draft', 'admin', 250, 250, 0),
+    ('draft-low', 'draft-low', 'draft-low', '', 'post', 'draft', 'admin', 150, 150, 0);`);
+  // Newest first: post-new (300), post-fallback (created 200), post-old (100).
+  assert.deepEqual(await adjacentSlugs('post-new'), { older: 'post-fallback', newer: null });
+  assert.deepEqual(await adjacentSlugs('post-fallback'), { older: 'post-old', newer: 'post-new' });
+  assert.deepEqual(await adjacentSlugs('post-old'), { older: null, newer: 'post-fallback' });
+  const newest = await content.getPublishedBySlugAndType(locals, 'post-new', 'post');
+  assert.deepEqual((await content.getAdjacentPosts(locals, newest!)).older, { slug: 'post-fallback', title: 'post-fallback', publishedAt: null, createdAt: 200, featuredImageUrl: null });
+});
+
+test('adjacent posts with equal dates follow the /blog order by id', async (t) => {
+  const { sqlite } = setup(t);
+  // Same date as post-fallback's created_at, one via published_at and one via the fallback.
+  sqlite.exec(`INSERT INTO content (id, slug, title, markdown, page_type, status, author_id, published_at, created_at, updated_at) VALUES
+    ('tie-b', 'tie-b', 'tie-b', '', 'post', 'published', 'admin', 200, 10, 0),
+    ('tie-a', 'tie-a', 'tie-a', '', 'post', 'published', 'admin', NULL, 200, 0);`);
+  const blog = await content.getBlogPage(locals, 1, { q: '', sort: 'newest' });
+  const order = blog.posts.map(row => row.slug);
+  assert.deepEqual(order, ['post-new', 'tie-b', 'tie-a', 'post-fallback', 'post-old']);
+  for (const [i, slug] of order.entries()) {
+    assert.deepEqual(await adjacentSlugs(slug), { older: order[i + 1] ?? null, newer: order[i - 1] ?? null }, slug);
+  }
+});
+
 test('nav items link to their content or to their own code-page path', async (t) => {
   const { sqlite } = setup(t);
   sqlite.exec(`INSERT INTO nav_items (id, label, content_id, path, sort_order, created_at) VALUES

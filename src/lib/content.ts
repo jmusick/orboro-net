@@ -173,7 +173,13 @@ export async function listRelatedPosts(locals: App.Locals, contentId: string, li
 
 export type PostSummary = Pick<ContentRecord, 'slug' | 'title' | 'publishedAt' | 'createdAt' | 'featuredImageUrl'>;
 
-// Sidebars and adjacent-post links never need article bodies.
+type PostSummaryRow = { slug: string; title: string; published_at: number | null; created_at: number; featured_image_url: string | null };
+
+function mapPostSummary(row: PostSummaryRow): PostSummary {
+  return { slug: row.slug, title: row.title, publishedAt: row.published_at, createdAt: row.created_at, featuredImageUrl: row.featured_image_url };
+}
+
+// Sidebars never need article bodies.
 export async function listPostSummaries(locals: App.Locals, limit = 5): Promise<PostSummary[]> {
   const db = getDB(locals);
   if (!db) return [];
@@ -181,8 +187,34 @@ export async function listPostSummaries(locals: App.Locals, limit = 5): Promise<
     `SELECT slug, title, published_at, created_at, featured_image_url FROM content
      WHERE page_type = 'post' AND status = 'published'
      ORDER BY COALESCE(published_at, created_at) DESC LIMIT ?`,
-  ).bind(limit).all<{ slug: string; title: string; published_at: number | null; created_at: number; featured_image_url: string | null }>();
-  return (result.results ?? []).map(row => ({ slug: row.slug, title: row.title, publishedAt: row.published_at, createdAt: row.created_at, featuredImageUrl: row.featured_image_url }));
+  ).bind(limit).all<PostSummaryRow>();
+  return (result.results ?? []).map(mapPostSummary);
+}
+
+export interface AdjacentPosts {
+  older: PostSummary | null;
+  newer: PostSummary | null;
+}
+
+// The published posts either side of this one in /blog's newest-first order
+// (blog-listing.ts: date DESC, then id DESC), so equal dates tie-break the same way
+// there and here, and a post never links to itself.
+export async function getAdjacentPosts(
+  locals: App.Locals,
+  post: Pick<ContentRecord, 'id' | 'publishedAt' | 'createdAt'>,
+): Promise<AdjacentPosts> {
+  const db = getDB(locals);
+  if (!db) return { older: null, newer: null };
+  const date = post.publishedAt ?? post.createdAt;
+  const neighbour = (comparison: '<' | '>', direction: 'ASC' | 'DESC') => db.prepare(
+    `SELECT slug, title, published_at, created_at, featured_image_url FROM content
+     WHERE page_type = 'post' AND status = 'published'
+       AND (COALESCE(published_at, created_at) ${comparison} ?1
+            OR (COALESCE(published_at, created_at) = ?1 AND id ${comparison} ?2))
+     ORDER BY COALESCE(published_at, created_at) ${direction}, id ${direction} LIMIT 1`,
+  ).bind(date, post.id).first<PostSummaryRow>();
+  const [older, newer] = await Promise.all([neighbour('<', 'DESC'), neighbour('>', 'ASC')]);
+  return { older: older ? mapPostSummary(older) : null, newer: newer ? mapPostSummary(newer) : null };
 }
 
 export async function getPublishedBySlugAndType(

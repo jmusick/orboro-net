@@ -11,7 +11,7 @@ import StoryCard from "../../components/StoryCard.astro";
 import RelatedTools from "../../components/RelatedTools.astro";
 import {
   getPublishedBySlugAndType,
-  listPostSummaries,
+  getAdjacentPosts,
   getContentCategories,
   summaryOrExcerpt,
   listCategoriesWithPostCounts,
@@ -55,17 +55,14 @@ const toolGroupsLoad = postCategoriesLoad.then(async (cats) => {
 
 // The "Keep reading" row stands in for the sidebar's recent posts, so the page
 // doesn't list the same posts twice.
-const [categories, postCategories, allPosts, relatedPosts, toolGroups] = await Promise.all([
+const [categories, postCategories, { older: olderPost, newer: newerPost }, relatedPosts, toolGroups] = await Promise.all([
   listCategoriesWithPostCounts(Astro.locals),
   postCategoriesLoad,
-  listPostSummaries(Astro.locals, 500),
+  getAdjacentPosts(Astro.locals, post),
   listRelatedPosts(Astro.locals, post.id),
   toolGroupsLoad,
 ]);
 
-const currentIndex = allPosts.findIndex((p) => p.slug === post.slug);
-const newerPost = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
-const olderPost = currentIndex >= 0 && currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : null;
 const adjacent = [
   olderPost && { post: olderPost, label: "Older", rel: "prev" },
   newerPost && { post: newerPost, label: "Newer", rel: "next" },
