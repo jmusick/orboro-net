@@ -1,0 +1,509 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-16T00:42:16.860Z",
+  "title": "Design System: Orboro.net",
+  "extensions": {
+    "colorMeta": {
+      "bg": {
+        "role": "neutral",
+        "displayName": "Midnight Indigo",
+        "canonical": "#070914",
+        "tonalRamp": [
+          "#0a0b0e",
+          "#23252a",
+          "#3f424a",
+          "#5d616d",
+          "#7e8291",
+          "#a1a4b2",
+          "#c6c9d3",
+          "#eceef5"
+        ]
+      },
+      "bg-deep": {
+        "role": "neutral",
+        "displayName": "Deepest Night",
+        "canonical": "#05070f",
+        "tonalRamp": [
+          "#0a0b0d",
+          "#232529",
+          "#3f4249",
+          "#5e616b",
+          "#7e828e",
+          "#a1a5af",
+          "#c6c9d1",
+          "#eceef4"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Deep Slate Indigo",
+        "canonical": "#0f1326",
+        "tonalRamp": [
+          "#0a0b0f",
+          "#22252e",
+          "#3e414f",
+          "#5b6074",
+          "#7a819a",
+          "#9ea4b9",
+          "#c4c8d9",
+          "#ebeefa"
+        ]
+      },
+      "surface-2": {
+        "role": "neutral",
+        "displayName": "Raised Slate Indigo",
+        "canonical": "#151b33",
+        "tonalRamp": [
+          "#090b10",
+          "#21252f",
+          "#3c4152",
+          "#596078",
+          "#78819f",
+          "#9ca4bd",
+          "#c2c9dd",
+          "#e9eefc"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Indigo Hairline",
+        "canonical": "#1d2442",
+        "tonalRamp": [
+          "#090b11",
+          "#212431",
+          "#3b4155",
+          "#58607c",
+          "#7681a5",
+          "#9ba4c2",
+          "#c1c8e0",
+          "#e9eeff"
+        ]
+      },
+      "line-strong": {
+        "role": "neutral",
+        "displayName": "Indigo Rule",
+        "canonical": "#3a4a78",
+        "tonalRamp": [
+          "#080b14",
+          "#1e2436",
+          "#37415d",
+          "#516087",
+          "#6e81b2",
+          "#94a4ce",
+          "#bcc9ea",
+          "#e5eeff"
+        ]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Starlight",
+        "canonical": "#e9eef9",
+        "tonalRamp": [
+          "#0a0b0d",
+          "#232529",
+          "#3f4247",
+          "#5e6169",
+          "#7e828c",
+          "#a1a5ad",
+          "#c6c9d0",
+          "#eceef3"
+        ]
+      },
+      "text-soft": {
+        "role": "neutral",
+        "displayName": "Soft Starlight",
+        "canonical": "#c3cbe0",
+        "tonalRamp": [
+          "#0a0b0e",
+          "#22252c",
+          "#3e424d",
+          "#5b6170",
+          "#7b8295",
+          "#9fa5b5",
+          "#c4c9d6",
+          "#ebeef7"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Dusk Blue-Gray",
+        "canonical": "#a3aec9",
+        "tonalRamp": [
+          "#090b10",
+          "#21252e",
+          "#3c4250",
+          "#596175",
+          "#78829b",
+          "#9ca5ba",
+          "#c2c9da",
+          "#e9eefa"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Orb Blue",
+        "canonical": "#70d0ff",
+        "tonalRamp": [
+          "#010d15",
+          "#042939",
+          "#0c4861",
+          "#176a8c",
+          "#278db9",
+          "#67afd4",
+          "#9cd2ee",
+          "#d0f5ff"
+        ]
+      },
+      "accent-hover": {
+        "role": "primary",
+        "displayName": "Pale Orb Blue",
+        "canonical": "color-mix(in srgb, var(--accent), white 36%)",
+        "tonalRamp": [
+          "#040d11",
+          "#132832",
+          "#264756",
+          "#3a687d",
+          "#518ba6",
+          "#7eadc3",
+          "#accfe1",
+          "#daf3ff"
+        ]
+      },
+      "accent-ink": {
+        "role": "primary",
+        "displayName": "Orb Ink",
+        "canonical": "#06101c",
+        "tonalRamp": [
+          "#090b0e",
+          "#21262b",
+          "#3b434c",
+          "#58626f",
+          "#768494",
+          "#9ba6b4",
+          "#c1cad5",
+          "#e9eff7"
+        ]
+      },
+      "game-wow": {
+        "role": "secondary",
+        "displayName": "Azeroth Amber",
+        "canonical": "#f5c46b",
+        "tonalRamp": [
+          "#120a00",
+          "#322201",
+          "#573d03",
+          "#7e5a07",
+          "#a77915",
+          "#c49f5c",
+          "#e2c593",
+          "#ffecc9"
+        ]
+      },
+      "game-poe": {
+        "role": "secondary",
+        "displayName": "Wraeclast Ember",
+        "canonical": "#ff8a73",
+        "tonalRamp": [
+          "#180503",
+          "#3f1710",
+          "#6a2c20",
+          "#9a4332",
+          "#ca5c47",
+          "#e58876",
+          "#feb4a5",
+          "#ffe0d5"
+        ]
+      },
+      "accent-2": {
+        "role": "tertiary",
+        "displayName": "Signal Pink",
+        "canonical": "#ff3fb8",
+        "tonalRamp": [
+          "#1c0010",
+          "#47012f",
+          "#770351",
+          "#ab0677",
+          "#e0189e",
+          "#f967bd",
+          "#ff9edc",
+          "#ffd2fc"
+        ]
+      },
+      "accent-3": {
+        "role": "tertiary",
+        "displayName": "Signal Lime",
+        "canonical": "#a8ff60",
+        "tonalRamp": [
+          "#030f00",
+          "#102d00",
+          "#214f00",
+          "#347300",
+          "#499a00",
+          "#79ba42",
+          "#a8db84",
+          "#d8fcc0"
+        ]
+      },
+      "danger": {
+        "role": "tertiary",
+        "displayName": "Alarm Red",
+        "canonical": "#ff3d4d",
+        "tonalRamp": [
+          "#1e0102",
+          "#4b040c",
+          "#7d0c1b",
+          "#b3162b",
+          "#eb273e",
+          "#ff6e6f",
+          "#ffa3a0",
+          "#ffd6d2"
+        ]
+      },
+      "warning": {
+        "role": "tertiary",
+        "displayName": "Caution Amber",
+        "canonical": "#ffc107",
+        "tonalRamp": [
+          "#130900",
+          "#362100",
+          "#5c3b00",
+          "#855700",
+          "#b07600",
+          "#cc9d26",
+          "#e8c477",
+          "#ffecb8"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page and post titles (h1)."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headings and direct-child article h2s; 1.35rem at 1024px and below."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Story-card, tool-tile and widget titles and headline numbers (1.05–1.2rem)."
+      },
+      "subhead": {
+        "displayName": "Subhead",
+        "purpose": "h3 and lower headings in the UI face."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "UI text, navigation and widgets."
+      },
+      "reading": {
+        "displayName": "Reading",
+        "purpose": "Article paragraphs, lists and quotes at the 42rem measure."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Chips, kickers and field labels; sentence case, never letter-spaced."
+      },
+      "code": {
+        "displayName": "Code",
+        "purpose": "Inline code and code blocks."
+      }
+    },
+    "shadows": [
+      {
+        "name": "menu-float",
+        "value": "0 8px 24px rgb(0 0 0 / 45%)",
+        "purpose": "Desktop nav dropdowns and flyouts only; removed in the collapsed mobile nav."
+      }
+    ],
+    "motion": [
+      {
+        "name": "transition-fast",
+        "value": "0.2s ease",
+        "purpose": "Color, background and border-color changes on hover and focus. List the properties; never transition: all."
+      },
+      {
+        "name": "art-zoom",
+        "value": "transform 0.5s ease; scale(1.04)",
+        "purpose": "Artwork scaling inside a fixed tile or story frame on hover."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation: none; transition: none",
+        "purpose": "Applied globally under prefers-reduced-motion: reduce."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "phone",
+        "value": "599px"
+      },
+      {
+        "name": "hero-stack",
+        "value": "760px"
+      },
+      {
+        "name": "tablet",
+        "value": "768px"
+      },
+      {
+        "name": "nav-collapse",
+        "value": "1024px"
+      },
+      {
+        "name": "article-aside",
+        "value": "1080px"
+      },
+      {
+        "name": "page-max",
+        "value": "1440px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The main action; Orb Blue fill with Orb Ink text.",
+      "html": "<button class=\"ds-btn-primary\">Read the post</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;gap:.5rem;border:1px solid transparent;border-radius:var(--r-md,10px);font-family:var(--font-ui,'Hanken Grotesk Variable',sans-serif);font-size:1rem;padding:.6rem 1rem;cursor:pointer;background:var(--accent,#70d0ff);color:var(--accent-ink,#06101c);font-weight:700;transition:background-color .2s ease}.ds-btn-primary:hover{background:color-mix(in srgb,var(--accent,#70d0ff),white 36%)}.ds-btn-primary:focus-visible{outline:2px solid var(--accent,#70d0ff);outline-offset:2px}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "An outlined accent action on a raised surface.",
+      "html": "<button class=\"ds-btn-secondary\">Browse tools</button>",
+      "css": ".ds-btn-secondary{display:inline-flex;align-items:center;border:1px solid var(--accent,#70d0ff);border-radius:var(--r-md,10px);background:var(--surface-2,#151b33);color:var(--accent,#70d0ff);font-family:var(--font-ui,'Hanken Grotesk Variable',sans-serif);font-size:1rem;font-weight:500;padding:.6rem 1rem;cursor:pointer;transition:background-color .2s ease}.ds-btn-secondary:hover{background:rgb(from var(--accent,#70d0ff) r g b / 10%)}.ds-btn-secondary:focus-visible{outline:2px solid var(--accent,#70d0ff);outline-offset:2px}"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "A quiet companion to a primary action, legible over artwork.",
+      "html": "<button class=\"ds-btn-ghost\">All posts</button>",
+      "css": ".ds-btn-ghost{display:inline-flex;align-items:center;border:1px solid rgb(255 255 255 / 22%);border-radius:var(--r-md,10px);background:rgb(7 9 20 / 45%);color:var(--text,#e9eef9);font-family:var(--font-ui,'Hanken Grotesk Variable',sans-serif);font-size:1rem;font-weight:600;padding:.6rem 1rem;cursor:pointer;transition:border-color .2s ease}.ds-btn-ghost:hover{border-color:rgb(255 255 255 / 45%)}.ds-btn-ghost:focus-visible{outline:2px solid var(--accent,#70d0ff);outline-offset:2px}"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Form input with a label above and an Orb Blue focus ring.",
+      "html": "<label class=\"ds-field\"><span>Search posts</span><input class=\"ds-input\" placeholder=\"Title, topic or keyword\"></label>",
+      "css": ".ds-field{display:flex;flex-direction:column;gap:.5rem;font-family:var(--font-ui,'Hanken Grotesk Variable',sans-serif)}.ds-field span{font-weight:600;font-size:.95rem;color:var(--text,#e9eef9)}.ds-input{padding:.75rem 1rem;border:1px solid var(--line-strong,#3a4a78);border-radius:var(--r-md,10px);background:var(--surface,#0f1326);color:var(--text,#e9eef9);font:inherit;font-size:.95rem;transition:border-color .2s ease}.ds-input::placeholder{color:var(--muted,#a3aec9)}.ds-input:focus{outline:2px solid var(--accent,#70d0ff);outline-offset:2px;border-color:var(--accent,#70d0ff)}"
+    },
+    {
+      "name": "Site Navigation",
+      "kind": "nav",
+      "refersTo": "nav-support",
+      "description": "Plain-text links; the current section is underlined in Orb Blue; Support is the one accent pill.",
+      "html": "<nav class=\"ds-nav\"><a href=\"#\">Blog</a><a href=\"#\" class=\"is-active\" aria-current=\"page\">Tools</a><a href=\"#\">Gaming</a><a href=\"#\" class=\"ds-nav-support\">Support</a></nav>",
+      "css": ".ds-nav{display:flex;align-items:center;gap:.25rem;font-family:var(--font-ui,'Hanken Grotesk Variable',sans-serif)}.ds-nav a{display:flex;align-items:center;min-height:44px;padding:0 .85rem;border-radius:var(--r-sm,6px);color:var(--text-soft,#c3cbe0);font-weight:600;font-size:.95rem;text-decoration:none;transition:color .18s ease,background .18s ease}.ds-nav a:hover{color:#fff}.ds-nav a.is-active{color:#fff;text-decoration:underline;text-decoration-color:var(--accent,#70d0ff);text-decoration-thickness:2px;text-underline-offset:.5rem}.ds-nav a.ds-nav-support{margin-left:.75rem;padding:0 1.25rem;border-radius:999px;background:var(--accent,#70d0ff);color:var(--accent-ink,#06101c);font-weight:700}.ds-nav a.ds-nav-support:hover{background:color-mix(in srgb,var(--accent,#70d0ff),white 36%)}.ds-nav a:focus-visible{outline:2px solid var(--accent,#70d0ff);outline-offset:2px}"
+    },
+    {
+      "name": "Topic Chips",
+      "kind": "chip",
+      "refersTo": "topic-chip",
+      "description": "Tone-tinted pills; Orb Blue by default, game colors for game topics.",
+      "html": "<div class=\"ds-chips\"><a class=\"ds-chip\" href=\"#\">Development</a><a class=\"ds-chip ds-chip-wow\" href=\"#\">World of Warcraft</a><a class=\"ds-chip ds-chip-poe\" href=\"#\">Path of Exile II</a></div>",
+      "css": ".ds-chips{display:flex;flex-wrap:wrap;gap:.5rem}.ds-chip{--tone:var(--accent,#70d0ff);display:inline-flex;padding:.25rem .75rem;border-radius:999px;border:1px solid rgb(from var(--tone) r g b / 35%);background:rgb(from var(--tone) r g b / 14%);color:var(--tone);font-family:var(--font-ui,'Hanken Grotesk Variable',sans-serif);font-size:.8rem;font-weight:700;text-decoration:none;transition:border-color .2s ease}.ds-chip-wow{--tone:var(--game-wow,#f5c46b)}.ds-chip-poe{--tone:var(--game-poe,#ff8a73)}.ds-chip:hover{border-color:var(--tone)}.ds-chip:focus-visible{outline:2px solid var(--accent,#70d0ff);outline-offset:2px}"
+    },
+    {
+      "name": "Tool Tile",
+      "kind": "card",
+      "refersTo": "tool-tile",
+      "description": "Signature launcher tile: game wordmark or artwork, floating game pill, display title and Orb Blue call to action.",
+      "html": "<a class=\"ds-tile\" href=\"#\"><div class=\"ds-tile-art\"><span class=\"ds-tile-mark\">WoW</span></div><span class=\"ds-tile-game\">World of Warcraft</span><div class=\"ds-tile-body\"><h3>Spell Queue Window Simulator</h3><p>Test how queue size, latency and keypress timing affect gaps in your rotation.</p><span class=\"ds-tile-cta\">Open tool</span></div></a>",
+      "css": ".ds-tile{--tone:var(--game-wow,#f5c46b);position:relative;display:flex;flex-direction:column;max-width:20rem;overflow:hidden;border-radius:var(--r-lg,16px);background:var(--surface,#0f1326);border:1px solid var(--line,#1d2442);color:var(--text,#e9eef9);text-decoration:none;font-family:var(--font-ui,'Hanken Grotesk Variable',sans-serif);transition:border-color .2s ease}.ds-tile:hover{border-color:var(--line-strong,#3a4a78)}.ds-tile:focus-visible{outline:2px solid var(--accent,#70d0ff);outline-offset:3px}.ds-tile-art{aspect-ratio:16/7;display:flex;align-items:flex-end;justify-content:flex-end;background:radial-gradient(circle at 80% 15%,rgb(from var(--tone) r g b / 30%),transparent 60%),var(--surface-2,#151b33)}.ds-tile-mark{padding:0 .9rem .4rem 0;font-family:var(--font-display,'Unbounded Variable',sans-serif);font-size:3rem;font-weight:700;line-height:1;letter-spacing:-.04em;color:rgb(from var(--tone) r g b / 30%);transition:color .2s ease}.ds-tile:hover .ds-tile-mark{color:rgb(from var(--tone) r g b / 45%)}.ds-tile-game{position:absolute;top:.75rem;left:.75rem;padding:.25rem .65rem;border-radius:999px;background:rgb(7 9 20 / 78%);color:var(--tone);font-size:.75rem;font-weight:700}.ds-tile-body{display:flex;flex-direction:column;gap:.5rem;padding:1.25rem 1.25rem 1.35rem}.ds-tile-body h3{margin:0;font-family:var(--font-display,'Unbounded Variable',sans-serif);font-size:1.05rem;font-weight:600;line-height:1.3}.ds-tile-body p{margin:0;color:var(--muted,#a3aec9);font-size:.95rem;line-height:1.5}.ds-tile-cta{padding-top:.75rem;color:var(--accent,#70d0ff);font-size:.9rem;font-weight:700}"
+    },
+    {
+      "name": "Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "Flat framed surface for callouts and widget shells.",
+      "html": "<div class=\"ds-panel\"><strong>The complete guide</strong><p>Widgets and callouts sit on Deep Slate Indigo inside a 1px hairline frame.</p></div>",
+      "css": ".ds-panel{padding:1rem;border:1px solid var(--line,#1d2442);border-radius:var(--r-md,10px);background:var(--surface,#0f1326);color:var(--text,#e9eef9);font-family:var(--font-ui,'Hanken Grotesk Variable',sans-serif)}.ds-panel p{margin:.4rem 0 0;color:var(--muted,#a3aec9)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Night Launcher",
+    "overview": "Orboro.net looks like a game launcher at night. Full-bleed game artwork sits behind the header and fades into a deep indigo ground, and one orb-blue accent, sampled from the logo, picks out every action. The artwork carries the drama. Everything built on top of it is flat, framed and quiet: 1px hairline frames, tonal indigo surfaces, and hover feedback that only changes a color or a border.\n\nThe mood is calm and nocturnal, never neon. Density is moderate: content sits directly on the page ground inside a wide 1440px frame rather than in a boxed panel, and running text is held to a comfortable reading measure. A wide display face (Unbounded) gives titles their launcher character; a warm grotesk (Hanken Grotesk) does all the reading, navigation and widget work.\n\nThe system was arrived at by removing things: neon glows, hover lift, entrance animations on every section, uppercase eyebrows, middle-dot meta strings and decorative radial color blobs were all tried and taken out. New work keeps them out.",
+    "keyCharacteristics": [
+      "Artwork-led heroes with scrims that guarantee legible copy",
+      "One accent (Orb Blue) for actions, links, focus and the current state",
+      "Game colors only for game identity, never for chrome",
+      "Flat, framed surfaces; depth from tone, not shadow",
+      "Wide display face for titles only; grotesk for everything else",
+      "Hover is a color or border change; artwork may scale slightly inside a fixed frame"
+    ],
+    "rules": [
+      {
+        "name": "The One Accent Rule",
+        "body": "Orb Blue is the only color that means \"act here\". Navigation chrome, backgrounds and gradients never use Signal Pink, Signal Lime or a game color.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tone Token Rule",
+        "body": "Game color reaches a component only through `topicTone()` and a `data-tone` attribute that sets `--tone`. Never hard-code Azeroth Amber or Wraeclast Ember on an element.",
+        "section": "colors"
+      },
+      {
+        "name": "The Derived Tint Rule",
+        "body": "Every accent tint is computed from the token with relative color syntax. Fixed accent RGB values fail `npm run check:styles`.",
+        "section": "colors"
+      },
+      {
+        "name": "The Display Face Names, Never Explains Rule",
+        "body": "Unbounded appears only on `h1`, `h2`, direct-child `.prose > h2`, and card, tile and widget titles. Widget headings nested in prose reset to the UI face, and widgets set `--font-display` explicitly where they want it.",
+        "section": "typography"
+      },
+      {
+        "name": "The Wide Face Step-Down Rule",
+        "body": "Unbounded runs wide, so size display text one step below what a narrow face would use, and check long titles at phone width. Headings use `text-wrap: balance`.",
+        "section": "typography"
+      },
+      {
+        "name": "The Seven-Tenths Floor Rule",
+        "body": "No text anywhere, widgets included, is smaller than 0.7rem.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Frame Rule",
+        "body": "Surfaces never lift. No hover shadows, no glows, no `translateY`. A frame acknowledges hover by changing its border color, from Indigo Hairline to Indigo Rule.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Scrim Is Not Decoration Rule",
+        "body": "Hero scrims exist to keep text over artwork at AA contrast. Never thin them; check copy over the subject at 900px and phone width.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Three Tier Rule",
+        "body": "There is no fourth radius. `0`, `50%` and hairlines may stay bare; everything else uses `--r-sm`, `--r-md`, `--r-lg` or `--r-pill`.",
+        "section": "shapes"
+      }
+    ],
+    "dos": [
+      "**Do** use `var(--accent)` or `rgb(from var(--accent) r g b / <alpha>)` for every accent color and tint.",
+      "**Do** route game color through `topicTone()` and `data-tone`, and keep it to chips, tiles, kickers and topic banners.",
+      "**Do** frame cards, callouts and blockquotes with a uniform 1px border and a symmetric radius from the three tiers.",
+      "**Do** give hover a color or border-color change only, and list the exact properties in `transition`.",
+      "**Do** let artwork scale to 1.04 inside a fixed frame on hover; the frame itself never moves.",
+      "**Do** keep running text at the 42rem measure and use underlined links in prose so links never rely on color alone.",
+      "**Do** give interactive targets at least 44px and keep all text at 0.7rem or larger.",
+      "**Do** put text on any Orb Blue fill in Orb Ink."
+    ],
+    "donts": [
+      "**Don't** add neon glow `box-shadow`s, `translateY` hover lift, or fade-and-slide keyframes on every section.",
+      "**Don't** bring back the cyan, pink and lime radial background blobs.",
+      "**Don't** use Signal Pink or Signal Lime in chrome, backgrounds or gradients; they encode status and data only.",
+      "**Don't** use `border-left: 3px solid var(--accent)` with an asymmetric radius and a gradient wash, or a top-left corner tick.",
+      "**Don't** add a fourth radius tier.",
+      "**Don't** use `transition: all`.",
+      "**Don't** use uppercase or letter-spaced eyebrows, middle-dot meta strings or monospace profile handles.",
+      "**Don't** thin hero scrims, or put copy over artwork without checking contrast at 900px and phone width.",
+      "**Don't** load fonts from a CDN or name a face in CSS that isn't imported."
+    ]
+  }
+}
