@@ -78,7 +78,7 @@ const artwork = image ? responsiveImage(image, HERO_WIDTHS, scrim === "side" ? "
 
   .hero-art--plain {
     background:
-      radial-gradient(ellipse 70% 60% at 30% 0%, rgb(76 70 170 / 28%) 0%, transparent 100%),
+      linear-gradient(180deg, rgb(from var(--accent) r g b / 8%) 0%, transparent 100%),
       var(--bg);
   }
 

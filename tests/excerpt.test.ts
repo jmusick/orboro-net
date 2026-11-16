@@ -9,10 +9,25 @@ test('summaries are literal text and respect each destination length', () => {
   for (const maxLen of [140, 155, 180]) {
     const text = 'A useful summary for readers. '.repeat(7).trim();
     const result = summaryOrExcerpt({ summary: text, markdown: 'Body' }, maxLen);
-    assert.ok(result.length <= maxLen + 1);
-    assert.ok(result.endsWith('…'));
-    assert.match(text.slice(result.length - 1), /^[\s,;:.–—-]/);
+    assert.ok(result.length <= maxLen);
+    assert.ok(result.endsWith('readers.'));
+    assert.ok(text.startsWith(result));
   }
+});
+
+test('excerpts end on a whole sentence when one fills most of the allowance', () => {
+  const summary = 'Kairos reads the cast bar and the queue window. The goal is to run it in raids without extra setup or tuning.';
+  assert.equal(summaryOrExcerpt({ summary, markdown: '' }, 80), 'Kairos reads the cast bar and the queue window.');
+  // A version number or decimal is not a sentence end.
+  assert.equal(
+    summaryOrExcerpt({ summary: 'Patch 12.1.5 changed the rotation for every spec that uses it in Mythic+ dungeons', markdown: '' }, 40),
+    'Patch 12.1.5 changed the rotation for…',
+  );
+  // A sentence that ends too early still falls back to a word cut.
+  assert.equal(
+    summaryOrExcerpt({ summary: 'Short. Then a much longer second sentence that runs past the limit', markdown: '' }, 40),
+    'Short. Then a much longer second…',
+  );
 });
 
 test('empty summaries preserve the existing post and page fallbacks', () => {

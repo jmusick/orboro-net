@@ -117,7 +117,7 @@ test('tool pages are published pages with a shortcode, minus the hub pages, in h
   assert.deepEqual(tools.map(row => row.slug), ['tool-first', 'tool-a', 'tool-b']);
   assert.deepEqual(tools[2], {
     slug: 'tool-b', title: 'Beta tool', homepageGroup: 'wow', homepageDescription: '', summary: '',
-    markdown: 'Intro. {{spell_queue_lab}}', featuredImageUrl: '/images/b.webp',
+    markdown: 'Intro. {{spell_queue_lab}}', featuredImageUrl: '/images/b.webp', updatedAt: 0,
   });
 });
 

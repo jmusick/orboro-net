@@ -186,7 +186,7 @@ test('page and filter parsing is strict; hrefs keep page 1 canonical', () => {
 });
 
 test('excerpts end on a word boundary', () => {
-  const text = 'Enshittification and AI slop are useful terms until we start using them for everything. A browser changes its tabs. A developer ships a feature.';
+  const text = 'Enshittification and AI slop are useful terms until we start using them for everything and a browser changes its tabs and a developer ships a feature and so on and on.';
   const excerpt = excerptFromMarkdown(text, 120);
   assert.ok(excerpt.endsWith('…'));
   assert.ok(text.startsWith(excerpt.slice(0, -1)));

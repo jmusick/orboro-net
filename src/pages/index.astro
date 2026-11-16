@@ -16,7 +16,7 @@ import {
 } from "../lib/content";
 import { responsiveImage, ART_WIDTHS } from "../lib/images";
 import { AUTHOR_AVATAR_PATH } from "../lib/structured-data";
-import { assignCovers, homepageTopics, topicTone } from "../lib/topics";
+import { assignCovers, homepageTopics, topicMark, topicTone } from "../lib/topics";
 
 const [rawPosts, featuredPages, categories, coverCandidates] = await Promise.all([
 	getPublishedContentByType(Astro.locals, "post", 5),
@@ -45,6 +45,7 @@ const latest = posts.slice(1);
 const topics = homepageTopics(categories).sort((a, b) => b.postCount - a.postCount || a.name.localeCompare(b.name));
 const takenImageUrls = posts.flatMap((post) => post.featuredImageUrl ? [post.featuredImageUrl] : []);
 const covers = assignCovers(topics.map((topic) => topic.id), coverCandidates, takenImageUrls);
+const SITE_HEADING = "Orboro.net: gaming guides, analysis and developer resources";
 const noun = (n: number) => (n === 1 ? "post" : "posts");
 ---
 
@@ -59,13 +60,14 @@ const noun = (n: number) => (n === 1 ? "post" : "posts");
 		<section slot="hero" class:list={["lead", lead.featuredImageUrl && "lead--art"]} aria-labelledby="lead-title">
 			<HeroArt image={lead.featuredImageUrl} scrim="side" stack />
 			<div class="lead__inner">
+				<h1 class="visually-hidden">{SITE_HEADING}</h1>
+				<h2 id="lead-title" class="lead__title"><a href={`/blog/${lead.slug}`}>{lead.title}</a></h2>
 				<p class="lead__meta">
 					{lead.categories.map((cat) => (
 						<TopicChip name={cat.name} slug={cat.slug} />
 					))}
 					<time datetime={lead.dateIso}>{lead.dateLabel}</time>
 				</p>
-				<h1 id="lead-title" class="lead__title"><a href={`/blog/${lead.slug}`}>{lead.title}</a></h1>
 				{lead.excerpt && <p class="lead__excerpt">{lead.excerpt}</p>}
 				<div class="lead__actions">
 					<Button href={`/blog/${lead.slug}`} size="lg" icon="chevron-right" iconPosition="right">Read the post</Button>
@@ -76,6 +78,7 @@ const noun = (n: number) => (n === 1 ? "post" : "posts");
 	)}
 
 	<div class="home">
+		{!lead && <h1 class="visually-hidden">{SITE_HEADING}</h1>}
 		<FeaturedTools pages={featuredPages} />
 
 		<section aria-labelledby="latest-title">
@@ -107,7 +110,7 @@ const noun = (n: number) => (n === 1 ? "post" : "posts");
 						return (
 							<li>
 								<a class="topic" href={`/blog/category/${topic.slug}`} data-tone={topicTone(topic.slug)}>
-									{cover ? <img {...responsiveImage(cover, ART_WIDTHS, "auto, (max-width: 508px) 92vw, (max-width: 773px) 44vw, (max-width: 1039px) 29vw, (max-width: 1304px) 22vw, 250px", Astro.url)} alt="" loading="lazy" /> : <span class="topic__plain" aria-hidden="true" />}
+									{cover ? <img {...responsiveImage(cover, ART_WIDTHS, "auto, (max-width: 508px) 92vw, (max-width: 773px) 44vw, (max-width: 1039px) 29vw, (max-width: 1304px) 22vw, 250px", Astro.url)} alt="" loading="lazy" /> : <span class="topic__plain" aria-hidden="true"><span class="topic__mark">{topicMark(topic.name, topic.slug)}</span></span>}
 									<span class="topic__label">
 										<span class="topic__name">{topic.name}</span>
 										<span class="topic__count">{topic.postCount} {noun(topic.postCount)}</span>
@@ -154,7 +157,7 @@ const noun = (n: number) => (n === 1 ? "post" : "posts");
 
 	.lead__title {
 		margin: 0;
-		font-size: clamp(2rem, 1.3rem + 2.2vw, 3.4rem);
+		font-size: clamp(2rem, 1.4rem + 2.2vw, 3.25rem);
 		line-height: 1.08;
 	}
 
@@ -172,7 +175,7 @@ const noun = (n: number) => (n === 1 ? "post" : "posts");
 		margin: 0;
 		max-width: 34em;
 		color: var(--text-soft);
-		font-size: 1.15rem;
+		font-size: 1.1875rem;
 		line-height: 1.6;
 	}
 
@@ -191,32 +194,12 @@ const noun = (n: number) => (n === 1 ? "post" : "posts");
 		padding-top: var(--space-6);
 	}
 
-	.section-head {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-2);
-		margin-bottom: var(--space-6);
-	}
-
+	/* Section head styles live in global.css; this page only adds the one-row variant. */
 	.section-head--row {
 		flex-direction: row;
 		flex-wrap: wrap;
 		align-items: baseline;
 		justify-content: space-between;
-	}
-
-	.section-head h2 {
-		margin: 0;
-		font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
-	}
-
-	.section-link {
-		font-weight: 700;
-		text-decoration: none;
-	}
-
-	.section-link:hover {
-		color: var(--accent-hover);
 	}
 
 	.empty-note {
@@ -266,7 +249,7 @@ const noun = (n: number) => (n === 1 ? "post" : "posts");
 		overflow: hidden;
 		border-radius: var(--r-lg,16px);
 		border: 1px solid var(--line);
-		color: #fff;
+		color: var(--text);
 		text-decoration: none;
 		transition: border-color var(--transition-fast);
 	}
@@ -290,7 +273,21 @@ const noun = (n: number) => (n === 1 ? "post" : "posts");
 	}
 
 	.topic__plain {
-		background: radial-gradient(circle at 80% 15%, rgb(from var(--tone) r g b / 28%), transparent 60%), var(--surface-2);
+		display: flex;
+		align-items: flex-start;
+		justify-content: flex-end;
+		background: color-mix(in srgb, var(--tone) 10%, var(--surface-2));
+	}
+
+	/* The wordmark stands in for artwork, as on a tool tile without one. */
+	.topic__mark {
+		padding: 0.75rem 1.1rem 0 0;
+		font-family: var(--font-display);
+		font-size: clamp(2.5rem, 2rem + 2vw, 3.5rem);
+		font-weight: 700;
+		line-height: 1;
+		letter-spacing: -0.04em;
+		color: rgb(from var(--tone) r g b / 30%);
 	}
 
 	/* Bottom scrim keeps the label legible over any artwork. */
@@ -313,12 +310,15 @@ const noun = (n: number) => (n === 1 ? "post" : "posts");
 		font-family: var(--font-display);
 		font-size: 1.25rem;
 		font-weight: 600;
+		text-wrap: balance;
 	}
 
 	.topic__count {
 		color: var(--text-soft);
 		font-size: 0.9rem;
 	}
+	.topic[data-tone="wow"] .topic__count,
+	.topic[data-tone="poe"] .topic__count { color: var(--tone); }
 
 	/* ── Phones: shorter page, and the lead's art shows above its copy ── */
 	@media (max-width: 760px) {

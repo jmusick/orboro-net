@@ -50,6 +50,8 @@ export interface ToolPage {
   /** Opening Markdown, enough for `toolDescription`. */
   markdown: string;
   featuredImageUrl: string | null;
+  /** Last save, in epoch milliseconds; tiles show it as "Updated <month year>". */
+  updatedAt?: number;
 }
 
 export interface ToolTileData {
@@ -59,6 +61,7 @@ export interface ToolTileData {
   featuredImageUrl: string | null;
   group: ToolGroup;
   tone: TopicTone;
+  updatedAt: number | null;
 }
 
 function groupFor(key: string): ToolGroup {
@@ -74,6 +77,7 @@ export function toToolTile(page: ToolPage): ToolTileData {
     featuredImageUrl: page.featuredImageUrl,
     group,
     tone: topicTone(group.key),
+    updatedAt: page.updatedAt ?? null,
   };
 }
 

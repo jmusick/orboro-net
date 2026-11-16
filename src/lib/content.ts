@@ -135,14 +135,14 @@ export async function listToolPages(locals: App.Locals): Promise<ToolPage[]> {
   if (!db) return [];
   const excluded = [...TOOL_INDEX_EXCLUDED_SLUGS];
   const result = await db.prepare(
-    `SELECT slug, title, homepage_group, homepage_description, summary, featured_image_url,
+    `SELECT slug, title, homepage_group, homepage_description, summary, featured_image_url, updated_at,
             substr(markdown, 1, ${EXCERPT_SOURCE_CHARS}) AS markdown_prefix
      FROM content
      WHERE page_type = 'page' AND status = 'published'
        AND ${EMBEDS_SHORTCODE_SQL}
        AND slug NOT IN (${excluded.map(() => "?").join(",")})
      ORDER BY homepage_order ASC, title COLLATE NOCASE ASC, id ASC`,
-  ).bind(...excluded).all<{ slug: string; title: string; homepage_group: string | null; homepage_description: string | null; summary: string | null; featured_image_url: string | null; markdown_prefix: string | null }>();
+  ).bind(...excluded).all<{ slug: string; title: string; homepage_group: string | null; homepage_description: string | null; summary: string | null; featured_image_url: string | null; updated_at: number | null; markdown_prefix: string | null }>();
   return (result.results ?? []).map((row) => ({
     slug: row.slug,
     title: row.title,
@@ -151,6 +151,7 @@ export async function listToolPages(locals: App.Locals): Promise<ToolPage[]> {
     summary: row.summary ?? "",
     markdown: row.markdown_prefix ?? "",
     featuredImageUrl: row.featured_image_url,
+    updatedAt: row.updated_at ?? undefined,
   }));
 }
 

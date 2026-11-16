@@ -26,9 +26,23 @@ export function excerptFromMarkdown(markdown: string, maxLen = 155): string {
   return truncatePlainText(plain, maxLen);
 }
 
+/** A sentence ending must keep at least this share of the length allowance. */
+const SENTENCE_MIN_SHARE = 0.55;
+
+/** Index just past the last `.`, `!` or `?` that is followed by whitespace, or -1. */
+function lastSentenceEnd(text: string): number {
+  let end = -1;
+  for (const match of text.matchAll(/[.!?]["”’)]?(?=\s)/g)) end = match.index + match[0].length;
+  return end;
+}
+
 function truncatePlainText(plain: string, maxLen: number): string {
   if (plain.length <= maxLen) return plain;
-  // Cut at the last word boundary so an excerpt never ends mid-word, unless
+  // End on a whole sentence when one fills most of the allowance, so the
+  // excerpt reads as finished instead of trailing off mid-thought.
+  const sentenceEnd = lastSentenceEnd(plain.slice(0, maxLen + 1));
+  if (sentenceEnd >= maxLen * SENTENCE_MIN_SHARE) return plain.slice(0, sentenceEnd);
+  // Otherwise cut at the last word boundary so an excerpt never ends mid-word, unless
   // that would throw away most of the allowance (one very long token).
   const cut = plain.slice(0, maxLen + 1);
   const boundary = cut.search(/\s\S*$/);

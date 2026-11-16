@@ -16,6 +16,14 @@ export function topicTone(key: string | null | undefined): TopicTone {
   return (key && TONES[key]) || "default";
 }
 
+/** Wordmark for a topic banner without artwork: the game's short name, else the topic's initial. */
+export function topicMark(name: string, slug: string): string {
+  const tone = topicTone(slug);
+  if (tone === "wow") return "WoW";
+  if (tone === "poe") return "PoE 2";
+  return name.trim().charAt(0).toUpperCase();
+}
+
 export interface GameHub {
   tone: Exclude<TopicTone, "default">;
   /** `homepage_group` of the game's featured tool pages. */
